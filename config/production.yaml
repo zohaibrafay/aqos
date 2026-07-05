@@ -1,0 +1,17 @@
+app:
+  name: AQOS
+  environment: production
+  debug: false
+
+logging:
+  level: WARNING
+  directory: logs
+
+data:
+  directory: datasets
+
+experiments:
+  directory: experiments
+
+models:
+  directory: models

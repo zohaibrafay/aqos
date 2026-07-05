@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: aqos
+Version: 0.1.0
+Summary: AI Quant Operating System
+Author: Zohaib Hussain
+Requires-Python: >=3.11
+License-File: LICENSE
+Dynamic: license-file

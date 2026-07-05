@@ -1,0 +1,17 @@
+app:
+  name: AQOS
+  environment: research
+  debug: true
+
+logging:
+  level: DEBUG
+  directory: logs
+
+data:
+  directory: datasets
+
+experiments:
+  directory: experiments
+
+models:
+  directory: models
