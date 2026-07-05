@@ -1,8 +1,5 @@
 """
 AQOS Core Infrastructure
-
-This package contains the core infrastructure components used
-throughout the AQOS platform.
 """
 
 from .bootstrap import Bootstrap
@@ -20,12 +17,14 @@ from .exceptions import (
     StrategyError,
     ValidationError,
 )
+from .health import HealthCheck
 from .logger import Logger
 
 __all__ = [
     "Bootstrap",
     "ConfigurationManager",
     "Logger",
+    "HealthCheck",
     "AQOSException",
     "ConfigurationError",
     "ValidationError",

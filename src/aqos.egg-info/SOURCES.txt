@@ -8,6 +8,7 @@ src/aqos/version.py
 src/aqos.egg-info/PKG-INFO
 src/aqos.egg-info/SOURCES.txt
 src/aqos.egg-info/dependency_links.txt
+src/aqos.egg-info/entry_points.txt
 src/aqos.egg-info/top_level.txt
 src/aqos/agents/__init__.py
 src/aqos/agents/data_agent.py
@@ -27,6 +28,7 @@ src/aqos/core/bootstrap.py
 src/aqos/core/configuration.py
 src/aqos/core/constants.py
 src/aqos/core/exceptions.py
+src/aqos/core/health.py
 src/aqos/core/lifecycle.py
 src/aqos/core/logger.py
 src/aqos/core/settings.py
