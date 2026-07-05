@@ -1,30 +1,46 @@
+"""
+AQOS Main Entry Point
+"""
+
+from aqos.core import Bootstrap
 from aqos.version import Version
-from aqos.core.configuration import ConfigurationManager
 
 
-def main():
+def main() -> None:
+    """
+    Main entry point for AQOS.
+    """
 
-    print(Version.get_banner())
+    bootstrap = Bootstrap()
 
-    config = ConfigurationManager()
+    try:
+        bootstrap.initialize()
 
-    config.load()
+        logger = bootstrap.logger
+        config = bootstrap.get_configuration()
 
-    config.validate()
+        logger.info("")
+        logger.info(Version.get_banner())
+        logger.info("")
+        logger.info("AQOS started successfully.")
+        logger.info("Environment : %s", config.get("app.environment"))
+        logger.info("Log Level   : %s", config.get("logging.level"))
+        logger.info("AQOS is ready.")
 
-    print()
+    except Exception as error:
+        if bootstrap.logger:
+            bootstrap.logger.exception(
+                "AQOS failed to start: %s",
+                error,
+            )
+        else:
+            print(f"AQOS failed to start: {error}")
 
-    print("Configuration Loaded")
+        raise
 
-    print(f"Environment : {config.get('app.environment')}")
-
-    print(f"Log Level   : {config.get('logging.level')}")
-
-    print()
-
-    print("AQOS Ready")
+    finally:
+        bootstrap.shutdown()
 
 
 if __name__ == "__main__":
-
     main()
