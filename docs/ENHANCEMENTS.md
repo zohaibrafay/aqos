@@ -231,6 +231,145 @@ Future improvements
 
 ---
 
+
+# Sprint 006 Deferred Enhancements
+
+## Learning
+
+### Trainer
+
+Future improvements
+
+- Early stopping
+- Mixed precision training
+- Gradient accumulation
+- Distributed training
+- Multi-GPU support
+- Automatic checkpointing
+
+---
+
+### Optimizer
+
+Future improvements
+
+- Adam
+- AdamW
+- SGD
+- RMSProp
+- LAMB
+- Optimizer parameter groups
+- Weight decay configuration
+
+---
+
+### Scheduler
+
+Future improvements
+
+- StepLR
+- MultiStepLR
+- Cosine Annealing
+- Cosine Warm Restarts
+- ReduceLROnPlateau
+- OneCycleLR
+- Warm-up scheduling
+
+---
+
+### Loss
+
+Future improvements
+
+- Mean Absolute Error (MAE)
+- Huber Loss
+- Binary Cross Entropy (BCE)
+- Cross Entropy
+- Focal Loss
+- Quantile Loss
+- Custom financial loss functions
+
+---
+
+### Cross Validation
+
+Future improvements
+
+- K-Fold
+- Stratified K-Fold
+- Group K-Fold
+- Time Series Split
+- Walk-Forward Validation
+- Rolling Window Validation
+- Expanding Window Validation
+
+---
+
+### Learning Pipeline
+
+Future improvements
+
+- Experiment tracking
+- Hyperparameter optimization
+- Automatic checkpoint management
+- Resume interrupted training
+- Training callbacks
+- MLflow integration
+- Weights & Biases integration
+
+---
+
+### Continual Learning
+
+Future improvements
+
+- Online learning
+- Incremental learning
+- Experience replay
+- Elastic Weight Consolidation (EWC)
+- Catastrophic forgetting prevention
+- Streaming market adaptation
+
+---
+
+### Self-Supervised Learning
+
+Future improvements
+
+- Contrastive learning
+- Masked time-series modeling
+- Representation learning
+- Transformer pretraining
+- Candle embedding learning
+- Multi-timeframe pretraining
+
+---
+
+### Reinforcement Learning
+
+Future improvements
+
+- PPO
+- DQN
+- SAC
+- TD3
+- Reward engineering
+- Trading environment
+- Portfolio optimization agent
+
+---
+
+### Training Evaluator
+
+Future improvements
+
+- Training metrics dashboard
+- Learning curve visualization
+- Confusion matrix generation
+- ROC and Precision-Recall curves
+- Model comparison
+- Automatic evaluation reports
+
 # Global Enhancements
 
 Future system-wide improvements

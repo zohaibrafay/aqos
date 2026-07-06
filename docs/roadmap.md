@@ -11,7 +11,7 @@
 **Current Version**
 
 ```
-v0.5.0-dev
+v0.6.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```
-Sprint 006 — Learning Engine
+Sprint 007 — Memory
 ```
 
 **Current Task**
 
 ```
-Task 6.1
+Task 7.1
 ```
 
 ---
@@ -44,8 +44,8 @@ Task 6.1
 | Sprint 003 | Feature Engineering | ✅ Complete |
 | Sprint 004 | Strategy Engine | ✅ Complete |
 | Sprint 005 | Models | ✅ Complete |
-| Sprint 006 | Learning Engine | 🚧 In Progress |
-| Sprint 007 | Memory | ⏳ Planned |
+| Sprint 006 | Learning Engine | ✅ Complete |
+| Sprint 007 | Memory | 🚧 In Progress |
 | Sprint 008 | Risk | ⏳ Planned |
 | Sprint 009 | Evaluation | ⏳ Planned |
 | Sprint 010 | Services | ⏳ Planned |
@@ -132,13 +132,9 @@ Task 6.1
 
 ---
 
-# Next Sprint
+## Sprint 006
 
-Sprint 006
-
-Learning Engine
-
-Starting with:
+### Learning
 
 - Trainer
 - Optimizer
@@ -146,6 +142,23 @@ Starting with:
 - Loss
 - Cross Validation
 - Learning Pipeline
+
+---
+
+# Next Sprint
+
+Sprint 007
+
+Memory
+
+Starting with:
+
+- Pattern Memory
+- Trade Memory
+- Embedding
+- Vector Store
+- Retriever
+- Memory Pipeline
 
 ---
 

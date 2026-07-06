@@ -10,7 +10,7 @@
 # Current Version
 
 ```
-v0.5.0-dev
+v0.6.0-dev
 ```
 
 ---
@@ -25,7 +25,8 @@ v0.5.0-dev
 | Sprint 003 | ✅ Complete |
 | Sprint 004 | ✅ Complete |
 | Sprint 005 | ✅ Complete |
-| Sprint 006 | 🚧 In Progress |
+| Sprint 006 | ✅ Complete |
+| Sprint 007 | 🚧 In Progress |
 
 ---
 
@@ -140,16 +141,20 @@ Responsible for prediction and market representation.
 
 # learning/
 
-Responsible for model training.
+Responsible for model training and optimization.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| trainer.py | Training engine | ⏳ |
-| optimizer.py | Optimizer | ⏳ |
-| scheduler.py | Learning-rate scheduler | ⏳ |
-| loss.py | Loss functions | ⏳ |
-| cross_validation.py | Cross validation | ⏳ |
-| pipeline.py | Learning pipeline | ⏳ |
+| trainer.py | Model training engine | ✅ |
+| optimizer.py | Optimizer configuration | ✅ |
+| scheduler.py | Learning-rate scheduler | ✅ |
+| loss.py | Loss function configuration | ✅ |
+| cross_validation.py | Cross-validation configuration | ✅ |
+| pipeline.py | Learning pipeline | ✅ |
+| continual.py | Continual learning | ⏳ |
+| evaluator.py | Training evaluation | ⏳ |
+| reinforcement.py | Reinforcement learning | ⏳ |
+| self_supervised.py | Self-supervised learning | ⏳ |
 
 ---
 
@@ -284,6 +289,15 @@ Responsible for multi-agent orchestration.
 - Uncertainty Engine
 - World Model
 
+## Learning
+
+- Trainer
+- Optimizer
+- Scheduler
+- Loss
+- Cross Validation
+- Learning Pipeline
+
 ---
 
 # Status Legend
@@ -309,5 +323,7 @@ Responsible for multi-agent orchestration.
 # Notes
 
 `CODEBASE.md` is the authoritative inventory of the AQOS repository.
+
+Files such as `continual.py`, `evaluator.py`, `reinforcement.py`, and `self_supervised.py` are intentionally present as architectural placeholders. They are planned for future implementation once their prerequisite systems (Memory, Evaluation, Risk, World Model, and Agent infrastructure) are available.
 
 Whenever the repository structure changes, this document must be updated before a sprint is considered complete.

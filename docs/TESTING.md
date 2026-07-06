@@ -149,6 +149,21 @@ Status
 
 ---
 
+## Sprint 006 — Learning Engine
+
+- Trainer
+- Optimizer
+- Scheduler
+- Loss
+- Cross Validation
+- Learning Pipeline
+
+Status
+
+✅ Complete
+
+
+
 # Testing Standards
 
 Each module should test:
@@ -233,3 +248,4 @@ The following test categories will be added in later phases:
 Testing is considered a first-class citizen in AQOS.
 
 No sprint is complete until all implemented modules have passing tests.
+

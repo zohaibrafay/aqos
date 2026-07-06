@@ -9,7 +9,65 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 # [Unreleased]
 
 Future changes will be listed here before the next release.
+# [v0.6.0-dev] - 2026-07-07
 
+## Added
+
+### Sprint 006 — Learning Engine
+
+#### Trainer
+
+- Added model training engine.
+- Added training validation.
+- Added unit tests.
+
+#### Optimizer
+
+- Added optimizer configuration.
+- Added learning-rate validation.
+- Added unit tests.
+
+#### Scheduler
+
+- Added scheduler configuration.
+- Added scheduling parameter validation.
+- Added unit tests.
+
+#### Loss
+
+- Added loss function configuration.
+- Added loss validation.
+- Added unit tests.
+
+#### Cross Validation
+
+- Added cross-validation configuration.
+- Added fold validation.
+- Added unit tests.
+
+#### Learning Pipeline
+
+- Added unified learning pipeline.
+- Integrated trainer, optimizer, scheduler, loss, and cross-validation.
+- Added pipeline validation.
+- Added unit tests.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Learning modules.
+- All Sprint 006 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
 ---
 
 # [v0.5.0-dev] - 2026-07-07
