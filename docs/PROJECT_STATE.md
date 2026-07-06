@@ -14,7 +14,7 @@
 | Item | Value |
 |------|-------|
 | Project | AI Quant Operating System (AQOS) |
-| Current Version | v0.6.0-dev |
+| Current Version | v0.7.0-dev |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -25,19 +25,19 @@
 ## Current Sprint
 
 ```
-Sprint 007 — Memory
+Sprint 008 — Risk
 ```
 
 ## Current Task
 
 ```
-Task 7.1
+Task 8.1
 ```
 
 ## Previous Sprint
 
 ```
-Sprint 006 — Learning Engine
+Sprint 007 — Memory
 ```
 
 Status
@@ -57,8 +57,8 @@ Status
 | Sprint 004 | Strategy Engine | ✅ Complete |
 | Sprint 005 | Models | ✅ Complete |
 | Sprint 006 | Learning Engine | ✅ Complete |
-| Sprint 007 | Memory | 🚧 In Progress |
-| Sprint 008 | Risk | ⏳ Planned |
+| Sprint 007 | Memory | ✅ Complete |
+| Sprint 008 | Risk | 🚧 In Progress |
 | Sprint 009 | Evaluation | ⏳ Planned |
 | Sprint 010 | Services | ⏳ Planned |
 | Sprint 011 | Agents | ⏳ Planned |
@@ -66,18 +66,18 @@ Status
 
 ---
 
-# Sprint 006 Summary
+# Sprint 007 Summary
 
 Completed Components
 
-## Learning Engine
+## Memory
 
-- Trainer
-- Optimizer
-- Scheduler
-- Loss
-- Cross Validation
-- Learning Pipeline
+- Pattern Memory
+- Trade Memory
+- Embedding Engine
+- Vector Store
+- Memory Retriever
+- Memory Pipeline
 
 All unit tests passed successfully.
 
@@ -93,27 +93,28 @@ Completed
 - Strategy Engine
 - Models
 - Learning Engine
+- Memory
 
 Next
 
-- Memory
+- Risk
 
 ---
 
 # Immediate Next Tasks
 
-Sprint 007
+Sprint 008
 
-Memory
+Risk
 
 Task Order
 
-- Task 7.1 Pattern Memory
-- Task 7.2 Trade Memory
-- Task 7.3 Embedding
-- Task 7.4 Vector Store
-- Task 7.5 Retriever
-- Task 7.6 Memory Pipeline
+- Task 8.1 Position Sizing
+- Task 8.2 Stop Loss
+- Task 8.3 Take Profit
+- Task 8.4 Drawdown
+- Task 8.5 Portfolio Risk
+- Task 8.6 Risk Pipeline
 
 ---
 
@@ -128,7 +129,7 @@ All Tests Passing
 Latest Test Result
 
 ```
-Sprint 006 Complete
+Sprint 007 Complete
 ```
 
 ---
@@ -192,9 +193,9 @@ If development resumes after a break:
 4. Continue from:
 
 ```
-Sprint 007
+Sprint 008
 
-Task 7.1
+Task 8.1
 ```
 
 ---
@@ -220,10 +221,12 @@ AQOS is being developed as an institutional-grade AI Quant Research Platform wit
 
 # Notes
 
-Sprint 006 has been completed successfully.
+Sprint 007 has been completed successfully.
 
-The Learning Engine now provides the foundational infrastructure for model training, including training orchestration, optimizer configuration, scheduler configuration, loss configuration, cross-validation, and a unified learning pipeline. These components establish the training framework that future learning paradigms—including continual learning, self-supervised learning, and reinforcement learning—will build upon in later sprints.
+The Memory subsystem now provides the foundation for storing and retrieving historical market knowledge. AQOS can store detected market patterns, historical trade records, deterministic memory embeddings, vector records, similarity-based retrieval results, and unified memory operations through the Memory Pipeline.
 
-The project is now ready to begin **Sprint 007 – Memory**.
+The current memory implementation is intentionally lightweight and in-memory only. Persistent memory, vector databases, advanced embeddings, experience replay, and long-term market memory will be added in later phases.
+
+The project is now ready to begin **Sprint 008 – Risk**.
 
 This document should always reflect the latest development state of AQOS and serve as the single source of truth for resuming work.

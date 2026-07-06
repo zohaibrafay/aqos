@@ -9,6 +9,83 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 # [Unreleased]
 
 Future changes will be listed here before the next release.
+
+# [v0.7.0-dev] - 2026-07-07
+
+## Added
+
+### Sprint 007 — Memory
+
+#### Pattern Memory
+
+- Added pattern record storage.
+- Added pattern metadata support.
+- Added pattern lookup by symbol.
+- Added pattern lookup by pattern name.
+- Added unit tests.
+
+#### Trade Memory
+
+- Added trade record storage.
+- Added trade metadata support.
+- Added open trade lookup.
+- Added closed trade lookup.
+- Added trade lookup by symbol and side.
+- Added unit tests.
+
+#### Embedding Engine
+
+- Added deterministic hash-based embedding generation.
+- Added normalized vector output.
+- Added batch text encoding.
+- Added unit tests.
+
+#### Vector Store
+
+- Added in-memory vector storage.
+- Added vector record model.
+- Added vector search result model.
+- Added cosine similarity search.
+- Added vector validation.
+- Added unit tests.
+
+#### Memory Retriever
+
+- Added memory retrieval engine.
+- Integrated embedding generation with vector search.
+- Added text-based memory indexing.
+- Added query-based retrieval.
+- Added unit tests.
+
+#### Memory Pipeline
+
+- Added unified memory pipeline.
+- Integrated pattern memory, trade memory, retriever, embedding, and vector store.
+- Added pattern memory indexing.
+- Added trade memory indexing.
+- Added memory counts.
+- Added memory clearing.
+- Added unit tests.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Memory modules.
+- All Sprint 007 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
+
+
+
 # [v0.6.0-dev] - 2026-07-07
 
 ## Added

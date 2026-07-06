@@ -11,7 +11,7 @@
 **Current Version**
 
 ```
-v0.6.0-dev
+v0.7.0-dev
 ```
 
 **Current Phase**
@@ -23,14 +23,17 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```
-Sprint 007 — Memory
+Sprint 008 — RISK
 ```
 
 **Current Task**
 
 ```
-Task 7.1
+Task 8.1
 ```
+
+---
+
 
 ---
 
@@ -45,8 +48,8 @@ Task 7.1
 | Sprint 004 | Strategy Engine | ✅ Complete |
 | Sprint 005 | Models | ✅ Complete |
 | Sprint 006 | Learning Engine | ✅ Complete |
-| Sprint 007 | Memory | 🚧 In Progress |
-| Sprint 008 | Risk | ⏳ Planned |
+| Sprint 007 | Memory | ✅ Complete |
+| Sprint 008 | Risk | 🚧 In Progress |
 | Sprint 009 | Evaluation | ⏳ Planned |
 | Sprint 010 | Services | ⏳ Planned |
 | Sprint 011 | Agents | ⏳ Planned |
@@ -145,24 +148,51 @@ Task 7.1
 
 ---
 
-# Next Sprint
+## Sprint 007
 
-Sprint 007
-
-Memory
-
-Starting with:
+### Memory
 
 - Pattern Memory
 - Trade Memory
-- Embedding
+- Embedding Engine
 - Vector Store
-- Retriever
+- Memory Retriever
 - Memory Pipeline
 
 ---
 
+# Next Sprint
+
+Sprint 008
+
+Risk
+
+Starting with:
+
+- Position Sizing
+- Stop Loss
+- Take Profit
+- Drawdown
+- Portfolio Risk
+- Risk Pipeline
+
+---
+
 # Long-Term Goal
+
+Build an institutional-grade AI Quant Research Platform capable of:
+
+- Market Intelligence
+- Machine Learning
+- Deep Learning
+- Reinforcement Learning
+- Pattern Memory
+- World Models
+- Risk Management
+- Backtesting
+- Paper Trading
+- Live Trading
+- Multi-Agent AI
 
 Build an institutional-grade AI Quant Research Platform capable of:
 

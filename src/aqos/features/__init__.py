@@ -1,21 +1,21 @@
 """
-AQOS Feature Engineering.
+AQOS Features Package.
 """
 
-from .base import Feature
-from .candlestick import CandlestickFeatures
-from .market_structure import MarketStructureFeatures
-from .pipeline import FeaturePipeline
-from .price_action import PriceActionFeatures
-from .statistical import StatisticalFeatures
-from .technical import TechnicalIndicators
+from aqos.features.base import Feature
+from aqos.features.candlestick import CandlestickFeatures
+from aqos.features.market_structure import MarketStructureFeatures
+from aqos.features.pipeline import FeaturePipeline
+from aqos.features.price_action import PriceActionFeatures
+from aqos.features.statistical import StatisticalFeatures
+from aqos.features.technical import TechnicalIndicators
 
 __all__ = [
+    "CandlestickFeatures",
     "Feature",
     "FeaturePipeline",
-    "TechnicalIndicators",
-    "CandlestickFeatures",
+    "MarketStructureFeatures",
     "PriceActionFeatures",
     "StatisticalFeatures",
-    "MarketStructureFeatures",
+    "TechnicalIndicators",
 ]
