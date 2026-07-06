@@ -14,7 +14,7 @@
 | Item | Value |
 |------|-------|
 | Project | AI Quant Operating System (AQOS) |
-| Current Version | v0.7.0-dev |
+| Current Version | v0.8.0-dev |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -24,20 +24,20 @@
 
 ## Current Sprint
 
-```
-Sprint 008 — Risk
+```text
+Sprint 009 — Evaluation
 ```
 
 ## Current Task
 
-```
-Task 8.1
+```text
+Task 9.1
 ```
 
 ## Previous Sprint
 
-```
-Sprint 007 — Memory
+```text
+Sprint 008 — Risk
 ```
 
 Status
@@ -58,26 +58,28 @@ Status
 | Sprint 005 | Models | ✅ Complete |
 | Sprint 006 | Learning Engine | ✅ Complete |
 | Sprint 007 | Memory | ✅ Complete |
-| Sprint 008 | Risk | 🚧 In Progress |
-| Sprint 009 | Evaluation | ⏳ Planned |
+| Sprint 008 | Risk | ✅ Complete |
+| Sprint 009 | Evaluation | 🚧 In Progress |
 | Sprint 010 | Services | ⏳ Planned |
 | Sprint 011 | Agents | ⏳ Planned |
 | Sprint 012 | Full System Integration | ⏳ Planned |
 
 ---
 
-# Sprint 007 Summary
+# Sprint 008 Summary
 
 Completed Components
 
-## Memory
+## Risk
 
-- Pattern Memory
-- Trade Memory
-- Embedding Engine
-- Vector Store
-- Memory Retriever
-- Memory Pipeline
+- Position Sizing
+- Exposure Management
+- Drawdown Management
+- Risk Constraints
+- Stop Loss Management
+- Take Profit Management
+- Portfolio Risk Management
+- Risk Pipeline
 
 All unit tests passed successfully.
 
@@ -94,27 +96,28 @@ Completed
 - Models
 - Learning Engine
 - Memory
+- Risk
 
 Next
 
-- Risk
+- Evaluation
 
 ---
 
 # Immediate Next Tasks
 
-Sprint 008
+Sprint 009
 
-Risk
+Evaluation
 
 Task Order
 
-- Task 8.1 Position Sizing
-- Task 8.2 Stop Loss
-- Task 8.3 Take Profit
-- Task 8.4 Drawdown
-- Task 8.5 Portfolio Risk
-- Task 8.6 Risk Pipeline
+- Task 9.1 Metrics
+- Task 9.2 Backtesting
+- Task 9.3 Walk-Forward Validation
+- Task 9.4 Paper Trading
+- Task 9.5 Reports
+- Task 9.6 Evaluation Pipeline
 
 ---
 
@@ -122,14 +125,14 @@ Task Order
 
 Current Status
 
-```
+```text
 All Tests Passing
 ```
 
 Latest Test Result
 
-```
-Sprint 007 Complete
+```text
+Sprint 008 Complete
 ```
 
 ---
@@ -138,14 +141,21 @@ Sprint 007 Complete
 
 Current Architecture
 
-```
-Version 1.0
+```text
+Version 1.1
 ```
 
 Status
 
+```text
+Updated during Sprint 008
 ```
-Frozen
+
+Reason
+
+```text
+Risk architecture was expanded to include portfolio risk, stop-loss management,
+take-profit management, and a unified risk pipeline.
 ```
 
 Architecture changes require a new ADR.
@@ -163,8 +173,8 @@ Architecture changes require a new ADR.
 | API.md | ⏳ Pending (No changes expected) |
 | TESTING.md | ⏳ Pending |
 | ENHANCEMENTS.md | ⏳ Pending |
-| ARCHITECTURE.md | ✅ Current |
-| DECISIONS.md | ✅ Current |
+| ARCHITECTURE.md | ⏳ Pending |
+| DECISIONS.md | ⏳ Pending |
 | RESEARCH.md | ✅ Current |
 
 ---
@@ -177,7 +187,7 @@ None
 
 Deferred enhancements are tracked in:
 
-```
+```text
 docs/ENHANCEMENTS.md
 ```
 
@@ -192,10 +202,10 @@ If development resumes after a break:
 3. Verify all tests pass.
 4. Continue from:
 
-```
-Sprint 008
+```text
+Sprint 009
 
-Task 8.1
+Task 9.1
 ```
 
 ---
@@ -213,6 +223,9 @@ AQOS is being developed as an institutional-grade AI Quant Research Platform wit
 - Vector Memory
 - Similarity Search
 - Risk Management
+- Portfolio Risk
+- Backtesting
+- Paper Trading
 - Multi-Agent AI
 - Research Automation
 - Live Trading
@@ -221,12 +234,19 @@ AQOS is being developed as an institutional-grade AI Quant Research Platform wit
 
 # Notes
 
-Sprint 007 has been completed successfully.
+Sprint 008 has been completed successfully.
 
-The Memory subsystem now provides the foundation for storing and retrieving historical market knowledge. AQOS can store detected market patterns, historical trade records, deterministic memory embeddings, vector records, similarity-based retrieval results, and unified memory operations through the Memory Pipeline.
+The Risk subsystem now provides the foundation for position sizing, exposure calculation, drawdown control, trade-level risk constraints, stop-loss management, take-profit management, portfolio-level risk checks, and unified risk assessment through the Risk Pipeline.
 
-The current memory implementation is intentionally lightweight and in-memory only. Persistent memory, vector databases, advanced embeddings, experience replay, and long-term market memory will be added in later phases.
+During Sprint 008, the risk architecture was expanded beyond the initial foundation to include:
 
-The project is now ready to begin **Sprint 008 – Risk**.
+- `stop_loss.py`
+- `take_profit.py`
+- `portfolio.py`
+- `pipeline.py`
+
+This expansion should be recorded in `ARCHITECTURE.md` and `DECISIONS.md`.
+
+The project is now ready to begin **Sprint 009 – Evaluation**.
 
 This document should always reflect the latest development state of AQOS and serve as the single source of truth for resuming work.

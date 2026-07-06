@@ -16,7 +16,7 @@
 |------|------|
 | Project | AI Quant Operating System (AQOS) |
 | Author | Zohaib Hussain |
-| Architecture Version | 1.0 |
+| Architecture Version | 1.1 |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -43,7 +43,7 @@ AQOS follows the following engineering principles:
 
 # High-Level Architecture
 
-```
+```text
 
                     +----------------------+
                     |   External Sources   |
@@ -110,7 +110,7 @@ AQOS follows the following engineering principles:
 
 # Package Structure
 
-```
+```text
 
 src/
 └── aqos/
@@ -236,6 +236,7 @@ Responsible for feature engineering.
 
 Includes
 
+- Base Feature
 - Technical Indicators
 - Candlestick Features
 - Price Action
@@ -269,10 +270,6 @@ Current Modules
 - take_profit.py
 - execution.py
 
-Current Status
-
-🟡 In Progress
-
 Completed
 
 - Base Strategy
@@ -280,16 +277,21 @@ Completed
 - Market Regime
 - Support & Resistance
 - Liquidity
-
-Remaining
-
 - Trend Structure
-- Signal
-- Entry
-- Exit
-- Stop Loss
-- Take Profit
-- Execution
+- Signal Engine
+- Entry Engine
+- Exit Engine
+- Strategy Stop Loss Engine
+- Strategy Take Profit Engine
+
+Remaining / Deferred
+
+- Strategy Planner
+- Execution Engine
+
+Current Status
+
+✅ Foundation Completed
 
 Future Expansion
 
@@ -308,21 +310,46 @@ Future Expansion
 
 ## models/
 
-Prediction models.
+Prediction models and market representation.
 
-Future
+Current Modules
+
+- base.py
+- dataset.py
+- encoder.py
+- predictor.py
+- similarity.py
+- transformer.py
+- uncertainty.py
+- world_model.py
+
+Completed
+
+- Base Model
+- Dataset
+- Encoder
+- Predictor
+- Similarity Engine
+- Transformer
+- Uncertainty Engine
+- World Model
+
+Status
+
+✅ Completed
+
+Future Expansion
 
 - LSTM
 - Transformer
-- TFT
+- Temporal Fusion Transformer
 - XGBoost
 - LightGBM
 - CatBoost
 - Ensemble Models
-
-Status
-
-Planned
+- ONNX Export
+- Model Registry
+- GPU Inference
 
 ---
 
@@ -330,17 +357,48 @@ Planned
 
 Training engine.
 
-Future
+Current Modules
+
+- trainer.py
+- optimizer.py
+- scheduler.py
+- loss.py
+- cross_validation.py
+- pipeline.py
+- continual.py
+- evaluator.py
+- reinforcement.py
+- self_supervised.py
+
+Completed
 
 - Trainer
 - Optimizer
 - Scheduler
-- Hyperparameter Search
+- Loss
 - Cross Validation
+- Learning Pipeline
+
+Deferred
+
+- Continual Learning
+- Training Evaluator
+- Reinforcement Learning
+- Self-Supervised Learning
 
 Status
 
-Planned
+✅ Foundation Completed
+
+Future Expansion
+
+- Online Learning
+- Incremental Learning
+- Reinforcement Learning
+- Self-Supervised Pretraining
+- Hyperparameter Search
+- Experiment Tracking
+- Distributed Training
 
 ---
 
@@ -348,17 +406,41 @@ Planned
 
 Knowledge and pattern memory.
 
-Future
+Current Modules
+
+- pattern_memory.py
+- trade_memory.py
+- embedding.py
+- vector_store.py
+- retriever.py
+- pipeline.py
+
+Completed
 
 - Pattern Memory
 - Trade Memory
-- Embeddings
-- Vector Database
-- Retrieval
+- Embedding Engine
+- Vector Store
+- Memory Retriever
+- Memory Pipeline
 
 Status
 
-Planned
+✅ Completed
+
+Future Expansion
+
+- Persistent Pattern Memory
+- Persistent Trade Memory
+- Real Embedding Models
+- Vector Database
+- FAISS
+- Chroma
+- Qdrant
+- pgvector
+- Experience Replay
+- Strategy Memory
+- Agent Memory
 
 ---
 
@@ -366,23 +448,185 @@ Planned
 
 Risk management.
 
-Future
+Current Modules
+
+- sizing.py
+- exposure.py
+- drawdown.py
+- constraints.py
+- stop_loss.py
+- take_profit.py
+- portfolio.py
+- pipeline.py
+
+Completed
 
 - Position Sizing
-- Stop Loss
-- Take Profit
-- Drawdown
-- Portfolio Risk
+- Exposure Management
+- Drawdown Management
+- Risk Constraints
+- Risk-Level Stop Loss Management
+- Risk-Level Take Profit Management
+- Portfolio Risk Management
+- Risk Pipeline
 
 Status
 
-Planned
+✅ Completed
+
+---
+
+# Risk Architecture
+
+The Risk subsystem is responsible for deciding whether a trade or portfolio state is acceptable under configured risk rules.
+
+The Risk subsystem does not generate trade signals.
+
+The Risk subsystem does not predict market direction.
+
+The Risk subsystem only protects capital.
+
+---
+
+## Risk Module Responsibilities
+
+| Module | Responsibility |
+|--------|---------------|
+| sizing.py | Calculates position size from account balance, risk percentage, entry price, and stop-loss price |
+| exposure.py | Calculates trade exposure and validates exposure limits |
+| drawdown.py | Calculates drawdown and validates drawdown limits |
+| constraints.py | Combines risk, exposure, and drawdown checks into a risk decision |
+| stop_loss.py | Handles risk-level stop-loss calculation and trigger checks |
+| take_profit.py | Handles risk-adjusted take-profit calculation and hit checks |
+| portfolio.py | Handles portfolio-level value, exposure, and unrealized PnL |
+| pipeline.py | Coordinates the full risk assessment flow |
+
+---
+
+## Risk Flow
+
+```text
+
+Trade Request
+
+↓
+
+Position Sizing
+
+↓
+
+Exposure Calculation
+
+↓
+
+Drawdown Check
+
+↓
+
+Risk Constraints
+
+↓
+
+Stop Loss Check
+
+↓
+
+Take Profit Check
+
+↓
+
+Portfolio Risk Check
+
+↓
+
+Risk Assessment
+
+```
+
+---
+
+## Risk Pipeline
+
+```text
+
+RiskPipeline
+
+├── PositionSizer
+├── ExposureManager
+├── DrawdownManager
+├── RiskConstraints
+├── StopLossManager
+├── TakeProfitManager
+└── PortfolioRiskManager
+
+```
+
+The `RiskPipeline` returns a `RiskAssessment`.
+
+RiskAssessment contains
+
+- allowed
+- position_size
+- risk_amount
+- exposure
+- drawdown_percent
+- stop_loss_price
+- take_profit_price
+- stop_loss_triggered
+- take_profit_hit
+- reasons
+
+---
+
+## Strategy Stop Loss vs Risk Stop Loss
+
+AQOS intentionally separates strategy-level stop-loss planning from risk-level stop-loss control.
+
+| Module | Purpose |
+|--------|---------|
+| strategy/stop_loss.py | Strategy-level stop-loss planning |
+| risk/stop_loss.py | Account-level stop-loss validation and risk control |
+
+Strategy stop loss answers:
+
+```text
+Where does the strategy want the stop loss?
+```
+
+Risk stop loss answers:
+
+```text
+Is the stop loss safe for the account?
+```
+
+---
+
+## Strategy Take Profit vs Risk Take Profit
+
+AQOS intentionally separates strategy-level take-profit planning from risk-level take-profit validation.
+
+| Module | Purpose |
+|--------|---------|
+| strategy/take_profit.py | Strategy-level take-profit planning |
+| risk/take_profit.py | Risk-adjusted take-profit calculation and validation |
+
+Strategy take profit answers:
+
+```text
+Where does the strategy want to take profit?
+```
+
+Risk take profit answers:
+
+```text
+Is the reward-risk structure acceptable?
+```
 
 ---
 
 ## evaluation/
 
-Strategy evaluation.
+Strategy and model evaluation.
 
 Future
 
@@ -391,6 +635,7 @@ Future
 - Walk Forward
 - Paper Trading
 - Reports
+- Evaluation Pipeline
 
 Status
 
@@ -419,7 +664,7 @@ Planned
 
 # System Data Flow
 
-```
+```text
 
 External APIs
 
@@ -473,7 +718,7 @@ Broker
 
 # Dependency Flow
 
-```
+```text
 
 core
 │
@@ -515,12 +760,12 @@ Circular dependencies are not allowed.
 | Sprint 001 | Core Infrastructure | ✅ |
 | Sprint 002 | Data Layer | ✅ |
 | Sprint 003 | Feature Engineering | ✅ |
-| Sprint 004 | Strategy Engine | 🟡 |
-| Sprint 005 | Models | ⏳ |
-| Sprint 006 | Learning | ⏳ |
-| Sprint 007 | Memory | ⏳ |
-| Sprint 008 | Risk | ⏳ |
-| Sprint 009 | Evaluation | ⏳ |
+| Sprint 004 | Strategy Engine | ✅ |
+| Sprint 005 | Models | ✅ |
+| Sprint 006 | Learning | ✅ |
+| Sprint 007 | Memory | ✅ |
+| Sprint 008 | Risk | ✅ |
+| Sprint 009 | Evaluation | 🚧 |
 | Sprint 010 | Services | ⏳ |
 | Sprint 011 | Agents | ⏳ |
 | Sprint 012 | Full Integration | ⏳ |
@@ -545,6 +790,10 @@ Includes
 - Multi-Timeframe Analysis
 - Hidden Markov Models
 - Transformer Market State Encoder
+- Market Regime Intelligence
+- Market DNA
+- Experience Memory
+- Strategy Generation
 
 ---
 
@@ -561,9 +810,13 @@ Includes
 - GPU Computing
 - Experiment Tracking
 - Monitoring
+- Paper Trading
 - Live Trading
 - MLOps
 - Kubernetes Deployment
+- Broker Integrations
+- Risk Monitoring
+- Agent Orchestration
 
 ---
 
@@ -585,6 +838,10 @@ Includes
 
 8. Documentation is part of the Definition of Done.
 
+9. Completed public classes must be exported through package-level `__init__.py`.
+
+10. Strategy logic and risk logic must remain separated.
+
 ---
 
 # Architecture Version History
@@ -592,7 +849,26 @@ Includes
 | Version | Description |
 |----------|-------------|
 | 1.0 | Initial frozen architecture after Sprint 003 |
-| Future | Updated only through Architecture Decision Records (ADR) |
+| 1.1 | Expanded Risk subsystem during Sprint 008 |
+
+---
+
+# Architecture Decision Records
+
+Architecture decisions are recorded in:
+
+```text
+docs/DECISIONS.md
+```
+
+Current ADRs
+
+| ADR | Decision |
+|------|----------|
+| ADR-001 | Freeze top-level AQOS architecture |
+| ADR-002 | Dedicated strategy modules |
+| ADR-003 | Documentation-first sprint completion workflow |
+| ADR-004 | Expanded Risk subsystem architecture |
 
 ---
 
@@ -601,5 +877,16 @@ Includes
 AQOS is being developed as a modular, scalable, and institutional-grade AI Quant Research Platform.
 
 This architecture document serves as the single source of truth for the system structure.
+
+The top-level AQOS architecture remains frozen.
+
+Sprint 008 expanded only the internal `risk/` subsystem by adding:
+
+- risk/stop_loss.py
+- risk/take_profit.py
+- risk/portfolio.py
+- risk/pipeline.py
+
+This expansion keeps account-level risk control separate from strategy-level trading logic.
 
 Any architectural modification must be documented in `docs/DECISIONS.md` before implementation.

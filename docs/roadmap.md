@@ -11,7 +11,7 @@
 **Current Version**
 
 ```
-v0.7.0-dev
+v0.8.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```
-Sprint 008 — RISK
+Sprint 009 — Evaluation
 ```
 
 **Current Task**
 
 ```
-Task 8.1
+Task 9.1
 ```
 
 ---

@@ -10,6 +10,115 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 
 Future changes will be listed here before the next release.
 
+# [v0.8.0-dev] - 2026-07-07
+
+## Added
+
+### Sprint 008 — Risk
+
+#### Position Sizing
+
+- Added position sizing engine.
+- Added risk amount calculation.
+- Added maximum position size limit.
+- Added unit tests.
+
+#### Exposure Management
+
+- Added exposure record model.
+- Added exposure calculation.
+- Added exposure percentage calculation.
+- Added exposure limit validation.
+- Added total exposure calculation.
+- Added unit tests.
+
+#### Drawdown Management
+
+- Added drawdown record model.
+- Added absolute drawdown calculation.
+- Added drawdown percentage calculation.
+- Added maximum drawdown calculation from equity curve.
+- Added drawdown limit validation.
+- Added unit tests.
+
+#### Risk Constraints
+
+- Added risk decision model.
+- Added unified risk constraint validation.
+- Added risk amount limit checks.
+- Added exposure limit checks.
+- Added drawdown limit checks.
+- Added multi-violation reason reporting.
+- Added unit tests.
+
+#### Stop Loss Management
+
+- Added stop-loss record model.
+- Added buy-side and sell-side stop-loss calculation.
+- Added stop-loss calculation from risk-per-unit amount.
+- Added stop-loss trigger checks.
+- Added unit tests.
+
+#### Take Profit Management
+
+- Added take-profit record model.
+- Added reward-risk based take-profit calculation.
+- Added buy-side and sell-side take-profit checks.
+- Added take-profit hit detection.
+- Added unit tests.
+
+#### Portfolio Risk Management
+
+- Added portfolio position model.
+- Added portfolio position value calculation.
+- Added unrealized profit/loss calculation.
+- Added total portfolio value calculation.
+- Added total unrealized PnL calculation.
+- Added exposure grouping by symbol.
+- Added symbol exposure limit checks.
+- Added largest symbol exposure percentage calculation.
+- Added unit tests.
+
+#### Risk Pipeline
+
+- Added complete risk assessment model.
+- Added unified risk pipeline.
+- Integrated position sizing, exposure, drawdown, constraints, stop-loss, take-profit, and portfolio risk managers.
+- Added complete trade risk assessment flow.
+- Added stop-loss trigger reporting.
+- Added take-profit hit reporting.
+- Added risk rejection reason reporting.
+- Added unit tests.
+
+---
+
+## Changed
+
+### Risk Architecture
+
+- Expanded the Risk subsystem from basic risk controls to a complete risk-management package.
+- Added portfolio-level and pipeline-level risk orchestration.
+- Added risk-specific stop-loss and take-profit modules to separate account-level risk control from strategy-level exit logic.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Risk modules.
+- All Sprint 008 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
+- Updated architecture documentation.
+- Added architecture decision record for expanded Risk subsystem.
+
 # [v0.7.0-dev] - 2026-07-07
 
 ## Added

@@ -175,6 +175,23 @@ Status
 
 ✅ Complete
 
+
+## Sprint 008 — Risk
+
+- Position Sizing
+- Exposure Management
+- Drawdown Management
+- Risk Constraints
+- Stop Loss Management
+- Take Profit Management
+- Portfolio Risk Management
+- Risk Pipeline
+
+Status
+
+✅ Complete
+
+
 # Testing Standards
 
 Each module should test:
@@ -197,7 +214,7 @@ All tests passing
 Current Development Version
 
 ```
-v0.7.0-dev
+v0.8.0-dev
 ```
 
 ---

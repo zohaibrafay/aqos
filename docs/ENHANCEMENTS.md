@@ -370,6 +370,221 @@ Future improvements
 - Model comparison
 - Automatic evaluation reports
 
+
+
+
+
+
+# Sprint 007 Deferred Enhancements
+
+# Sprint 008 Deferred Enhancements
+
+## Risk
+
+### Position Sizing
+
+Future improvements
+
+- ATR-based position sizing
+- Volatility-adjusted sizing
+- Kelly Criterion sizing
+- Fixed fractional sizing
+- Risk parity sizing
+- Symbol-specific risk profiles
+- Dynamic risk percentage adjustment
+
+---
+
+### Exposure Management
+
+Future improvements
+
+- Net exposure calculation
+- Gross exposure calculation
+- Long/short exposure separation
+- Asset-class exposure limits
+- Currency exposure limits
+- Sector exposure limits
+- Correlated exposure detection
+
+---
+
+### Drawdown Management
+
+Future improvements
+
+- Daily drawdown limits
+- Weekly drawdown limits
+- Monthly drawdown limits
+- Trailing drawdown
+- Equity curve monitoring
+- Auto-risk reduction after drawdown
+- Trading lockout after max drawdown breach
+
+---
+
+### Risk Constraints
+
+Future improvements
+
+- Configurable risk rules
+- Rule severity levels
+- Soft warnings vs hard blocks
+- Time-based risk constraints
+- Symbol-specific constraints
+- Strategy-specific constraints
+- Risk policy profiles
+
+---
+
+### Stop Loss Management
+
+Future improvements
+
+- ATR-based stop loss
+- Volatility-based stop loss
+- Structure-based stop loss
+- Trailing stop loss
+- Break-even stop loss
+- Time-based stop loss
+- Risk-adjusted dynamic stop loss
+
+---
+
+### Take Profit Management
+
+Future improvements
+
+- Multi-target take profit
+- Partial profit taking
+- Trailing take profit
+- Risk-adjusted profit targets
+- Volatility-based profit targets
+- Structure-based profit targets
+- Dynamic reward-risk optimization
+
+---
+
+### Portfolio Risk Management
+
+Future improvements
+
+- Portfolio correlation analysis
+- Portfolio volatility estimation
+- Portfolio VaR
+- Portfolio CVaR
+- Concentration risk detection
+- Multi-symbol allocation limits
+- Portfolio-level risk budgeting
+- Portfolio heatmap generation
+
+---
+
+### Risk Pipeline
+
+Future improvements
+
+- Full pre-trade risk approval flow
+- Post-trade risk monitoring
+- Real-time risk alerts
+- Broker-level risk checks
+- Portfolio-level risk aggregation
+- Risk audit logs
+- Risk report generation
+- Agent-driven risk explanations
+
+
+## Memory
+
+### Pattern Memory
+
+Future improvements
+
+- Persistent pattern storage
+- Pattern outcome tracking
+- Pattern win-rate analysis
+- Pattern confidence scoring
+- Multi-timeframe pattern relationships
+- Pattern lifecycle tracking
+- Pattern clustering
+
+---
+
+### Trade Memory
+
+Future improvements
+
+- Persistent trade history
+- Profit and loss calculation
+- Trade outcome classification
+- Trade performance analytics
+- Strategy-based trade grouping
+- Symbol-based trade analytics
+- Trade replay support
+
+---
+
+### Embedding Engine
+
+Future improvements
+
+- Real embedding models
+- Sentence Transformers integration
+- OpenAI embedding support
+- Local embedding model support
+- Market-specific embedding models
+- Multi-timeframe candle embeddings
+- Learned pattern embeddings
+
+---
+
+### Vector Store
+
+Future improvements
+
+- FAISS integration
+- Chroma integration
+- Qdrant integration
+- Pinecone integration
+- pgvector integration
+- Persistent vector storage
+- Approximate nearest neighbor search
+- Metadata filtering
+
+---
+
+### Memory Retriever
+
+Future improvements
+
+- Hybrid retrieval
+- Metadata-aware retrieval
+- Symbol-filtered retrieval
+- Timeframe-filtered retrieval
+- Pattern-type retrieval
+- Trade-outcome retrieval
+- Similar setup retrieval
+- Retrieval ranking improvements
+
+---
+
+### Memory Pipeline
+
+Future improvements
+
+- Persistent memory backend
+- Long-term market memory
+- Experience replay
+- Strategy memory
+- Risk memory
+- Agent memory integration
+- Memory summarization
+- Memory pruning
+- Memory versioning
+
+
+
+
 # Global Enhancements
 
 Future system-wide improvements

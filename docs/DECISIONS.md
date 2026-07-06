@@ -329,41 +329,245 @@ A sprint is **not complete** until:
 - Documentation is updated.
 - Changes are committed to Git.
 
+---
+
+## ADR-004
+
+### Date
+
+2026-07-07
+
+### Sprint
+
+Sprint 008
+
+### Status
+
+Accepted
+
+### Decision
+
+Expand the internal Risk subsystem architecture.
+
+### Context
+
+During Sprint 008, the Risk subsystem was initially implemented with the following files:
+
+```text
+risk/
+├── sizing.py
+├── exposure.py
+├── drawdown.py
+└── constraints.py
+```
+
+This provided the foundation for position sizing, exposure management, drawdown management, and basic risk constraint validation.
+
+However, before moving into Evaluation, Paper Trading, Services, Agents, Broker Integration, and Live Trading, AQOS needs a more complete risk-management foundation.
+
+The system also needs a clear separation between:
+
+```text
+strategy-level trade planning
+```
+
+and
+
+```text
+account-level risk control
+```
+
+AQOS already has strategy-level modules:
+
+```text
+strategy/stop_loss.py
+strategy/take_profit.py
+```
+
+These are responsible for strategy planning.
+
+But risk-level stop-loss and take-profit logic is different. Risk modules must validate whether the trade is safe for the account, whether reward-risk is acceptable, whether a stop loss has been triggered, and whether the trade violates portfolio-level risk rules.
+
+### Alternatives Considered
+
+Option A
+
+Keep the Risk subsystem minimal with only:
+
+```text
+sizing.py
+exposure.py
+drawdown.py
+constraints.py
+```
+
+Option B
+
+Add only `portfolio.py` and delay the rest.
+
+Option C
+
+Add the full internal Risk subsystem now:
+
+```text
+sizing.py
+exposure.py
+drawdown.py
+constraints.py
+stop_loss.py
+take_profit.py
+portfolio.py
+pipeline.py
+```
+
+### Decision
+
+Expand the internal Risk subsystem during Sprint 008.
+
+The final Risk package now contains:
+
+```text
+risk/
+├── __init__.py
+├── sizing.py
+├── exposure.py
+├── drawdown.py
+├── constraints.py
+├── stop_loss.py
+├── take_profit.py
+├── portfolio.py
+└── pipeline.py
+```
+
+The top-level AQOS architecture remains frozen.
+
+No new top-level package was introduced.
+
+### Benefits
+
+- Risk subsystem is complete enough before Evaluation begins.
+- Risk logic remains separate from strategy logic.
+- AQOS can perform unified trade-level risk assessment.
+- AQOS now supports portfolio-level risk checks.
+- Future Evaluation, Paper Trading, Agents, and Live Trading modules can depend on a stable `RiskPipeline`.
+- Risk rejection reasons can be explained clearly.
+- Stop-loss and take-profit now exist at both strategy and risk layers with different responsibilities.
+
+### Drawbacks
+
+- More files were added to the Risk subsystem.
+- There is naming overlap between `strategy/stop_loss.py` and `risk/stop_loss.py`.
+- There is naming overlap between `strategy/take_profit.py` and `risk/take_profit.py`.
+- Documentation must clearly explain the difference between strategy-level and risk-level modules.
+
+### Impact
+
+Affected folders/files:
+
+```text
+src/aqos/risk/
+├── __init__.py
+├── sizing.py
+├── exposure.py
+├── drawdown.py
+├── constraints.py
+├── stop_loss.py
+├── take_profit.py
+├── portfolio.py
+└── pipeline.py
+```
+
+Affected tests:
+
+```text
+tests/unit/test_sizing.py
+tests/unit/test_exposure.py
+tests/unit/test_drawdown.py
+tests/unit/test_constraints.py
+tests/unit/test_risk_stop_loss.py
+tests/unit/test_risk_take_profit.py
+tests/unit/test_portfolio.py
+tests/unit/test_risk_pipeline.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+```
+
+Architecture version updated from:
+
+```text
+1.0
+```
+
+to:
+
+```text
+1.1
+```
+
+### Notes
+
+Strategy modules answer:
+
+```text
+What trade setup makes sense?
+```
+
+Risk modules answer:
+
+```text
+Is this trade safe enough to allow?
+```
+
+This decision keeps account protection separate from market prediction and trade planning.
+
+The top-level AQOS package structure remains frozen.
+
 # Future Decision Log
 
 Every future architecture decision will be recorded below.
 
 Examples
 
-ADR-003
+ADR-005
 
 Introduce Time Series Transformer.
 
-ADR-004
+ADR-006
 
 Replace rule-based liquidity with SMC engine.
 
-ADR-005
+ADR-007
 
 Introduce Vector Database.
 
-ADR-006
+ADR-008
 
 Add Reinforcement Learning.
 
-ADR-007
+ADR-009
 
 Replace pandas with Polars.
 
-ADR-008
+ADR-010
 
 Introduce DuckDB Data Lake.
 
-ADR-009
+ADR-011
 
 Distributed Training.
 
-ADR-010
+ADR-012
 
 Live Trading Infrastructure.
 

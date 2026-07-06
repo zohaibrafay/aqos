@@ -9,8 +9,8 @@
 
 # Current Version
 
-```
-v0.7.0-dev
+```text
+v0.8.0-dev
 ```
 
 ---
@@ -27,7 +27,8 @@ v0.7.0-dev
 | Sprint 005 | ✅ Complete |
 | Sprint 006 | ✅ Complete |
 | Sprint 007 | ✅ Complete |
-| Sprint 008 | 🚧 In Progress |
+| Sprint 008 | ✅ Complete |
+| Sprint 009 | 🚧 In Progress |
 
 ---
 
@@ -133,8 +134,8 @@ Responsible for market intelligence and trading decisions.
 | `signal.py` | Signal generation | ✅ |
 | `entry.py` | Entry engine | ✅ |
 | `exit.py` | Exit engine | ✅ |
-| `stop_loss.py` | Stop-loss engine | ✅ |
-| `take_profit.py` | Take-profit engine | ✅ |
+| `stop_loss.py` | Strategy-level stop-loss engine | ✅ |
+| `take_profit.py` | Strategy-level take-profit engine | ✅ |
 | `execution.py` | Execution engine | ⏳ |
 
 ---
@@ -199,13 +200,15 @@ Responsible for risk management.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `__init__.py` | Risk package exports | ⏳ |
-| `position_size.py` | Position sizing | ⏳ |
-| `stop_loss.py` | Dynamic stop loss | ⏳ |
-| `take_profit.py` | Dynamic take profit | ⏳ |
-| `drawdown.py` | Drawdown management | ⏳ |
-| `portfolio.py` | Portfolio risk | ⏳ |
-| `pipeline.py` | Risk pipeline | ⏳ |
+| `__init__.py` | Risk package exports | ✅ |
+| `sizing.py` | Position sizing | ✅ |
+| `exposure.py` | Exposure management | ✅ |
+| `drawdown.py` | Drawdown management | ✅ |
+| `constraints.py` | Risk constraints | ✅ |
+| `stop_loss.py` | Risk-level stop-loss management | ✅ |
+| `take_profit.py` | Risk-level take-profit management | ✅ |
+| `portfolio.py` | Portfolio risk management | ✅ |
+| `pipeline.py` | Risk pipeline | ✅ |
 
 ---
 
@@ -319,8 +322,8 @@ Responsible for system interfaces.
 - Signal Engine
 - Entry Engine
 - Exit Engine
-- Stop Loss Engine
-- Take Profit Engine
+- Strategy Stop Loss Engine
+- Strategy Take Profit Engine
 
 ## Models
 
@@ -351,6 +354,17 @@ Responsible for system interfaces.
 - Memory Retriever
 - Memory Pipeline
 
+## Risk
+
+- Position Sizer
+- Exposure Manager
+- Drawdown Manager
+- Risk Constraints
+- Stop Loss Manager
+- Take Profit Manager
+- Portfolio Risk Manager
+- Risk Pipeline
+
 ---
 
 # Status Legend
@@ -370,10 +384,34 @@ Every completed AQOS package should expose its completed public classes through 
 Example:
 
 ```python
-from aqos.memory import MemoryPipeline
+from aqos.risk import RiskPipeline
 ```
 
 This keeps imports clean, consistent, and stable across the codebase.
+
+---
+
+# Architecture Notes
+
+## Strategy stop-loss vs Risk stop-loss
+
+AQOS has two different stop-loss concepts:
+
+| Module | Purpose |
+|--------|---------|
+| `strategy/stop_loss.py` | Strategy-level stop-loss planning |
+| `risk/stop_loss.py` | Account-level stop-loss validation and risk control |
+
+## Strategy take-profit vs Risk take-profit
+
+AQOS has two different take-profit concepts:
+
+| Module | Purpose |
+|--------|---------|
+| `strategy/take_profit.py` | Strategy-level take-profit planning |
+| `risk/take_profit.py` | Risk-adjusted take-profit calculation and validation |
+
+This separation prevents strategy logic from being mixed with portfolio/account risk controls.
 
 ---
 
@@ -392,7 +430,9 @@ This keeps imports clean, consistent, and stable across the codebase.
 
 `CODEBASE.md` is the authoritative inventory of the AQOS repository.
 
-The Memory subsystem was completed in Sprint 007. It currently uses lightweight in-memory storage and deterministic hash-based embeddings. This gives AQOS a testable foundation for pattern memory, trade memory, vector search, and retrieval before persistent vector databases and real embedding models are integrated later.
+The Risk subsystem was completed in Sprint 008. It now includes position sizing, exposure management, drawdown management, risk constraints, risk-level stop-loss management, risk-level take-profit management, portfolio risk management, and a unified risk pipeline.
+
+During Sprint 008, the risk architecture was expanded from the initial foundation to a complete risk-management package. This architecture change is recorded in `ARCHITECTURE.md` and `DECISIONS.md`.
 
 Files such as `continual.py`, `evaluator.py`, `reinforcement.py`, and `self_supervised.py` remain intentionally deferred learning modules. They will be implemented only after their prerequisite systems are available.
 
