@@ -2,455 +2,291 @@
 
 > AI Quant Operating System (AQOS)
 >
-> This document tracks all planned enhancements, deferred implementations,
-> research ideas, performance improvements, and institutional-grade upgrades.
+> This document tracks enhancements intentionally deferred during development.
 >
-> Whenever a simplified implementation is created, its future replacement
-> must be recorded here.
+> These are **not bugs**. They are planned improvements that will be implemented in future sprints when the supporting infrastructure is available.
 
 ---
 
-# Purpose
+# Status
 
-This document ensures that:
+Current Version
 
-- Nothing is forgotten.
-- Simplified implementations are tracked.
-- Technical debt is intentional.
-- Future upgrades are planned.
-- Research ideas are preserved.
-
-This is **NOT** a bug tracker.
-
-It is the roadmap from Foundation → Institutional Grade.
+```
+v0.5.0-dev
+```
 
 ---
 
-# Enhancement Status
+# Guiding Principle
 
-| Status | Meaning |
-|---------|---------|
-| 📌 Planned | Planned for a future phase |
-| 🚧 In Progress | Currently being implemented |
-| ✅ Completed | Fully implemented |
-| ❌ Cancelled | No longer required |
-| 🔬 Research | Under investigation |
+During early sprints we build **clean, modular foundations**.
+
+Production-grade AI functionality is intentionally deferred until the required infrastructure exists.
+
+Every enhancement listed here has been consciously postponed.
 
 ---
 
-# Development Phases
+# Sprint 004 Deferred Enhancements
 
-## Phase 1
+## Strategy Engine
 
-Foundation
+### Pattern Detector
 
-Goal
+Future improvements
 
-Build a complete working Quant Research Platform.
-
-Current Status
-
-🚧 In Progress
-
----
-
-## Phase 2
-
-Institutional Intelligence
-
-Goal
-
-Replace simplified implementations with institutional-grade algorithms.
-
-Status
-
-📌 Planned
+- Multi-candle pattern recognition
+- Pattern confidence scoring
+- Pattern clustering
+- Volume confirmation
+- Pattern history tracking
 
 ---
 
-## Phase 3
+### Market Regime
 
-Production Platform
+Future improvements
 
-Goal
-
-Production deployment and scalability.
-
-Status
-
-📌 Planned
+- Hidden Markov Models
+- Bayesian regime detection
+- Volatility-based regimes
+- AI regime classification
+- Multi-timeframe regime analysis
 
 ---
 
-# Sprint 004
+### Support & Resistance
 
-## Pattern Detector
+Future improvements
 
-### Current Implementation
-
-Basic candlestick pattern detection.
-
-Implemented
-
-- Doji
-- Hammer
-- Shooting Star
-- Bullish Engulfing
-- Bearish Engulfing
-
-### Future Enhancements
-
-Status
-
-📌 Planned
-
-Priority
-
-High
-
-Planned Features
-
-- Morning Star
-- Evening Star
-- Harami
-- Piercing Pattern
-- Dark Cloud Cover
-- Three White Soldiers
-- Three Black Crows
-- Inside Bar
-- Outside Bar
-- Pin Bar
-- Tweezer Tops
-- Tweezer Bottoms
-
-Advanced Features
-
-- Chart Pattern Detection
-- Triangle Detection
-- Wedge Detection
-- Flag Detection
-- Pennant Detection
-- Head & Shoulders
-- Double Top
-- Double Bottom
-
-Institutional Features
-
-- Pattern Confidence Score
-- Pattern Probability
-- Pattern Clustering
-- Multi-Timeframe Confirmation
+- Dynamic support/resistance
+- Volume profile integration
+- Order block detection
+- Fair Value Gap detection
+- Institutional liquidity zones
 
 ---
 
-## Market Regime
+### Liquidity
 
-### Current Implementation
+Future improvements
 
-Simple SMA20 / SMA50 crossover.
-
-### Future Enhancements
-
-Status
-
-📌 Planned
-
-Priority
-
-High
-
-Replace with
-
-- Hidden Markov Model (HMM)
-- Volatility Regime Detection
-- Trend Strength Scoring
-- Market State Probability
-- Sideways Detection
-- Regime Transition Detection
-- Transformer Market State Encoder
+- Liquidity sweep detection
+- Stop hunt identification
+- Smart Money Concepts
+- Order flow analysis
+- Depth-of-market integration
 
 ---
 
-## Support & Resistance
+### Trend Structure
 
-### Current Implementation
+Future improvements
 
-Rolling High / Rolling Low.
-
-### Future Enhancements
-
-Status
-
-📌 Planned
-
-Priority
-
-High
-
-Replace with
-
-- Swing Pivot Detection
-- Dynamic Support Levels
-- Dynamic Resistance Levels
-- Volume Profile
-- Market Profile
-- Liquidity Clusters
-- Multi-Timeframe Levels
-- Level Strength Scoring
+- Multi-timeframe trend alignment
+- Swing strength analysis
+- Break of Structure (BoS)
+- Change of Character (ChoCH)
+- Elliott Wave integration
 
 ---
 
-## Liquidity
+### Signal Engine
 
-### Current Implementation
+Future improvements
 
-Rolling High / Rolling Low liquidity zones.
-
-### Future Enhancements
-
-Status
-
-📌 Planned
-
-Priority
-
-Very High
-
-Institutional Upgrade
-
-- Equal Highs
-- Equal Lows
-- Buy-side Liquidity
-- Sell-side Liquidity
-- Liquidity Sweep Detection
-- Internal Liquidity
-- External Liquidity
-- Order Blocks
-- Mitigation Blocks
-- Breaker Blocks
-- Fair Value Gap (FVG)
-- Balanced Price Range (BPR)
-- Break of Structure (BOS)
-- Change of Character (CHoCH)
-- Inducement Detection
-- Premium / Discount Zones
-- Multi-Timeframe Liquidity
+- Weighted ensemble voting
+- Confidence scoring
+- AI signal ranking
+- Multi-model consensus
+- Signal explainability
 
 ---
 
-# Sprint 005
+### Entry / Exit Engine
 
-Models
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- XGBoost
-- CatBoost
-- LightGBM
-- Random Forest
-- LSTM
-- GRU
-- Transformer
-- Temporal Fusion Transformer
-- N-BEATS
-- PatchTST
-- Ensemble Models
+- Dynamic entry timing
+- Confirmation filters
+- Volatility filters
+- Time-based exits
+- Event-driven exits
 
 ---
 
-# Sprint 006
+### Stop Loss / Take Profit
 
-Learning Engine
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- Bayesian Optimization
-- Optuna
-- Hyperparameter Search
-- AutoML
-- Cross Validation
-- Walk Forward Validation
-- Online Learning
+- ATR-based levels
+- Volatility-adjusted exits
+- Adaptive Risk/Reward
+- Trailing stop logic
+- Partial profit taking
 
 ---
 
-# Sprint 007
+# Sprint 005 Deferred Enhancements
 
-Memory
+## Models
 
-Future Enhancements
+### Base Model
 
-📌 Planned
+Future improvements
 
-- Vector Database
-- Pattern Memory
-- Trade Memory
-- Similarity Search
-- Embeddings
-- Semantic Retrieval
-- Long-Term Memory
+- Native PyTorch support
+- Native TensorFlow support
+- ONNX model support
+- GPU awareness
+- Distributed training hooks
 
 ---
 
-# Sprint 008
+### Dataset
 
-Risk
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- Kelly Criterion
-- Volatility Position Sizing
-- Dynamic Stop Loss
-- Portfolio Optimization
-- Risk Budgeting
-- Exposure Limits
+- Time-series dataset builder
+- Sliding window generation
+- Sequence dataset creation
+- Automatic train/validation/test split
+- Dataset versioning
+- Dataset caching
 
 ---
 
-# Sprint 009
+### Predictor
 
-Evaluation
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- Monte Carlo Simulation
-- Walk Forward Analysis
-- Performance Attribution
-- Advanced Risk Metrics
-- Trade Analytics
+- Batch inference
+- Streaming inference
+- Online prediction
+- Multi-model prediction
+- Async prediction pipeline
 
 ---
 
-# Sprint 010
+### Encoder
 
-Services
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- Alpha Vantage
-- Finnhub
-- TradingEconomics
-- Polygon.io
-- Binance
-- MetaTrader
-- Interactive Brokers
+- Categorical encoding
+- Feature normalization
+- Standardization
+- Missing-value encoding
+- Embedding generation
 
 ---
 
-# Sprint 011
+### Transformer
 
-Agents
+Future improvements
 
-Future Enhancements
-
-📌 Planned
-
-- Research Agent
-- Market Analysis Agent
-- Prediction Agent
-- Risk Agent
-- Strategy Agent
-- Execution Agent
-- Portfolio Agent
-- Coordinator Agent
+- Feature scaling
+- PCA
+- Feature selection
+- Dimensionality reduction
+- Learned feature transformations
 
 ---
 
-# Performance Improvements
+### Similarity Engine
 
-Future
+Future improvements
 
-- GPU Acceleration
-- Polars
-- DuckDB
-- Async Data Loading
-- Parallel Processing
-- Distributed Training
-- Model Caching
-
-Status
-
-📌 Planned
+- Cosine similarity
+- Euclidean distance
+- Dynamic Time Warping (DTW)
+- FAISS integration
+- Approximate nearest neighbor search
+- Pattern similarity retrieval
 
 ---
 
-# Research Backlog
+### Uncertainty Engine
 
-Topics
+Future improvements
 
-- Smart Money Concepts (SMC)
-- ICT Concepts
-- Wyckoff Method
-- Market Microstructure
-- Order Flow
-- Volume Profile
-- Auction Market Theory
-- Quantitative Finance
-- Time Series Forecasting
+- Bayesian uncertainty
+- Monte Carlo Dropout
+- Ensemble uncertainty
+- Confidence calibration
+- Prediction intervals
+
+---
+
+### World Model
+
+Future improvements
+
+- Latent market representation
+- Market state transitions
+- Temporal memory
+- Transformer-based world model
+- Reinforcement Learning environment model
+- Probabilistic market simulation
+
+---
+
+# Global Enhancements
+
+Future system-wide improvements
+
+## Performance
+
+- Parallel pipelines
+- GPU acceleration
+- Async processing
+- Distributed execution
+- Memory optimization
+
+---
+
+## AI
+
+- Transformer models
 - Reinforcement Learning
-- Graph Neural Networks
+- Foundation Models
 - Agentic AI
-- Explainable AI
-
-Status
-
-🔬 Research
+- Retrieval-Augmented Generation (RAG)
 
 ---
 
-# Technical Debt
+## Quantitative Research
 
-Current
-
-None
-
-Future technical debt should be recorded here instead of being forgotten.
-
----
-
-# Enhancement Workflow
-
-Whenever we simplify a feature:
-
-1. Record it here.
-2. Explain the current implementation.
-3. Explain the future implementation.
-4. Assign a priority.
-5. Reference the sprint where it originated.
+- Feature Store
+- Experiment Tracking
+- Hyperparameter Optimization
+- AutoML
+- Portfolio Optimization
 
 ---
 
-# Enhancement Priority
+## Infrastructure
 
-| Priority | Meaning |
-|----------|---------|
-| Critical | Required before production |
-| High | Strongly recommended |
-| Medium | Nice to have |
-| Low | Optional |
+- Docker deployment
+- Kubernetes support
+- Cloud-native architecture
+- CI/CD automation
+- Model registry
+- Artifact versioning
 
 ---
 
-# Final Rule
+# Enhancement Rules
 
-No simplified implementation should exist without a corresponding enhancement entry in this document.
+1. Never implement an enhancement unless its prerequisite modules exist.
+2. Keep the foundation simple before adding intelligence.
+3. Large enhancements should be implemented in dedicated future sprints.
+4. Completed enhancements should be removed from this document and recorded in the CHANGELOG.
 
-Every enhancement should have:
+---
 
-- Origin Sprint
-- Current Implementation
-- Planned Replacement
-- Priority
-- Status
+# Notes
 
-Nothing gets forgotten.
+This document serves as the long-term enhancement backlog for AQOS.
+
+It ensures that promising ideas are not forgotten while keeping the implementation focused, modular, and aligned with the project's roadmap.

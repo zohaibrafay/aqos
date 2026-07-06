@@ -1,525 +1,235 @@
-# AQOS Testing Strategy
+# AQOS Testing Guide
 
 > AI Quant Operating System (AQOS)
->
-> This document defines the testing philosophy, testing standards,
-> testing workflow, and quality requirements for AQOS.
 
----
-
-# Purpose
-
-Testing ensures that AQOS remains:
-
-- Correct
-- Reliable
-- Maintainable
-- Reproducible
-- Safe to refactor
-
-Every feature added to AQOS must be verifiable through automated tests.
+This document defines the testing strategy, standards, and current test coverage for AQOS.
 
 ---
 
 # Testing Philosophy
 
-AQOS follows the following testing principles:
+AQOS follows a layered testing approach.
 
-- Test early
-- Test often
-- Automate everything possible
-- Small isolated tests
-- Reproducible results
-- Fast feedback
+```
+Unit Tests
+     ↓
+Integration Tests
+     ↓
+System Tests
+     ↓
+End-to-End Tests
+```
 
-Tests should make development safer—not slower.
+Every sprint must include unit tests for all implemented modules before the sprint is considered complete.
 
 ---
 
-# Testing Pyramid
-
-```
-
-                End-to-End Tests
-                     ▲
-                     │
-            Integration Tests
-                     ▲
-                     │
-               Unit Tests
-
-```
-
-Most tests should be Unit Tests.
-
----
-
-# Testing Types
-
-## 1. Unit Tests
-
-Purpose
-
-Verify individual classes and functions.
-
-Examples
-
-- Pattern Detector
-- Market Regime
-- Data Validator
-- Feature Calculator
-
-Requirements
-
-- Independent
-- Fast
-- No external services
-- Deterministic
-
-Status
-
-Required
-
----
-
-## 2. Integration Tests
-
-Purpose
-
-Verify multiple modules working together.
-
-Examples
-
-```
-Provider
-    ↓
-Loader
-    ↓
-Validator
-    ↓
-Cleaner
-```
-
-or
-
-```
-Data
-    ↓
-Features
-    ↓
-Strategy
-```
-
-Status
-
-Required where applicable.
-
----
-
-## 3. End-to-End Tests
-
-Purpose
-
-Verify the complete AQOS workflow.
-
-Example
-
-```
-Market Data
-
-↓
-
-Features
-
-↓
-
-Strategy
-
-↓
-
-Prediction
-
-↓
-
-Risk
-
-↓
-
-Evaluation
-```
-
-Status
-
-Phase 3
-
----
-
-## 4. Regression Tests
-
-Purpose
-
-Ensure previously fixed bugs never return.
-
-Status
-
-Required
-
----
-
-## 5. Performance Tests
-
-Purpose
-
-Measure:
-
-- Speed
-- Memory
-- CPU
-- Scalability
-
-Status
-
-Phase 2
-
----
-
-## 6. Stress Tests
-
-Purpose
-
-Verify AQOS under heavy workloads.
-
-Examples
-
-- Millions of candles
-- Large datasets
-- Multiple symbols
-- Multiple timeframes
-
-Status
-
-Phase 3
-
----
-
-# Test Directory Structure
-
-```
-tests/
-
-├── unit/
-├── integration/
-├── regression/
-├── performance/
-└── end_to_end/
-```
-
----
-
-# Unit Testing Rules
-
-Every public class should have a corresponding test.
-
-Example
-
-```
-src/aqos/data/provider.py
-
-↓
-
-tests/unit/test_provider.py
-```
-
-Naming convention
-
-```
-test_<module>.py
-```
-
-Examples
-
-```
-test_provider.py
-
-test_pattern_detector.py
-
-test_market_regime.py
-
-test_liquidity.py
-```
-
----
-
-# Integration Testing Rules
-
-Integration tests validate module interaction.
-
-Examples
-
-```
-test_data_pipeline.py
-
-test_feature_pipeline.py
-
-test_strategy_pipeline.py
-
-test_training_pipeline.py
-```
-
----
-
-# Test Naming Convention
-
-Test functions
-
-```
-test_provider_loads_dataframe()
-
-test_market_regime_detects_bull_market()
-
-test_pattern_detector_detects_doji()
-```
-
-Avoid
-
-```
-test1()
-
-test_case()
-
-check()
-
-example()
-```
-
----
-
-# Test Coverage
-
-Current Goal
-
-```
-Minimum
-
-80%
-```
-
-Long-Term Goal
-
-```
-90%+
-```
-
-Critical modules should approach
-
-```
-100%
-```
-
-Examples
-
-- Risk
-- Strategy
-- Models
-- Evaluation
+# Testing Framework
+
+| Tool | Purpose |
+|------|---------|
+| pytest | Unit testing |
+| pytest-cov | Coverage reporting |
+| pandas | Test data generation |
 
 ---
 
 # Running Tests
 
-Run all tests
+Run the complete test suite:
 
 ```bash
-python -m pytest
+pytest
 ```
 
-Run unit tests
+Run with verbose output:
 
 ```bash
-python -m pytest tests/unit
+pytest -v
 ```
 
-Run integration tests
+Run a single test file:
 
 ```bash
-python -m pytest tests/integration
+pytest tests/unit/test_provider.py
 ```
 
-Run a single file
+Run tests with coverage:
 
 ```bash
-python -m pytest tests/unit/test_provider.py
-```
-
-Run a single test
-
-```bash
-python -m pytest -k provider
+pytest --cov=src/aqos
 ```
 
 ---
 
-# Current Test Status
+# Current Test Coverage
 
-| Sprint | Status |
-|---------|--------|
-| Sprint 000 | ✅ |
-| Sprint 001 | ✅ |
-| Sprint 002 | ✅ |
-| Sprint 003 | ✅ |
-| Sprint 004 | 🟡 |
-| Sprint 005 | ⏳ |
-| Sprint 006 | ⏳ |
-| Sprint 007 | ⏳ |
-| Sprint 008 | ⏳ |
-| Sprint 009 | ⏳ |
-| Sprint 010 | ⏳ |
-| Sprint 011 | ⏳ |
-| Sprint 012 | ⏳ |
-
----
-
-# Current Tested Modules
-
-Completed
+## Sprint 001 — Core Infrastructure
 
 - Version
 - Configuration
 - Logger
 - Exceptions
-- Data Provider
-- Data Loader
-- Data Validator
-- Data Cleaner
-- Data Storage
-- Data Catalog
-- Data Pipeline
-- Feature Base
-- Technical Features
+- Bootstrap
+- Health Check
+- CLI
+
+Status
+
+✅ Complete
+
+---
+
+## Sprint 002 — Data Layer
+
+- Provider
+- Loader
+- Validator
+- Cleaner
+- Storage
+- Catalog
+- Pipeline
+
+Status
+
+✅ Complete
+
+---
+
+## Sprint 003 — Feature Engineering
+
+- Base Feature
+- Technical Indicators
 - Candlestick Features
 - Price Action
 - Statistical Features
 - Market Structure
 - Feature Pipeline
+
+Status
+
+✅ Complete
+
+---
+
+## Sprint 004 — Strategy Engine
+
+- Base Strategy
 - Pattern Detector
 - Market Regime
 - Support & Resistance
 - Liquidity
+- Trend Structure
+- Signal Engine
+- Entry Engine
+- Exit Engine
+- Stop Loss Engine
+- Take Profit Engine
+
+Status
+
+✅ Complete
 
 ---
 
-# Test Data
+## Sprint 005 — Models
 
-Whenever possible:
+- Base Model
+- Dataset
+- Predictor
+- Encoder
+- Transformer
+- Similarity Engine
+- Uncertainty Engine
+- World Model
 
-Use
+Status
 
-- Small datasets
-- Deterministic values
-- Fixed random seeds
-
-Avoid
-
-- Live APIs
-- Random failures
-- Time-dependent assertions
-
----
-
-# Mocking
-
-External dependencies should be mocked.
-
-Examples
-
-- APIs
-- Databases
-- Brokers
-- WebSockets
-
-Unit tests should never depend on internet connectivity.
+✅ Complete
 
 ---
 
-# Continuous Testing
+# Testing Standards
 
-Every completed task must pass:
+Each module should test:
+
+- Successful execution
+- Invalid input
+- Edge cases
+- Exception handling
+- Return types
+- Expected outputs
+
+---
+
+# Current Status
 
 ```
-Unit Tests
-
-↓
-
-Integration Tests
-
-↓
-
-Regression Tests
+All tests passing
 ```
 
-before moving to the next task.
+Current Development Version
+
+```
+v0.5.0-dev
+```
 
 ---
 
-# Bug Fix Policy
+# Future Testing
 
-Every bug fix must include:
+The following test categories will be added in later phases:
 
-1. A failing test.
-2. The code fix.
-3. A passing test.
+## Integration Tests
 
-Never fix a bug without adding a test.
-
----
-
-# Definition of Tested
-
-A feature is considered tested when:
-
-- Unit tests pass
-- Integration tests pass (if applicable)
-- Edge cases covered
-- Error handling verified
-- No regression introduced
+- Data → Features
+- Features → Models
+- Models → Learning
+- Learning → Memory
+- Strategy → Risk
+- Services → Agents
 
 ---
 
-# Future Testing Roadmap
+## System Tests
 
-Phase 2
-
-- Performance Benchmarks
-- Memory Benchmarks
-- ML Model Validation
-- Walk-Forward Testing
-- Monte Carlo Testing
-
-Phase 3
-
-- Paper Trading Validation
-- Live Trading Simulation
-- Broker Integration Tests
-- Distributed System Tests
-- End-to-End Automation
+- Full prediction pipeline
+- Full trading pipeline
+- Research workflow
+- Multi-agent workflow
 
 ---
 
-# Testing Principles
+## Performance Tests
 
-Every test should be:
-
-- Fast
-- Independent
-- Repeatable
-- Readable
-- Deterministic
-- Easy to maintain
+- Large dataset handling
+- Model inference latency
+- Memory usage
+- Pipeline throughput
 
 ---
 
-# Final Rule
+## End-to-End Tests
 
-No feature is considered complete until it has automated tests.
+- Historical backtesting
+- Paper trading
+- Live trading
+- AI research workflow
 
-If a feature cannot be tested, its design should be reconsidered.
+---
+
+# Testing Rules
+
+1. Every source file must have a corresponding unit test.
+2. New features require new tests.
+3. Bug fixes require regression tests.
+4. All tests must pass before a sprint is marked complete.
+5. Documentation is updated only after sprint completion.
+
+---
+
+# Notes
+
+Testing is considered a first-class citizen in AQOS.
+
+No sprint is complete until all implemented modules have passing tests.

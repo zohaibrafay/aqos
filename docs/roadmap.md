@@ -11,7 +11,7 @@
 **Current Version**
 
 ```
-v0.4.0-dev
+v0.5.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```
-Sprint 005 — Models
+Sprint 006 — Learning Engine
 ```
 
 **Current Task**
 
 ```
-Task 5.1
+Task 6.1
 ```
 
 ---
@@ -43,8 +43,8 @@ Task 5.1
 | Sprint 002 | Data Layer | ✅ Complete |
 | Sprint 003 | Feature Engineering | ✅ Complete |
 | Sprint 004 | Strategy Engine | ✅ Complete |
-| Sprint 005 | Models | 🚧 In Progress |
-| Sprint 006 | Learning Engine | ⏳ Planned |
+| Sprint 005 | Models | ✅ Complete |
+| Sprint 006 | Learning Engine | 🚧 In Progress |
 | Sprint 007 | Memory | ⏳ Planned |
 | Sprint 008 | Risk | ⏳ Planned |
 | Sprint 009 | Evaluation | ⏳ Planned |
@@ -91,8 +91,8 @@ Task 5.1
 
 ## Sprint 003
 
-- Feature Base
-- Technical Features
+- Base Feature
+- Technical Indicators
 - Candlestick Features
 - Price Action
 - Statistical Features
@@ -117,20 +117,35 @@ Task 5.1
 
 ---
 
-# Next Sprint
+## Sprint 005
 
-Sprint 005
-
-Models
-
-Starting with:
+### Models
 
 - Base Model
 - Dataset
-- Prediction
-- Ensemble
-- Registry
-- Pipeline
+- Predictor
+- Encoder
+- Transformer
+- Similarity Engine
+- Uncertainty Engine
+- World Model
+
+---
+
+# Next Sprint
+
+Sprint 006
+
+Learning Engine
+
+Starting with:
+
+- Trainer
+- Optimizer
+- Scheduler
+- Loss
+- Cross Validation
+- Learning Pipeline
 
 ---
 
@@ -142,6 +157,8 @@ Build an institutional-grade AI Quant Research Platform capable of:
 - Machine Learning
 - Deep Learning
 - Reinforcement Learning
+- Pattern Memory
+- World Models
 - Risk Management
 - Backtesting
 - Paper Trading

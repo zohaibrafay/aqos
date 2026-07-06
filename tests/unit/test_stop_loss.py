@@ -15,7 +15,7 @@ def test_buy_stop_loss():
         side="buy",
     )
 
-    assert stop == 98.0
+    assert stop == pytest.approx(98.0)
 
 
 def test_sell_stop_loss():
@@ -26,7 +26,7 @@ def test_sell_stop_loss():
         side="sell",
     )
 
-    assert stop == 102.0
+    assert stop == pytest.approx(102.0)
 
 
 def test_custom_percentage():
@@ -37,7 +37,7 @@ def test_custom_percentage():
         side="buy",
     )
 
-    assert stop == 95.0
+    assert stop == pytest.approx(95.0)
 
 
 def test_case_insensitive():
@@ -48,7 +48,7 @@ def test_case_insensitive():
         side="BUY",
     )
 
-    assert stop == 98.0
+    assert stop == pytest.approx(98.0)
 
 
 def test_invalid_side():

@@ -15,7 +15,7 @@ def test_buy_take_profit():
         side="buy",
     )
 
-    assert target == 104.0
+    assert target == pytest.approx(104.0)
 
 
 def test_sell_take_profit():
@@ -26,7 +26,7 @@ def test_sell_take_profit():
         side="sell",
     )
 
-    assert target == 96.0
+    assert target == pytest.approx(96.0)
 
 
 def test_custom_percentage():
@@ -37,7 +37,7 @@ def test_custom_percentage():
         side="buy",
     )
 
-    assert target == 110.0
+    assert target == pytest.approx(110.0)
 
 
 def test_case_insensitive():
@@ -48,7 +48,7 @@ def test_case_insensitive():
         side="BUY",
     )
 
-    assert target == 104.0
+    assert target == pytest.approx(104.0)
 
 
 def test_invalid_side():

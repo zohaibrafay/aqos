@@ -14,7 +14,7 @@
 | Item | Value |
 |------|-------|
 | Project | AI Quant Operating System (AQOS) |
-| Current Version | v0.4.0-dev |
+| Current Version | v0.5.0-dev |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -25,19 +25,19 @@
 ## Current Sprint
 
 ```
-Sprint 005 — Models
+Sprint 006 — Learning Engine
 ```
 
 ## Current Task
 
 ```
-Task 5.1
+Task 6.1
 ```
 
 ## Previous Sprint
 
 ```
-Sprint 004 — Strategy Engine
+Sprint 005 — Models
 ```
 
 Status
@@ -55,8 +55,8 @@ Status
 | Sprint 002 | Data Layer | ✅ Complete |
 | Sprint 003 | Feature Engineering | ✅ Complete |
 | Sprint 004 | Strategy Engine | ✅ Complete |
-| Sprint 005 | Models | 🚧 In Progress |
-| Sprint 006 | Learning Engine | ⏳ Planned |
+| Sprint 005 | Models | ✅ Complete |
+| Sprint 006 | Learning Engine | 🚧 In Progress |
 | Sprint 007 | Memory | ⏳ Planned |
 | Sprint 008 | Risk | ⏳ Planned |
 | Sprint 009 | Evaluation | ⏳ Planned |
@@ -66,23 +66,20 @@ Status
 
 ---
 
-# Sprint 004 Summary
+# Sprint 005 Summary
 
 Completed Components
 
-## Strategy
+## Models
 
-- Base Strategy
-- Pattern Detector
-- Market Regime
-- Support & Resistance
-- Liquidity
-- Trend Structure
-- Signal Engine
-- Entry Engine
-- Exit Engine
-- Stop Loss Engine
-- Take Profit Engine
+- Base Model
+- Dataset
+- Predictor
+- Encoder
+- Transformer
+- Similarity Engine
+- Uncertainty Engine
+- World Model
 
 All unit tests passed successfully.
 
@@ -96,27 +93,28 @@ Completed
 - Data Layer
 - Feature Engineering
 - Strategy Engine
+- Models
 
 Next
 
-- Models
+- Learning Engine
 
 ---
 
 # Immediate Next Tasks
 
-Sprint 005
+Sprint 006
 
-Models
+Learning Engine
 
 Task Order
 
-- Task 5.1 Base Model
-- Task 5.2 Dataset
-- Task 5.3 Prediction Engine
-- Task 5.4 Ensemble
-- Task 5.5 Registry
-- Task 5.6 Model Pipeline
+- Task 6.1 Trainer
+- Task 6.2 Optimizer
+- Task 6.3 Scheduler
+- Task 6.4 Loss
+- Task 6.5 Cross Validation
+- Task 6.6 Learning Pipeline
 
 ---
 
@@ -131,7 +129,7 @@ All Tests Passing
 Latest Test Result
 
 ```
-Sprint 004 Complete
+Sprint 005 Complete
 ```
 
 ---
@@ -162,7 +160,7 @@ Architecture changes require a new ADR.
 | PROJECT_STATE.md | ✅ Updated |
 | CHANGELOG.md | ⏳ Pending |
 | CODEBASE.md | ⏳ Pending |
-| API.md | ⏳ Pending |
+| API.md | ⏳ Pending (No changes expected) |
 | TESTING.md | ⏳ Pending |
 | ENHANCEMENTS.md | ⏳ Pending |
 | ARCHITECTURE.md | ✅ Current |
@@ -195,9 +193,9 @@ If development resumes after a break:
 4. Continue from:
 
 ```
-Sprint 005
+Sprint 006
 
-Task 5.1
+Task 6.1
 ```
 
 ---
@@ -210,7 +208,9 @@ AQOS is being developed as an institutional-grade AI Quant Research Platform wit
 - Machine Learning
 - Deep Learning
 - Reinforcement Learning
-- Market Intelligence
+- World Models
+- Pattern Memory
+- Similarity Search
 - Risk Management
 - Multi-Agent AI
 - Research Automation
@@ -220,8 +220,10 @@ AQOS is being developed as an institutional-grade AI Quant Research Platform wit
 
 # Notes
 
-Sprint 004 has been completed successfully.
+Sprint 005 has been completed successfully.
 
-The project is now ready to begin **Sprint 005 – Models**.
+The Models layer now provides the foundational abstractions for prediction, encoding, transformation, similarity scoring, uncertainty estimation, and market world-state representation. These components will be expanded and integrated with the Learning Engine in future sprints.
+
+The project is now ready to begin **Sprint 006 – Learning Engine**.
 
 This document should always reflect the latest development state of AQOS and serve as the single source of truth for resuming work.

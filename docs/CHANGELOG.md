@@ -12,6 +12,86 @@ Future changes will be listed here before the next release.
 
 ---
 
+# [v0.5.0-dev] - 2026-07-07
+
+## Added
+
+### Sprint 005 — Models
+
+#### Base Model
+
+- Added abstract base model interface.
+- Standardized model lifecycle (`fit`, `predict`, `save`, `load`).
+- Added unit tests.
+
+#### Dataset
+
+- Added dataset preparation utility.
+- Added feature/target splitting.
+- Added dataset validation.
+- Added configurable target column.
+- Added unit tests.
+
+#### Predictor
+
+- Added prediction engine.
+- Added model wrapper for inference.
+- Added prediction validation.
+- Added unit tests.
+
+#### Encoder
+
+- Added feature encoder.
+- Added encoded feature interface.
+- Added unit tests.
+
+#### Transformer
+
+- Added feature transformer.
+- Added transformation interface.
+- Added unit tests.
+
+#### Similarity Engine
+
+- Added feature vector similarity engine.
+- Added similarity scoring.
+- Added input validation.
+- Added unit tests.
+
+#### Uncertainty Engine
+
+- Added prediction confidence estimation.
+- Added probability validation.
+- Added unit tests.
+
+#### World Model
+
+- Added market world-state representation.
+- Added prediction aggregation.
+- Added confidence integration.
+- Added world-state validation.
+- Added unit tests.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Model modules.
+- Improved floating-point assertions using `pytest.approx()`.
+- All Sprint 005 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
+
+---
+
 # [v0.4.0-dev] - 2026-07-07
 
 ## Added
