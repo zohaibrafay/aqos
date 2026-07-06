@@ -10,6 +10,91 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 
 Future changes will be listed here before the next release.
 
+# [v0.9.0-dev] - 2026-07-07
+
+## Added
+
+### Sprint 009 — Evaluation
+
+#### Evaluation Metrics
+
+- Added classification accuracy.
+- Added mean absolute error.
+- Added mean squared error.
+- Added root mean squared error.
+- Added trade win rate.
+- Added average profit.
+- Added total profit.
+- Added profit factor.
+- Added unit tests.
+
+#### Backtesting
+
+- Added backtest trade model.
+- Added backtest result model.
+- Added lightweight backtesting engine.
+- Added equity curve generation.
+- Added win-rate calculation.
+- Added max drawdown calculation.
+- Added unit tests.
+
+#### Walk-Forward Validation
+
+- Added walk-forward split model.
+- Added walk-forward validation splitter.
+- Added configurable train size.
+- Added configurable test size.
+- Added configurable step size.
+- Added unit tests.
+
+#### Paper Trading
+
+- Added paper trade model.
+- Added paper trading engine.
+- Added simulated trade opening.
+- Added simulated trade closing.
+- Added realized profit calculation.
+- Added unrealized equity calculation.
+- Added open and closed trade tracking.
+- Added unit tests.
+
+#### Evaluation Reports
+
+- Added evaluation report model.
+- Added backtest report generation.
+- Added text summary generation.
+- Added report details for trades.
+- Added unit tests.
+
+#### Evaluation Pipeline
+
+- Added unified evaluation pipeline.
+- Integrated metrics, backtesting, walk-forward validation, paper trading, and reporting.
+- Added classification evaluation.
+- Added regression evaluation.
+- Added trade evaluation.
+- Added backtest report generation.
+- Added paper trading access.
+- Added unit tests.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Evaluation modules.
+- All Sprint 009 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
+- Updated architecture documentation.
+
 # [v0.8.0-dev] - 2026-07-07
 
 ## Added

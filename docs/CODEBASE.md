@@ -10,7 +10,7 @@
 # Current Version
 
 ```text
-v0.8.0-dev
+v0.9.0-dev
 ```
 
 ---
@@ -28,7 +28,8 @@ v0.8.0-dev
 | Sprint 006 | ✅ Complete |
 | Sprint 007 | ✅ Complete |
 | Sprint 008 | ✅ Complete |
-| Sprint 009 | 🚧 In Progress |
+| Sprint 009 | ✅ Complete |
+| Sprint 010 | 🚧 In Progress |
 
 ---
 
@@ -214,17 +215,17 @@ Responsible for risk management.
 
 # evaluation/
 
-Responsible for model and strategy evaluation.
+Responsible for model, strategy, and trading evaluation.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `__init__.py` | Evaluation package exports | ⏳ |
-| `metrics.py` | Evaluation metrics | ⏳ |
-| `backtest.py` | Backtesting | ⏳ |
-| `walk_forward.py` | Walk-forward validation | ⏳ |
-| `paper_trading.py` | Paper trading | ⏳ |
-| `report.py` | Evaluation reports | ⏳ |
-| `pipeline.py` | Evaluation pipeline | ⏳ |
+| `__init__.py` | Evaluation package exports | ✅ |
+| `metrics.py` | Evaluation metrics | ✅ |
+| `backtest.py` | Backtesting | ✅ |
+| `walk_forward.py` | Walk-forward validation | ✅ |
+| `paper_trading.py` | Paper trading simulation | ✅ |
+| `report.py` | Evaluation reports | ✅ |
+| `pipeline.py` | Evaluation pipeline | ✅ |
 
 ---
 
@@ -365,6 +366,15 @@ Responsible for system interfaces.
 - Portfolio Risk Manager
 - Risk Pipeline
 
+## Evaluation
+
+- Evaluation Metrics
+- Backtester
+- Walk-Forward Validator
+- Paper Trading Engine
+- Report Generator
+- Evaluation Pipeline
+
 ---
 
 # Status Legend
@@ -384,7 +394,7 @@ Every completed AQOS package should expose its completed public classes through 
 Example:
 
 ```python
-from aqos.risk import RiskPipeline
+from aqos.evaluation import EvaluationPipeline
 ```
 
 This keeps imports clean, consistent, and stable across the codebase.
@@ -430,9 +440,9 @@ This separation prevents strategy logic from being mixed with portfolio/account 
 
 `CODEBASE.md` is the authoritative inventory of the AQOS repository.
 
-The Risk subsystem was completed in Sprint 008. It now includes position sizing, exposure management, drawdown management, risk constraints, risk-level stop-loss management, risk-level take-profit management, portfolio risk management, and a unified risk pipeline.
+The Evaluation subsystem was completed in Sprint 009. It now includes evaluation metrics, lightweight backtesting, walk-forward validation, paper trading simulation, evaluation reports, and a unified evaluation pipeline.
 
-During Sprint 008, the risk architecture was expanded from the initial foundation to a complete risk-management package. This architecture change is recorded in `ARCHITECTURE.md` and `DECISIONS.md`.
+The current Evaluation implementation is intentionally lightweight and deterministic. Later phases will add realistic backtesting features such as slippage, commissions, broker fill simulation, benchmark comparison, Monte Carlo analysis, advanced performance metrics, and visual reporting.
 
 Files such as `continual.py`, `evaluator.py`, `reinforcement.py`, and `self_supervised.py` remain intentionally deferred learning modules. They will be implemented only after their prerequisite systems are available.
 

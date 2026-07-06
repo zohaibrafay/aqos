@@ -192,6 +192,19 @@ Status
 ✅ Complete
 
 
+## Sprint 009 — Evaluation
+
+- Evaluation Metrics
+- Backtesting
+- Walk-Forward Validation
+- Paper Trading
+- Evaluation Reports
+- Evaluation Pipeline
+
+Status
+
+✅ Complete
+
 # Testing Standards
 
 Each module should test:
@@ -214,7 +227,7 @@ All tests passing
 Current Development Version
 
 ```
-v0.8.0-dev
+v0.9.0-dev
 ```
 
 ---

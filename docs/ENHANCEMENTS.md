@@ -585,6 +585,116 @@ Future improvements
 
 
 
+# Sprint 009 Deferred Enhancements
+
+
+## Evaluation
+
+### Evaluation Metrics
+
+Future improvements
+
+- Sharpe Ratio
+- Sortino Ratio
+- Calmar Ratio
+- Maximum consecutive wins
+- Maximum consecutive losses
+- Average win
+- Average loss
+- Expectancy
+- Risk-adjusted return
+- Benchmark comparison
+- Confusion matrix
+- Precision
+- Recall
+- F1 score
+- ROC-AUC
+
+---
+
+### Backtesting
+
+Future improvements
+
+- Candle-by-candle backtesting
+- Signal-based backtesting
+- Strategy-based backtesting
+- Slippage simulation
+- Commission simulation
+- Spread simulation
+- Partial fills
+- Order types
+- Realistic execution modeling
+- Multi-symbol backtesting
+- Multi-timeframe backtesting
+- Portfolio backtesting
+
+---
+
+### Walk-Forward Validation
+
+Future improvements
+
+- Expanding window validation
+- Rolling window validation
+- Anchored walk-forward validation
+- Strategy re-training per window
+- Parameter optimization per split
+- Walk-forward performance reports
+- Out-of-sample degradation tracking
+- Market regime-aware validation
+
+---
+
+### Paper Trading
+
+Future improvements
+
+- Real-time simulated execution
+- Simulated order book
+- Broker-like order lifecycle
+- Market orders
+- Limit orders
+- Stop orders
+- Stop-limit orders
+- Slippage modeling
+- Spread modeling
+- Trade journal integration
+- Paper trading session reports
+
+---
+
+### Evaluation Reports
+
+Future improvements
+
+- HTML reports
+- PDF reports
+- Markdown reports
+- Equity curve charts
+- Drawdown charts
+- Trade distribution charts
+- Monthly performance reports
+- Symbol performance reports
+- Strategy comparison reports
+- Risk-adjusted performance summaries
+
+---
+
+### Evaluation Pipeline
+
+Future improvements
+
+- Full strategy evaluation pipeline
+- Backtest + risk + report integration
+- Paper trading + memory integration
+- Model prediction evaluation
+- Strategy signal evaluation
+- Agent-readable evaluation summaries
+- Automated evaluation reports
+- Experiment comparison
+- Evaluation result persistence
+- Evaluation dashboard integration
 # Global Enhancements
 
 Future system-wide improvements

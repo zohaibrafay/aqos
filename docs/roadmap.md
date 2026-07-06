@@ -10,30 +10,27 @@
 
 **Current Version**
 
-```
-v0.8.0-dev
+```text
+v0.9.0-dev
 ```
 
 **Current Phase**
 
-```
+```text
 Phase 1 — Foundation
 ```
 
 **Current Sprint**
 
-```
-Sprint 009 — Evaluation
+```text
+Sprint 010 — Services
 ```
 
 **Current Task**
 
+```text
+Task 10.1
 ```
-Task 9.1
-```
-
----
-
 
 ---
 
@@ -49,9 +46,9 @@ Task 9.1
 | Sprint 005 | Models | ✅ Complete |
 | Sprint 006 | Learning Engine | ✅ Complete |
 | Sprint 007 | Memory | ✅ Complete |
-| Sprint 008 | Risk | 🚧 In Progress |
-| Sprint 009 | Evaluation | ⏳ Planned |
-| Sprint 010 | Services | ⏳ Planned |
+| Sprint 008 | Risk | ✅ Complete |
+| Sprint 009 | Evaluation | ✅ Complete |
+| Sprint 010 | Services | 🚧 In Progress |
 | Sprint 011 | Agents | ⏳ Planned |
 | Sprint 012 | System Integration | ⏳ Planned |
 
@@ -105,6 +102,8 @@ Task 9.1
 ---
 
 ## Sprint 004
+
+### Strategy
 
 - Base Strategy
 - Pattern Detector
@@ -161,38 +160,51 @@ Task 9.1
 
 ---
 
-# Next Sprint
+## Sprint 008
 
-Sprint 008
-
-Risk
-
-Starting with:
+### Risk
 
 - Position Sizing
-- Stop Loss
-- Take Profit
-- Drawdown
-- Portfolio Risk
+- Exposure Management
+- Drawdown Management
+- Risk Constraints
+- Stop Loss Management
+- Take Profit Management
+- Portfolio Risk Management
 - Risk Pipeline
 
 ---
 
-# Long-Term Goal
+## Sprint 009
 
-Build an institutional-grade AI Quant Research Platform capable of:
+### Evaluation
 
-- Market Intelligence
-- Machine Learning
-- Deep Learning
-- Reinforcement Learning
-- Pattern Memory
-- World Models
-- Risk Management
+- Evaluation Metrics
 - Backtesting
+- Walk-Forward Validation
 - Paper Trading
-- Live Trading
-- Multi-Agent AI
+- Evaluation Reports
+- Evaluation Pipeline
+
+---
+
+# Next Sprint
+
+Sprint 010
+
+Services
+
+Starting with:
+
+- Market Data Service
+- Broker Service
+- News Service
+- Economic Calendar Service
+- Storage Service
+
+---
+
+# Long-Term Goal
 
 Build an institutional-grade AI Quant Research Platform capable of:
 

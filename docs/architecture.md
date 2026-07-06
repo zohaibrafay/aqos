@@ -626,22 +626,48 @@ Is the reward-risk structure acceptable?
 
 ## evaluation/
 
-Strategy and model evaluation.
+Strategy, model, and trading evaluation.
 
-Future
+Current Modules
 
-- Metrics
+- metrics.py
+- backtest.py
+- walk_forward.py
+- paper_trading.py
+- report.py
+- pipeline.py
+
+Completed
+
+- Evaluation Metrics
 - Backtesting
-- Walk Forward
+- Walk-Forward Validation
 - Paper Trading
-- Reports
+- Evaluation Reports
 - Evaluation Pipeline
 
 Status
 
-Planned
+✅ Completed
 
----
+Future Expansion
+
+- Sharpe Ratio
+- Sortino Ratio
+- Calmar Ratio
+- Advanced Performance Metrics
+- Candle-by-Candle Backtesting
+- Slippage Simulation
+- Commission Simulation
+- Spread Simulation
+- Multi-Symbol Backtesting
+- Multi-Timeframe Backtesting
+- Portfolio Backtesting
+- HTML Reports
+- PDF Reports
+- Equity Curve Charts
+- Drawdown Charts
+- Evaluation Dashboard
 
 ## agents/
 
@@ -754,6 +780,8 @@ Circular dependencies are not allowed.
 
 # Current Development Status
 
+# Current Development Status
+
 | Sprint | Module | Status |
 |---------|---------|--------|
 | Sprint 000 | Project Setup | ✅ |
@@ -765,8 +793,8 @@ Circular dependencies are not allowed.
 | Sprint 006 | Learning | ✅ |
 | Sprint 007 | Memory | ✅ |
 | Sprint 008 | Risk | ✅ |
-| Sprint 009 | Evaluation | 🚧 |
-| Sprint 010 | Services | ⏳ |
+| Sprint 009 | Evaluation | ✅ |
+| Sprint 010 | Services | 🚧 |
 | Sprint 011 | Agents | ⏳ |
 | Sprint 012 | Full Integration | ⏳ |
 
@@ -887,6 +915,15 @@ Sprint 008 expanded only the internal `risk/` subsystem by adding:
 - risk/portfolio.py
 - risk/pipeline.py
 
-This expansion keeps account-level risk control separate from strategy-level trading logic.
+Sprint 009 completed the existing `evaluation/` subsystem by adding:
+
+- evaluation/metrics.py
+- evaluation/backtest.py
+- evaluation/walk_forward.py
+- evaluation/paper_trading.py
+- evaluation/report.py
+- evaluation/pipeline.py
+
+No new architecture decision was required for Sprint 009 because Evaluation was already part of the frozen top-level AQOS architecture.
 
 Any architectural modification must be documented in `docs/DECISIONS.md` before implementation.
