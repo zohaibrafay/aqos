@@ -10,7 +10,7 @@
 # Current Version
 
 ```text
-v0.11.0-dev
+v0.12.0-dev
 ```
 
 ---
@@ -31,6 +31,7 @@ v0.11.0-dev
 | Sprint 009 | ✅ Complete |
 | Sprint 010 | ✅ Complete |
 | Sprint 011 | ✅ Complete |
+| Sprint 012 | ✅ Complete |
 
 ---
 
@@ -269,6 +270,30 @@ Responsible for external integrations.
 | `strategy` | Strategy Interface | ✅ |
 
 ---
+
+# agents/
+
+Responsible for external integrations.
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `__init__.py` | Agents package exports | ✅ |
+| `base.py` | Base Agent | ✅ |
+| `data_agent.py` | Data Agent | ✅ |
+| `evaluation_agent.py` | Evaluation Agent | ✅|
+| `execution_agent.py` | Execution Agent| ✅ |
+| `market_agent.py` | Market Agent| ✅ |
+| `memory_agent.py` | Memory Agent | ✅ |
+| `orchestrator.py` | Orchestrator Agent | ✅ |
+| `research_agent.py` | Research Agent | ✅ |
+| `risk_agent.py` | Risk Agent | ✅ |
+| `strategy_agent` | Strategy Agent | ✅ |
+
+---
+
+
+
+
 ### Domain Interface Contracts
 
 #### `data_provider.py`
@@ -834,6 +859,275 @@ Responsible for system interfaces.
 
 ---
 
+## Agent Directory
+
+```text
+agents/
+├── __init__.py
+├── base.py
+├── data_agent.py
+├── evaluation_agent.py
+├── execution_agent.py
+├── market_agent.py
+├── memory_agent.py
+├── orchestrator.py
+├── research_agent.py
+├── risk_agent.py
+└── strategy_agent.py
+```
+
+### `base.py`
+
+Public classes:
+
+- `AgentBase`
+- `AgentTask`
+- `AgentResult`
+
+Responsibilities:
+
+- Define shared agent task schema
+- Define shared agent result schema
+- Normalize agent actions
+- Validate supported actions
+- Provide success/failure result helpers
+- Provide payload validation helpers
+
+### `data_agent.py`
+
+Public classes:
+
+- `DataAgent`
+
+Responsibilities:
+
+- Check market data availability
+- Return market data summaries
+- Return latest candle
+- Return close prices
+- Prepare OHLCV records
+- Run basic data quality checks
+
+Supported actions:
+
+- `health`
+- `availability`
+- `summary`
+- `latest-candle`
+- `close-prices`
+- `prepare-ohlcv`
+- `quality-check`
+
+### `market_agent.py`
+
+Public classes:
+
+- `MarketAgent`
+
+Responsibilities:
+
+- Generate market snapshots
+- Generate trend summaries
+- Generate regime summaries
+- Generate news context
+- Generate economic calendar context
+- Build market state payloads for downstream agents
+
+Supported actions:
+
+- `health`
+- `snapshot`
+- `trend-summary`
+- `regime-summary`
+- `news-context`
+- `calendar-context`
+- `market-state`
+
+### `research_agent.py`
+
+Public classes:
+
+- `ResearchAgent`
+
+Responsibilities:
+
+- Generate research hypotheses
+- Generate experiment plans
+- Create research experiments
+- Record research findings
+- Generate research summaries
+
+Supported actions:
+
+- `health`
+- `hypothesis`
+- `experiment-plan`
+- `create-experiment`
+- `record-finding`
+- `research-summary`
+
+### `strategy_agent.py`
+
+Public classes:
+
+- `StrategyAgent`
+
+Responsibilities:
+
+- Generate strategy signals
+- Generate strategy decisions
+- Explain signals
+- Check entries
+- Check exits
+- Generate strategy handoff payloads
+
+Supported actions:
+
+- `health`
+- `signal`
+- `decision`
+- `explain-signal`
+- `entry-check`
+- `exit-check`
+- `handoff`
+
+### `risk_agent.py`
+
+Public classes:
+
+- `RiskAgent`
+
+Responsibilities:
+
+- Calculate position size
+- Assess trade risk
+- Approve or reject trades
+- Generate rejection reasons
+- Generate risk handoff payloads for execution
+
+Supported actions:
+
+- `health`
+- `position-size`
+- `assess-trade`
+- `approve-trade`
+- `reject-reason`
+- `risk-handoff`
+
+### `execution_agent.py`
+
+Public classes:
+
+- `ExecutionAgent`
+
+Responsibilities:
+
+- Place simulated orders
+- Execute risk-approved trades
+- Fill orders
+- Cancel orders
+- Close positions
+- Retrieve order status
+- Generate execution summaries
+
+Supported actions:
+
+- `health`
+- `execute-trade`
+- `place-order`
+- `fill-order`
+- `cancel-order`
+- `close-position`
+- `order-status`
+- `execution-summary`
+
+### `evaluation_agent.py`
+
+Public classes:
+
+- `EvaluationAgent`
+
+Responsibilities:
+
+- Run backtests
+- Generate backtest summaries
+- Compare backtests
+- Grade performance
+- Generate evaluation reports
+
+Supported actions:
+
+- `health`
+- `run-backtest`
+- `backtest-summary`
+- `compare-backtests`
+- `performance-grade`
+- `evaluation-report`
+
+### `memory_agent.py`
+
+Public classes:
+
+- `MemoryAgent`
+
+Responsibilities:
+
+- Store observations
+- Recall memory records
+- Retrieve memory by ID
+- Forget memory records
+- Generate memory summaries
+- Store pattern memory
+- Store trade memory
+
+Supported actions:
+
+- `health`
+- `remember`
+- `recall`
+- `get-memory`
+- `forget`
+- `memory-summary`
+- `pattern-memory`
+- `trade-memory`
+
+### `orchestrator.py`
+
+Public classes:
+
+- `AgentOrchestrator`
+
+Responsibilities:
+
+- Route tasks to agents
+- Check agent health
+- Run market-strategy workflow
+- Run strategy-risk workflow
+- Run risk-execution workflow
+- Run full trade workflow
+- Run research workflow
+- Run backtest workflow
+- Run memory workflow
+
+Supported actions:
+
+- `health`
+- `route`
+- `market-strategy-workflow`
+- `strategy-risk-workflow`
+- `risk-execution-workflow`
+- `trade-workflow`
+- `research-workflow`
+- `backtest-workflow`
+- `memory-workflow`
+
+### Agents Package Exports
+
+All public agent classes are exported from:
+
+```text
+src/aqos/agents/__init__.py
+```
 # Status Legend
 
 | Symbol | Meaning |

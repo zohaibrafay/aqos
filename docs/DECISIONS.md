@@ -1121,6 +1121,272 @@ Future sprints may add:
 - Request IDs
 - Trace IDs
 - Error codes
+---
+
+## ADR-007
+
+### Date
+
+2026-07-07
+
+### Sprint
+
+Sprint 012
+
+### Status
+
+Accepted
+
+### Title
+
+Introduce the Agents subsystem architecture.
+
+### Context
+
+After Sprint 011, AQOS had a completed Interfaces subsystem that exposed domain contracts and application-facing interfaces.
+
+The next required layer was an agent-oriented workflow layer capable of coordinating existing services and interfaces into higher-level actions.
+
+AQOS needs agents because the long-term product direction is an AI Quant Operating System, not only a collection of isolated modules.
+
+The system must support workflows such as:
+
+```text
+market analysis → strategy decision → risk assessment → execution
+```
+
+and:
+
+```text
+research hypothesis → experiment plan → backtest → evaluation report
+```
+
+Without an Agents subsystem, these workflows would need to be manually assembled in external applications.
+
+### Alternatives Considered
+
+Option A
+
+Delay agents until after live API/dashboard work.
+
+Option B
+
+Implement agents outside the main package.
+
+Option C
+
+Introduce a dedicated `agents/` subsystem using the already frozen top-level AQOS architecture.
+
+### Decision
+
+Implement the Agents subsystem in Sprint 012.
+
+The top-level `agents/` package already existed in the frozen architecture, so no new top-level package was introduced.
+
+The final Sprint 012 agent structure is:
+
+```text
+src/aqos/agents/
+├── __init__.py
+├── base.py
+├── data_agent.py
+├── evaluation_agent.py
+├── execution_agent.py
+├── market_agent.py
+├── memory_agent.py
+├── orchestrator.py
+├── research_agent.py
+├── risk_agent.py
+└── strategy_agent.py
+```
+
+### Shared Agent Contract
+
+All agents use a shared task/result pattern:
+
+```text
+AgentTask
+AgentResult
+AgentBase
+```
+
+`AgentTask` carries:
+
+- action
+- payload
+- metadata
+
+`AgentResult` carries:
+
+- success
+- message
+- data
+- metadata
+
+`AgentBase` provides:
+
+- shared validation
+- action normalization
+- supported action checks
+- success result builder
+- failure result builder
+- payload helpers
+
+### Implemented Agents
+
+Sprint 012 introduced:
+
+- `DataAgent`
+- `MarketAgent`
+- `ResearchAgent`
+- `StrategyAgent`
+- `RiskAgent`
+- `ExecutionAgent`
+- `EvaluationAgent`
+- `MemoryAgent`
+- `AgentOrchestrator`
+
+### Workflow Design
+
+Agents coordinate existing AQOS capabilities.
+
+They do not replace Services.
+
+They sit above Services and provide workflow-level execution.
+
+Example:
+
+```text
+AgentOrchestrator
+    ↓
+MarketAgent
+    ↓
+StrategyAgent
+    ↓
+RiskAgent
+    ↓
+ExecutionAgent
+```
+
+### Benefits
+
+- AQOS now supports task-based agent workflows.
+- Each agent has a clear responsibility.
+- Workflows are deterministic and testable.
+- Services remain reusable and isolated.
+- Agent outputs are standardized through `AgentResult`.
+- Agents support future LLM tool-calling integration.
+- AgentOrchestrator enables multi-step workflow composition.
+- Future autonomous planning can build on this foundation.
+
+### Drawbacks
+
+- Agents add another coordination layer.
+- Current agents are deterministic and do not yet use LLM reasoning.
+- Current execution agent uses simulated broker execution only.
+- Current orchestrator workflows are simple and rule-based.
+- Future work is required for real autonomous behavior.
+
+### Impact
+
+Affected folder:
+
+```text
+src/aqos/agents/
+```
+
+Affected files:
+
+```text
+src/aqos/agents/__init__.py
+src/aqos/agents/base.py
+src/aqos/agents/data_agent.py
+src/aqos/agents/market_agent.py
+src/aqos/agents/research_agent.py
+src/aqos/agents/strategy_agent.py
+src/aqos/agents/risk_agent.py
+src/aqos/agents/execution_agent.py
+src/aqos/agents/evaluation_agent.py
+src/aqos/agents/memory_agent.py
+src/aqos/agents/orchestrator.py
+```
+
+Affected tests:
+
+```text
+tests/unit/test_agent_base.py
+tests/unit/test_data_agent.py
+tests/unit/test_market_agent.py
+tests/unit/test_research_agent.py
+tests/unit/test_strategy_agent.py
+tests/unit/test_risk_agent.py
+tests/unit/test_execution_agent.py
+tests/unit/test_evaluation_agent.py
+tests/unit/test_memory_agent.py
+tests/unit/test_agent_orchestrator.py
+tests/unit/test_agents_exports.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+```
+
+Architecture version updated from:
+
+```text
+1.3
+```
+
+to:
+
+```text
+1.4
+```
+
+### Notes
+
+Agents answer:
+
+```text
+How should AQOS coordinate intelligent workflows?
+```
+
+Services answer:
+
+```text
+How should AQOS orchestrate subsystem operations?
+```
+
+Interfaces answer:
+
+```text
+How should external systems call AQOS?
+```
+
+The current Agents subsystem is a deterministic foundation.
+
+Future sprints may add:
+
+- LLM-backed reasoning
+- Tool-call schemas
+- Autonomous planning
+- Agent memory loops
+- Multi-agent debate
+- Workflow graphs
+- Agent telemetry
+- Agent persistence
+- Real paper trading loops
+- Live broker adapters
+
 # Future Decision Log
 
 Every future architecture decision will be recorded below.

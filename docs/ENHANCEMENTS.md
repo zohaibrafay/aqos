@@ -13,7 +13,7 @@
 Current Version
 
 ```
-v0.11.0-dev
+v0.12.0-dev
 ```
 
 ---
@@ -893,6 +893,120 @@ The following items are intentionally left for future enhancement after the foun
 - Add evaluation agent actions.
 - Add memory-aware agent workflows.
 - Add natural language explanation outputs.
+## Sprint 012 Agent Enhancements
+
+Status: Foundation completed
+
+Sprint 012 completed the deterministic in-memory Agents subsystem.
+
+The following items are intentionally left for future enhancement after the foundation is stable.
+
+### Agent Runtime Enhancements
+
+- Add autonomous agent runtime.
+- Add task queue support.
+- Add agent execution history.
+- Add agent retry policies.
+- Add agent timeout handling.
+- Add agent scheduling.
+- Add agent state persistence.
+- Add agent-level telemetry.
+
+### LLM Enhancements
+
+- Add LLM-backed reasoning.
+- Add tool-calling schemas.
+- Add planner-agent workflows.
+- Add critic-agent workflows.
+- Add reflection loops.
+- Add explanation generation.
+- Add confidence scoring with model support.
+- Add prompt templates for each agent.
+
+### Data Agent Enhancements
+
+- Add provider-aware data ingestion.
+- Add data freshness checks.
+- Add missing candle detection.
+- Add anomaly detection.
+- Add outlier detection.
+- Add market session awareness.
+- Add multi-timeframe preparation.
+
+### Market Agent Enhancements
+
+- Add advanced market regime detection.
+- Add volatility summaries.
+- Add liquidity summaries.
+- Add support/resistance context.
+- Add multi-timeframe market state.
+- Add news-event impact weighting.
+- Add economic event risk windows.
+
+### Research Agent Enhancements
+
+- Add automated research report generation.
+- Add experiment prioritization.
+- Add hypothesis ranking.
+- Add literature/news driven idea generation.
+- Add historical finding retrieval.
+- Add research notebook export.
+
+### Strategy Agent Enhancements
+
+- Add richer strategy explanations.
+- Add confidence scoring.
+- Add multi-strategy voting.
+- Add signal conflict detection.
+- Add entry checklist generation.
+- Add exit checklist generation.
+
+### Risk Agent Enhancements
+
+- Add portfolio-level risk.
+- Add correlated exposure checks.
+- Add daily loss limits.
+- Add account drawdown limits.
+- Add session-based risk limits.
+- Add symbol-specific risk limits.
+- Add risk explanation templates.
+
+### Execution Agent Enhancements
+
+- Add paper trading loop.
+- Add live broker adapter boundary.
+- Add slippage simulation.
+- Add commission simulation.
+- Add partial fill simulation.
+- Add order lifecycle history.
+- Add execution latency tracking.
+
+### Evaluation Agent Enhancements
+
+- Add equity curve output.
+- Add advanced metrics.
+- Add Monte Carlo analysis.
+- Add walk-forward summaries.
+- Add benchmark comparison.
+- Add report export.
+
+### Memory Agent Enhancements
+
+- Add vector memory integration.
+- Add memory decay.
+- Add memory ranking.
+- Add memory deduplication.
+- Add memory namespaces.
+- Add trade outcome learning loops.
+
+### Orchestrator Enhancements
+
+- Add graph-based workflows.
+- Add conditional workflow routing.
+- Add multi-agent debate.
+- Add workflow persistence.
+- Add workflow replay.
+- Add workflow visualization.
 
 # Global Enhancements
 

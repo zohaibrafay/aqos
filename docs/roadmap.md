@@ -11,7 +11,7 @@
 **Current Version**
 
 ```text
-v0.11.0-dev
+v0.12.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```text
-Sprint 012 — Agents
+Sprint 013 — Common Utilities
 ```
 
 **Current Task**
 
 ```text
-Task 12.1
+Task 13.1
 ```
 
 ---
@@ -50,8 +50,9 @@ Task 12.1
 | Sprint 009 | Evaluation | ✅ Complete |
 | Sprint 010 | Services | ✅ Complete |
 | Sprint 011 | Interfaces | ✅ Complete  |
-| Sprint 012 | Agents | 🚧 In Progress |
-| Sprint 013 | System Integration | ⏳ Planned |
+| Sprint 012 | Agents | ✅ Complete |
+| Sprint 013 | Common Utilities | 🚧 In Progress |
+| Sprint 014 | System Integration | ⏳ Planned |
 
 ---
 
@@ -261,17 +262,50 @@ Completed capabilities:
 
 ## Sprint 012 — Agents
 
+Status: Completed
+
+Sprint 012 completed the AQOS Agents subsystem.
+
+Completed agent modules:
+
+- `base.py`
+- `data_agent.py`
+- `market_agent.py`
+- `research_agent.py`
+- `strategy_agent.py`
+- `risk_agent.py`
+- `execution_agent.py`
+- `evaluation_agent.py`
+- `memory_agent.py`
+- `orchestrator.py`
+
+Completed capabilities:
+
+- Define shared agent task/result contracts
+- Provide data availability and OHLCV preparation workflows
+- Provide market snapshot, trend, regime, news, and calendar workflows
+- Provide research hypothesis and experiment planning workflows
+- Provide strategy signal, decision, explanation, and handoff workflows
+- Provide risk assessment, position sizing, and approval workflows
+- Provide simulated execution, order, fill, cancel, close, and summary workflows
+- Provide backtest, evaluation, report, and comparison workflows
+- Provide memory storage, recall, pattern memory, trade memory, and summary workflows
+- Provide multi-agent orchestration workflows
+- Export all public agent classes through `aqos.agents`
+
+## Sprint 013 — Common Utilities
+
 Status: Next
 
 Planned focus:
 
-- Research agent
-- Strategy agent
-- Risk agent
-- Execution agent
-- Evaluation agent
-- Agent orchestration
-- Agent-to-service workflows
+- Shared constants
+- Common validators
+- ID helpers
+- Time utilities
+- Serialization helpers
+- Error helpers
+- Lightweight common utilities used across AQOS
 # Long-Term Goal
 
 Build an institutional-grade AI Quant Research Platform capable of:

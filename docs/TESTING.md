@@ -321,6 +321,96 @@ tests/unit/test_interfaces_exports.py
 The Interfaces tests are deterministic and do not require external APIs, databases, brokers, dashboards, HTTP servers, or live agent runtimes.
 
 ---
+## Sprint 012 — Agents Tests
+
+Status: Completed
+
+Sprint 012 added unit test coverage for the full Agents subsystem.
+
+### Test Files
+
+```text
+tests/unit/test_agent_base.py
+tests/unit/test_data_agent.py
+tests/unit/test_market_agent.py
+tests/unit/test_research_agent.py
+tests/unit/test_strategy_agent.py
+tests/unit/test_risk_agent.py
+tests/unit/test_execution_agent.py
+tests/unit/test_evaluation_agent.py
+tests/unit/test_memory_agent.py
+tests/unit/test_agent_orchestrator.py
+tests/unit/test_agents_exports.py
+```
+
+### Coverage Areas
+
+- Agent task validation
+- Agent result validation
+- Agent base execution flow
+- Agent action normalization
+- Unsupported agent action handling
+- Data availability checks
+- Market data summary generation
+- OHLCV preparation
+- Data quality checks
+- Market snapshot generation
+- Trend summary generation
+- Regime summary generation
+- News context generation
+- Economic calendar context generation
+- Market state generation
+- Research hypothesis generation
+- Experiment planning
+- Research experiment creation
+- Research finding storage
+- Strategy signal generation
+- Strategy decision generation
+- Strategy signal explanations
+- Strategy entry and exit checks
+- Strategy handoff generation
+- Risk position sizing
+- Risk trade assessment
+- Risk approval and rejection handling
+- Risk handoff generation
+- Execution order placement
+- Execution order filling
+- Execution order cancellation
+- Position closing
+- Order status retrieval
+- Execution summary generation
+- Backtest execution
+- Backtest summaries
+- Backtest comparisons
+- Performance grading
+- Evaluation report generation
+- Memory storage
+- Memory recall
+- Memory retrieval
+- Memory forgetting
+- Memory summary generation
+- Pattern memory storage
+- Trade memory storage
+- Agent orchestration
+- Agent routing
+- Market → Strategy workflow
+- Strategy → Risk workflow
+- Risk → Execution workflow
+- Full trade workflow
+- Research workflow
+- Backtest workflow
+- Memory workflow
+- Agents package exports
+
+### Command
+
+```bash
+python -m pytest
+```
+
+### Notes
+
+The Agents tests are deterministic and do not require external APIs, live brokers, real market data providers, dashboards, HTTP servers, LLM calls, or autonomous runtimes.
 
 ## Testing Standards
 
@@ -344,7 +434,7 @@ All tests passing
 Current Development Version:
 
 ```text
-v0.11.0-dev
+v0.12.0-dev
 ```
 
 ---
@@ -385,6 +475,16 @@ The following test categories will be added in later phases.
 - AI research workflow
 
 ---
+### Integration Tests
+
+- Data → Features
+- Features → Models
+- Models → Learning
+- Learning → Memory
+- Strategy → Risk
+- Services → Interfaces
+- Interfaces → Agents
+- Agents → Orchestrator
 
 ## Testing Rules
 

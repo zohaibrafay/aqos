@@ -16,7 +16,7 @@
 |------|------|
 | Project | AI Quant Operating System (AQOS) |
 | Author | Zohaib Hussain |
-| Architecture Version | 1.3 |
+| Architecture Version | 1.4 |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -796,8 +796,9 @@ Circular dependencies are not allowed.
 | Sprint 009 | Evaluation | ✅ |
 | Sprint 010 | Services | ✅ |
 | Sprint 011 | Interfaces | ✅  |
-| Sprint 012 | Agents | ⏳ |
-| Sprint 013 | Full Integration | ⏳ |
+| Sprint 012 | Agents | ✅ |
+| Sprint 013 | Common Utilities |⏳ |
+| Sprint 014 | Full Integration | ⏳ |
 
 ---
 
@@ -900,7 +901,157 @@ Current ADRs
 | ADR-004 | Expanded Risk subsystem architecture |
 
 ---
+### Agent Layer Position
 
+```text
+external users / apps / agents
+    ↓
+interfaces/
+    ↓
+agents/
+    ↓
+services/
+    ↓
+core AQOS subsystems
+```
+
+Agents are not responsible for low-level domain logic.
+
+They are responsible for:
+
+- workflow execution
+- task routing
+- handoff generation
+- agent-level summaries
+- multi-step coordination
+- deterministic workflow orchestration
+
+### Agent Modules
+
+```text
+agents/
+├── base.py
+├── data_agent.py
+├── market_agent.py
+├── research_agent.py
+├── strategy_agent.py
+├── risk_agent.py
+├── execution_agent.py
+├── evaluation_agent.py
+├── memory_agent.py
+└── orchestrator.py
+```
+
+### Shared Agent Contract
+
+All agents use:
+
+```text
+AgentTask
+AgentResult
+AgentBase
+```
+
+`AgentTask` defines:
+
+- action
+- payload
+- metadata
+
+`AgentResult` defines:
+
+- success
+- message
+- data
+- metadata
+
+`AgentBase` provides:
+
+- action normalization
+- action validation
+- payload helpers
+- success helper
+- failure helper
+
+### Agent Responsibilities
+
+#### DataAgent
+
+Handles market data availability, OHLCV preparation, close prices, summaries, and quality checks.
+
+#### MarketAgent
+
+Builds market snapshots, trend summaries, regime summaries, news context, calendar context, and market state payloads.
+
+#### ResearchAgent
+
+Generates hypotheses, experiment plans, research experiments, findings, and research summaries.
+
+#### StrategyAgent
+
+Generates signals, decisions, explanations, entry checks, exit checks, and strategy handoff payloads.
+
+#### RiskAgent
+
+Calculates position size, assesses trades, approves/rejects trades, generates rejection reasons, and produces risk handoff payloads.
+
+#### ExecutionAgent
+
+Places simulated orders, executes risk-approved trades, fills orders, cancels orders, closes positions, and summarizes execution state.
+
+#### EvaluationAgent
+
+Runs backtests, summarizes backtests, compares backtests, grades performance, and generates evaluation reports.
+
+#### MemoryAgent
+
+Stores, recalls, retrieves, forgets, and summarizes memory records.
+
+#### AgentOrchestrator
+
+Coordinates all agents and runs multi-agent workflows.
+
+### Completed Multi-Agent Workflows
+
+```text
+MarketAgent → StrategyAgent
+StrategyAgent → RiskAgent
+RiskAgent → ExecutionAgent
+MarketAgent → StrategyAgent → RiskAgent → ExecutionAgent
+ResearchAgent
+EvaluationAgent
+MemoryAgent
+```
+
+### Example Trade Workflow
+
+```text
+AgentOrchestrator.trade-workflow
+    ↓
+MarketAgent.market-state
+    ↓
+StrategyAgent.handoff
+    ↓
+RiskAgent.risk-handoff
+    ↓
+ExecutionAgent.execute-trade
+```
+
+### Design Boundary
+
+The Agents subsystem does not replace Services.
+
+Services remain responsible for subsystem orchestration.
+
+Agents are responsible for task-level workflow composition.
+
+The current Agents subsystem is deterministic and does not require:
+
+- external APIs
+- live brokers
+- real-time feeds
+- LLM calls
+- autonomous runtimes
 # Final Note
 
 AQOS is being developed as a modular, scalable, and institutional-grade AI Quant Research Platform.

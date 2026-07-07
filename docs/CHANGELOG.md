@@ -10,90 +10,61 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 
 Future changes will be listed here before the next release.
 
-# [v0.9.0-dev] - 2026-07-07
+# [v0.12.0-dev] — Sprint 012 Agents
 
-## Added
+Status: Completed
 
-### Sprint 009 — Evaluation
+### Added
 
-#### Evaluation Metrics
+- Added `AgentTask` for agent task input.
+- Added `AgentResult` for agent result output.
+- Added `AgentBase` as the shared base class for all AQOS agents.
+- Added `DataAgent` for market data availability, summaries, OHLCV preparation, close prices, and quality checks.
+- Added `MarketAgent` for market snapshots, trend summaries, regime summaries, news context, calendar context, and market state generation.
+- Added `ResearchAgent` for hypothesis generation, experiment planning, experiment creation, research finding storage, and research summaries.
+- Added `StrategyAgent` for strategy signals, decisions, signal explanations, entry checks, exit checks, and strategy handoffs.
+- Added `RiskAgent` for position sizing, trade assessment, trade approval, rejection reasons, and risk handoffs.
+- Added `ExecutionAgent` for simulated trade execution, order placement, order filling, order cancellation, position closing, order status, and execution summaries.
+- Added `EvaluationAgent` for backtest execution, backtest summaries, backtest comparison, performance grading, and evaluation reports.
+- Added `MemoryAgent` for memory storage, recall, retrieval, forgetting, summaries, pattern memory, and trade memory.
+- Added `AgentOrchestrator` for routing and multi-agent workflows.
+- Added agents export coverage through `src/aqos/agents/__init__.py`.
 
-- Added classification accuracy.
-- Added mean absolute error.
-- Added mean squared error.
-- Added root mean squared error.
-- Added trade win rate.
-- Added average profit.
-- Added total profit.
-- Added profit factor.
-- Added unit tests.
+### Added Workflows
 
-#### Backtesting
+- Added market-strategy workflow.
+- Added strategy-risk workflow.
+- Added risk-execution workflow.
+- Added full trade workflow.
+- Added research workflow.
+- Added backtest workflow.
+- Added memory workflow.
+- Added generic agent routing workflow.
 
-- Added backtest trade model.
-- Added backtest result model.
-- Added lightweight backtesting engine.
-- Added equity curve generation.
-- Added win-rate calculation.
-- Added max drawdown calculation.
-- Added unit tests.
+### Tests
 
-#### Walk-Forward Validation
+- Added unit tests for `AgentBase`, `AgentTask`, and `AgentResult`.
+- Added unit tests for `DataAgent`.
+- Added unit tests for `MarketAgent`.
+- Added unit tests for `ResearchAgent`.
+- Added unit tests for `StrategyAgent`.
+- Added unit tests for `RiskAgent`.
+- Added unit tests for `ExecutionAgent`.
+- Added unit tests for `EvaluationAgent`.
+- Added unit tests for `MemoryAgent`.
+- Added unit tests for `AgentOrchestrator`.
+- Added unit tests for agents package exports.
 
-- Added walk-forward split model.
-- Added walk-forward validation splitter.
-- Added configurable train size.
-- Added configurable test size.
-- Added configurable step size.
-- Added unit tests.
+### Changed
 
-#### Paper Trading
+- Expanded AQOS from service/interface-level orchestration to agent-level workflow orchestration.
 
-- Added paper trade model.
-- Added paper trading engine.
-- Added simulated trade opening.
-- Added simulated trade closing.
-- Added realized profit calculation.
-- Added unrealized equity calculation.
-- Added open and closed trade tracking.
-- Added unit tests.
+### Notes
 
-#### Evaluation Reports
-
-- Added evaluation report model.
-- Added backtest report generation.
-- Added text summary generation.
-- Added report details for trades.
-- Added unit tests.
-
-#### Evaluation Pipeline
-
-- Added unified evaluation pipeline.
-- Integrated metrics, backtesting, walk-forward validation, paper trading, and reporting.
-- Added classification evaluation.
-- Added regression evaluation.
-- Added trade evaluation.
-- Added backtest report generation.
-- Added paper trading access.
-- Added unit tests.
-
----
-
-## Tests
-
-- Added complete unit test coverage for all Evaluation modules.
-- All Sprint 009 tests passed successfully.
-
----
-
-## Documentation
-
-- Updated project roadmap.
-- Updated project state.
-- Updated codebase documentation.
-- Updated testing documentation.
-- Updated enhancement backlog.
-- Updated architecture documentation.
+- Sprint 012 agents are deterministic, in-memory friendly, and testable.
+- Agents currently coordinate existing AQOS services and internal logic.
+- Agents do not call external LLMs yet.
+- Autonomous reasoning, LLM tool-calling, live broker integration, and real-time agent planning are reserved for future phases.
 
 
 # [v0.11.0-dev] — 2026-07-07
@@ -204,6 +175,91 @@ Status: Completed
 
 - Real broker, market data, news, calendar, and persistence integrations are intentionally not connected yet.
 - Current implementations are deterministic, in-memory, lightweight, and testable.
+# [v0.9.0-dev] - 2026-07-07
+
+## Added
+
+### Sprint 009 — Evaluation
+
+#### Evaluation Metrics
+
+- Added classification accuracy.
+- Added mean absolute error.
+- Added mean squared error.
+- Added root mean squared error.
+- Added trade win rate.
+- Added average profit.
+- Added total profit.
+- Added profit factor.
+- Added unit tests.
+
+#### Backtesting
+
+- Added backtest trade model.
+- Added backtest result model.
+- Added lightweight backtesting engine.
+- Added equity curve generation.
+- Added win-rate calculation.
+- Added max drawdown calculation.
+- Added unit tests.
+
+#### Walk-Forward Validation
+
+- Added walk-forward split model.
+- Added walk-forward validation splitter.
+- Added configurable train size.
+- Added configurable test size.
+- Added configurable step size.
+- Added unit tests.
+
+#### Paper Trading
+
+- Added paper trade model.
+- Added paper trading engine.
+- Added simulated trade opening.
+- Added simulated trade closing.
+- Added realized profit calculation.
+- Added unrealized equity calculation.
+- Added open and closed trade tracking.
+- Added unit tests.
+
+#### Evaluation Reports
+
+- Added evaluation report model.
+- Added backtest report generation.
+- Added text summary generation.
+- Added report details for trades.
+- Added unit tests.
+
+#### Evaluation Pipeline
+
+- Added unified evaluation pipeline.
+- Integrated metrics, backtesting, walk-forward validation, paper trading, and reporting.
+- Added classification evaluation.
+- Added regression evaluation.
+- Added trade evaluation.
+- Added backtest report generation.
+- Added paper trading access.
+- Added unit tests.
+
+---
+
+## Tests
+
+- Added complete unit test coverage for all Evaluation modules.
+- All Sprint 009 tests passed successfully.
+
+---
+
+## Documentation
+
+- Updated project roadmap.
+- Updated project state.
+- Updated codebase documentation.
+- Updated testing documentation.
+- Updated enhancement backlog.
+- Updated architecture documentation.
+
 
 # [v0.8.0-dev] - 2026-07-07
 
