@@ -16,7 +16,7 @@
 |------|------|
 | Project | AI Quant Operating System (AQOS) |
 | Author | Zohaib Hussain |
-| Architecture Version | 1.5 |
+| Architecture Version | 1.6 |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -1115,6 +1115,151 @@ Responsibilities:
 - safely execute callables
 
 ### Design Boundary
+
+## System Integration Testing Layer
+
+Status: Completed in Sprint 014
+
+Sprint 014 introduced the first AQOS System Integration testing layer.
+
+This layer validates cross-subsystem workflows.
+
+Path:
+
+```text
+tests/integration/
+```
+
+The System Integration testing layer is not a production runtime subsystem.
+
+It is a verification layer that proves completed AQOS subsystems work together.
+
+### Integration Layer Position
+
+```text
+tests/integration/
+    ↓
+agents/
+    ↓
+services/
+    ↓
+domain subsystems
+    ↓
+common/
+```
+
+### Integration Coverage
+
+Sprint 014 validates:
+
+```text
+Data → Features
+Services → Agents
+Market → Strategy → Risk
+Market → Strategy → Risk → Execution
+Backtest → Evaluation
+Research → Memory
+Common Utilities → AQOS subsystem outputs
+```
+
+### Shared Integration Fixtures
+
+Integration tests use shared fixtures from:
+
+```text
+tests/integration/conftest.py
+```
+
+These fixtures provide:
+
+- default symbol
+- default timeframe
+- default account balance
+- default risk percent
+- deterministic OHLCV records
+- DataService
+- ModelService
+- StrategyService
+- MarketDataService
+- NewsService
+- EconomicCalendarService
+- ExperimentService
+- StorageService
+- BrokerService
+- BacktestService
+- DataAgent
+- MarketAgent
+- ResearchAgent
+- StrategyAgent
+- RiskAgent
+- ExecutionAgent
+- EvaluationAgent
+- MemoryAgent
+- AgentOrchestrator
+
+### Deterministic Test Data
+
+Sprint 014 integration tests use deterministic OHLCV records:
+
+```text
+2026-01-01T00:00:00Z
+2026-01-01T01:00:00Z
+2026-01-01T02:00:00Z
+```
+
+The default integration market path uses:
+
+```text
+XAUUSD / H1
+```
+
+### Integration Design Rules
+
+Integration tests must remain:
+
+- deterministic
+- fast
+- in-memory
+- dependency-light
+- external API free
+- live broker free
+- live market data free
+- LLM free
+- HTTP server free unless testing an API layer
+
+### Execution Boundary
+
+The current orchestrated full trade workflow places a simulated broker order.
+
+It does not automatically create an open position unless an explicit fill workflow is executed.
+
+This boundary keeps execution lifecycle stages separate:
+
+```text
+order placement → order fill → position lifecycle → close position
+```
+
+Future sprints may add integration coverage for full order fill and position lifecycle workflows.
+
+### Purpose
+
+The System Integration testing layer answers:
+
+```text
+Do completed AQOS subsystems work together correctly?
+```
+
+Unit tests answer:
+
+```text
+Does each component work in isolation?
+```
+
+Architecture decisions answer:
+
+```text
+Why is the system structured this way?
+```
 
 The Common Utilities subsystem provides generic reusable primitives.
 

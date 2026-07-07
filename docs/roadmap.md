@@ -11,7 +11,7 @@
 **Current Version**
 
 ```text
-v0.13.0-dev
+v0.14.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```text
-Sprint 014 — System Integration
+Sprint 015 — API Layer
 ```
 
 **Current Task**
 
 ```text
-Task 14.1
+Task 15.1
 ```
 
 ---
@@ -52,7 +52,8 @@ Task 14.1
 | Sprint 011 | Interfaces | ✅ Complete  |
 | Sprint 012 | Agents | ✅ Complete |
 | Sprint 013 | Common Utilities | ✅ Complete|
-| Sprint 014 | System Integration | 🚧 In Progress |
+| Sprint 014 | System Integration | ✅ Complete |
+| Sprint 015 | API Layer | 🚧 In Progress |
 
 ---
 
@@ -326,16 +327,56 @@ Completed capabilities:
 - Public exports through `aqos.common`
 ## Sprint 014 — System Integration
 
+Status: Completed
+
+Sprint 014 completed the first AQOS System Integration testing layer.
+
+Completed integration coverage:
+
+- Integration test scaffold
+- Data → Features integration
+- Services → Agents integration
+- Market → Strategy → Risk integration
+- Full Trade Workflow integration
+- Backtest → Evaluation integration
+- Research → Memory integration
+- Common Utilities adoption checks
+
+Completed capabilities:
+
+- Shared integration fixtures
+- Shared deterministic OHLCV market data fixtures
+- Shared service fixtures
+- Shared agent fixtures
+- Shared orchestrator fixture
+- Validation that MarketDataService can feed FeaturePipeline
+- Validation that DataAgent can prepare OHLCV records for features
+- Validation that shared services are visible through agents
+- Validation that MarketAgent output can feed StrategyAgent
+- Validation that StrategyAgent handoff can feed RiskAgent
+- Validation that RiskAgent handoff can feed ExecutionAgent
+- Validation that AgentOrchestrator can run multi-agent workflows
+- Validation that EvaluationAgent can run and summarize backtests
+- Validation that ResearchAgent outputs can be stored in MemoryAgent
+- Validation that Common Utilities work with real subsystem outputs
+
+## Sprint 015 — API Layer
+
 Status: Next
 
 Planned focus:
 
-- Cross-subsystem integration tests
-- End-to-end AQOS workflow tests
-- Agent-to-service workflow validation
-- Common utilities adoption in selected modules
-- System-level workflow examples
-- Integration documentation
+- API package scaffold
+- API schemas
+- Health endpoints
+- Market endpoints
+- Strategy endpoints
+- Risk endpoints
+- Execution endpoints
+- Evaluation endpoints
+- Research endpoints
+- Memory endpoints
+- Agent orchestration endpoints
 
 # Long-Term Goal
 

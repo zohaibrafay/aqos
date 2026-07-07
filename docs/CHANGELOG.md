@@ -8,7 +8,76 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 
 # [Unreleased]
 
+
+
 Future changes will be listed here before the next release.
+## [v0.14.0-dev] — Sprint 014 System Integration
+
+Status: Completed
+
+### Added
+
+- Added shared integration test scaffold.
+- Added shared integration fixtures in `tests/integration/conftest.py`.
+- Added deterministic OHLCV market data fixtures.
+- Added shared service fixtures.
+- Added shared agent fixtures.
+- Added shared `AgentOrchestrator` fixture.
+- Added Data → Features integration tests.
+- Added Services → Agents integration tests.
+- Added Market → Strategy → Risk integration tests.
+- Added Full Trade Workflow integration tests.
+- Added Backtest → Evaluation integration tests.
+- Added Research → Memory integration tests.
+- Added Common Utilities adoption integration tests.
+
+### Added Integration Test Files
+
+- Added `tests/integration/conftest.py`.
+- Added `tests/integration/test_system_integration_scaffold.py`.
+- Added `tests/integration/test_data_to_features_integration.py`.
+- Added `tests/integration/test_services_to_agents_integration.py`.
+- Added `tests/integration/test_market_strategy_risk_integration.py`.
+- Added `tests/integration/test_full_trade_workflow_integration.py`.
+- Added `tests/integration/test_backtest_evaluation_integration.py`.
+- Added `tests/integration/test_research_memory_integration.py`.
+- Added `tests/integration/test_common_utilities_adoption.py`.
+
+### Validated Workflows
+
+- Validated integration fixture setup.
+- Validated MarketDataService → FeaturePipeline.
+- Validated DataAgent → FeaturePipeline.
+- Validated DataAgent quality checks before feature generation.
+- Validated MarketDataService visibility through DataAgent.
+- Validated NewsService visibility through MarketAgent.
+- Validated EconomicCalendarService visibility through MarketAgent.
+- Validated ExperimentService visibility through ResearchAgent.
+- Validated StorageService visibility through ResearchAgent.
+- Validated BrokerService visibility through ExecutionAgent.
+- Validated BacktestService visibility through EvaluationAgent.
+- Validated MarketAgent → StrategyAgent.
+- Validated StrategyAgent → RiskAgent.
+- Validated RiskAgent → ExecutionAgent.
+- Validated AgentOrchestrator market-strategy workflow.
+- Validated AgentOrchestrator strategy-risk workflow.
+- Validated AgentOrchestrator risk-execution workflow.
+- Validated AgentOrchestrator trade workflow.
+- Validated AgentOrchestrator backtest workflow.
+- Validated AgentOrchestrator research workflow.
+- Validated AgentOrchestrator memory workflow.
+- Validated EvaluationAgent → MemoryAgent.
+- Validated ResearchAgent → MemoryAgent.
+- Validated Common Utilities against real subsystem outputs.
+
+### Notes
+
+- Sprint 014 introduced integration tests only.
+- No production subsystem package was added.
+- Tests are deterministic and in-memory.
+- Tests do not require external APIs, live market data, live brokers, LLM calls, dashboards, or HTTP servers.
+- The current execution workflow places orders but does not automatically create positions unless the fill workflow is explicitly called.
+
 # [v0.13.0-dev] — Sprint 013 Common Utilities
 
 Status: Completed

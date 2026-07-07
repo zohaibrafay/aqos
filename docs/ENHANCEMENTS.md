@@ -1101,6 +1101,72 @@ The following items are intentionally left for future enhancement after the foun
 - Implement reserved `types.py`.
 - Gradually refactor existing AQOS modules to use common utilities.
 - Add integration tests for common utility adoption.
+
+## Sprint 014 System Integration Enhancements
+
+Status: Foundation completed
+
+Sprint 014 completed the first deterministic System Integration testing layer.
+
+The following items are intentionally left for future enhancement after the foundation is stable.
+
+### Integration Coverage Enhancements
+
+- Add Features → Models integration tests.
+- Add Models → Learning integration tests.
+- Add Learning → Memory integration tests.
+- Add Strategy → Evaluation integration tests.
+- Add Interfaces → Agents integration tests.
+- Add Services → Interfaces integration tests.
+- Add CLI → Agents integration tests.
+- Add API → Agents integration tests after API layer exists.
+- Add Dashboard → API integration tests after dashboard/API layers exist.
+
+### Trade Workflow Enhancements
+
+- Add explicit order fill integration workflow.
+- Add position lifecycle integration workflow.
+- Add close-position integration workflow.
+- Add realized profit integration workflow.
+- Add stop-loss execution simulation.
+- Add take-profit execution simulation.
+- Add rejected-order lifecycle checks.
+- Add partial-fill lifecycle tests.
+
+### Backtest Integration Enhancements
+
+- Add feature-generated signals into backtests.
+- Add strategy-generated signals into backtests.
+- Add risk-adjusted backtest tests.
+- Add walk-forward integration tests.
+- Add paper-trading loop integration tests.
+- Add evaluation report export tests.
+
+### Research Integration Enhancements
+
+- Add research → experiment → backtest → evaluation flow.
+- Add research finding → strategy improvement flow.
+- Add research memory retrieval in orchestrator workflows.
+- Add experiment comparison integration tests.
+
+### Common Utility Adoption Enhancements
+
+- Refactor existing modules to use common validators.
+- Refactor ID creation to use common ID helpers.
+- Refactor error outputs to use common error helpers.
+- Refactor serialization paths to use common serializers.
+- Add adoption checks for each major subsystem.
+
+### Test Infrastructure Enhancements
+
+- Add integration test markers.
+- Add slow test markers.
+- Add performance thresholds.
+- Add coverage grouping.
+- Add CI workflow split for unit vs integration tests.
+- Add deterministic seed helpers.
+- Add test data builders.
+- Add scenario fixtures.
 # Global Enhancements
 
 Future system-wide improvements

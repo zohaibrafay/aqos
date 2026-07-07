@@ -33,6 +33,7 @@ v0.13.0-dev
 | Sprint 011 | ✅ Complete |
 | Sprint 012 | ✅ Complete |
 | Sprint 013 | ✅ Complete |
+| Sprint 014 | ✅ Complete |
 
 ---
 
@@ -1394,6 +1395,145 @@ This separation prevents strategy logic from being mixed with portfolio/account 
 ---
 
 # Notes
+
+Sprint 014 introduced a dedicated system integration testing layer.
+
+This layer validates how completed AQOS subsystems work together.
+
+It does not introduce a new production runtime package.
+
+### Integration Directory
+
+```text
+tests/integration/
+├── conftest.py
+├── test_backtest_evaluation_integration.py
+├── test_common_utilities_adoption.py
+├── test_core.py
+├── test_data_to_features_integration.py
+├── test_feature_pipeline.py
+├── test_features.py
+├── test_full_trade_workflow_integration.py
+├── test_market_strategy_risk_integration.py
+├── test_research_memory_integration.py
+├── test_services_to_agents_integration.py
+└── test_system_integration_scaffold.py
+```
+
+### `conftest.py`
+
+Responsibilities:
+
+- Provide integration default values
+- Provide sample OHLCV records
+- Provide shared service fixtures
+- Provide populated MarketDataService fixture
+- Provide populated NewsService fixture
+- Provide populated EconomicCalendarService fixture
+- Provide shared agent fixtures
+- Provide shared AgentOrchestrator fixture
+
+### `test_system_integration_scaffold.py`
+
+Responsibilities:
+
+- Validate integration defaults
+- Validate OHLCV fixtures
+- Validate service fixtures
+- Validate market data fixture population
+- Validate news fixture population
+- Validate economic calendar fixture population
+- Validate agent fixtures
+- Validate agent health
+- Validate orchestrator health
+- Validate orchestrator routing
+
+### `test_data_to_features_integration.py`
+
+Responsibilities:
+
+- Validate MarketDataService output can feed FeaturePipeline
+- Validate DataAgent prepared OHLCV records can feed FeaturePipeline
+- Validate feature pipeline preserves market data rows
+- Validate feature output can be used as market context
+- Validate DataAgent quality checks before feature pipeline execution
+
+### `test_services_to_agents_integration.py`
+
+Responsibilities:
+
+- Validate services are visible through agents
+- Validate MarketDataService through DataAgent
+- Validate NewsService through MarketAgent
+- Validate EconomicCalendarService through MarketAgent
+- Validate ExperimentService through ResearchAgent
+- Validate StorageService through ResearchAgent
+- Validate BrokerService through ExecutionAgent
+- Validate BacktestService through EvaluationAgent
+- Validate MemoryAgent stateful behavior
+
+### `test_market_strategy_risk_integration.py`
+
+Responsibilities:
+
+- Validate MarketAgent output feeds StrategyAgent
+- Validate StrategyAgent handoff feeds RiskAgent
+- Validate manual Market → Strategy → Risk workflow
+- Validate orchestrator market-strategy workflow
+- Validate orchestrator strategy-risk workflow
+- Validate hold-signal risk workflow stop
+- Validate invalid risk handoff rejection behavior
+
+### `test_full_trade_workflow_integration.py`
+
+Responsibilities:
+
+- Validate manual Market → Strategy → Risk → Execution workflow
+- Validate orchestrator trade workflow
+- Validate orchestrator risk-execution workflow
+- Validate trade workflow failure when market data is missing
+- Validate rejected risk handoff does not execute
+- Validate trade workflow output can be stored in memory
+
+### `test_backtest_evaluation_integration.py`
+
+Responsibilities:
+
+- Validate EvaluationAgent runs backtests
+- Validate EvaluationAgent stores backtest results in BacktestService
+- Validate EvaluationAgent summaries
+- Validate EvaluationAgent reports
+- Validate EvaluationAgent comparison workflow
+- Validate duplicate backtest handling
+- Validate orchestrator backtest workflow
+- Validate evaluation output can be stored in memory
+
+### `test_research_memory_integration.py`
+
+Responsibilities:
+
+- Validate research hypotheses can be stored in memory
+- Validate experiment plans can be stored in memory
+- Validate research findings can feed memory
+- Validate research summaries can be stored in memory
+- Validate orchestrator research workflow can feed memory
+- Validate orchestrator memory workflow can store research content
+- Validate memory type filtering
+
+### `test_common_utilities_adoption.py`
+
+Responsibilities:
+
+- Validate common constants match integration defaults
+- Validate common validators accept real OHLCV fixtures
+- Validate common validators accept market, strategy, and risk outputs
+- Validate ID helpers can build workflow IDs
+- Validate time utilities parse fixture datetimes
+- Validate serialization helpers process agent and orchestrator outputs
+- Validate math helpers process backtest-like values
+- Validate error helpers format agent failures
+- Validate safe execution helpers
+- Validate common utilities can serialize full trade workflow output
 
 `CODEBASE.md` is the authoritative inventory of the AQOS repository.
 

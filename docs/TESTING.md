@@ -412,6 +412,82 @@ python -m pytest
 
 The Agents tests are deterministic and do not require external APIs, live brokers, real market data providers, dashboards, HTTP servers, LLM calls, or autonomous runtimes.
 ## Sprint 013 — Common Utilities Tests
+## Sprint 014 — System Integration Tests
+
+Status: Completed
+
+Sprint 014 introduced the first system integration testing layer for AQOS.
+
+### Test Files
+
+```text
+tests/integration/conftest.py
+tests/integration/test_system_integration_scaffold.py
+tests/integration/test_data_to_features_integration.py
+tests/integration/test_services_to_agents_integration.py
+tests/integration/test_market_strategy_risk_integration.py
+tests/integration/test_full_trade_workflow_integration.py
+tests/integration/test_backtest_evaluation_integration.py
+tests/integration/test_research_memory_integration.py
+tests/integration/test_common_utilities_adoption.py
+```
+
+### Coverage Areas
+
+- Shared integration fixtures
+- Shared deterministic OHLCV records
+- Shared service fixtures
+- Shared agent fixtures
+- Shared orchestrator fixture
+- Data service to feature pipeline flow
+- DataAgent to feature pipeline flow
+- Data quality checks before feature execution
+- MarketDataService through DataAgent
+- NewsService through MarketAgent
+- EconomicCalendarService through MarketAgent
+- ExperimentService through ResearchAgent
+- StorageService through ResearchAgent
+- BrokerService through ExecutionAgent
+- BacktestService through EvaluationAgent
+- MarketAgent to StrategyAgent flow
+- StrategyAgent to RiskAgent flow
+- RiskAgent to ExecutionAgent flow
+- Full trade workflow
+- Backtest workflow
+- Research workflow
+- Memory workflow
+- Common Utilities usage against real AQOS outputs
+- AgentOrchestrator workflow routing
+
+### Command
+
+```bash
+python -m pytest
+```
+
+### Integration Test Philosophy
+
+Integration tests verify cross-subsystem behavior.
+
+They should remain:
+
+- deterministic
+- in-memory
+- fast
+- independent of external APIs
+- independent of live brokers
+- independent of live market data
+- independent of HTTP servers
+- independent of dashboards
+- independent of LLM calls
+
+### Current Execution Boundary
+
+The full trade workflow currently validates order placement.
+
+Order fill and position creation remain explicit execution lifecycle actions.
+
+This means trade workflow tests should verify order state unless they explicitly call fill actions.
 
 Status: Completed
 
