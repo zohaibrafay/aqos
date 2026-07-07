@@ -205,6 +205,26 @@ Status
 
 ✅ Complete
 
+## Sprint 010 — Services Tests
+
+Status: Completed
+
+Sprint 010 added unit test coverage for the full Services subsystem.
+
+### Test Files
+
+```text
+tests/unit/test_data_service.py
+tests/unit/test_model_service.py
+tests/unit/test_strategy_service.py
+tests/unit/test_backtest_service.py
+tests/unit/test_experiment_service.py
+tests/unit/test_market_data.py
+tests/unit/test_broker.py
+tests/unit/test_news.py
+tests/unit/test_economic_calendar.py
+tests/unit/test_storage_service.py
+tests/unit/test_services_exports.py
 # Testing Standards
 
 Each module should test:

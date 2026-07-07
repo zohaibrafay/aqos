@@ -29,7 +29,7 @@ v0.9.0-dev
 | Sprint 007 | ✅ Complete |
 | Sprint 008 | ✅ Complete |
 | Sprint 009 | ✅ Complete |
-| Sprint 010 | 🚧 In Progress |
+| Sprint 010 | ✅ Complete |
 
 ---
 
@@ -235,14 +235,268 @@ Responsible for external integrations.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `__init__.py` | Services package exports | ⏳ |
-| `market_data.py` | Market data services | ⏳ |
-| `broker.py` | Broker integrations | ⏳ |
-| `news.py` | News services | ⏳ |
-| `economic_calendar.py` | Economic calendar | ⏳ |
-| `storage.py` | Cloud/local storage | ⏳ |
+| `__init__.py` | Services package exports | ✅ |
+| `market_data.py` | Market data services | ✅ |
+| `broker.py` | Broker integrations | ✅ |
+| `news.py` | News services | ✅|
+| `economic_calendar.py` | Economic calendar | ✅ |
+| `storage.py` | Cloud/local storage | ✅ |
+| `backtest_Service.py` | backtest Service | ✅ |
+| `data_Service.py` | Data Service | ✅ |
+| `experiment_service` | Experiment Service | ✅ |
+| `model_service` | Modal Service | ✅ |
+| `strategy_service` | Strategy Service | ✅ |
 
 ---
+
+
+### Service Directory
+
+```text
+services/
+├── __init__.py
+├── backtest_service.py
+├── broker.py
+├── data_service.py
+├── economic_calendar.py
+├── experiment_service.py
+├── market_data.py
+├── model_service.py
+├── news.py
+├── storage.py
+└── strategy_service.py
+```
+
+### Internal Orchestration Services
+
+#### `data_service.py`
+
+Provides dataset-level service operations.
+
+Public classes:
+
+- `DataService`
+- `DatasetSnapshot`
+
+Responsibilities:
+
+- Register market datasets
+- Validate required OHLCV columns
+- Sort data by timestamp
+- Retrieve datasets
+- List dataset names, symbols, and timeframes
+- Return latest row
+- Return close prices
+
+#### `model_service.py`
+
+Provides model-level service operations.
+
+Public classes:
+
+- `ModelService`
+- `ModelSnapshot`
+- `PredictionSnapshot`
+
+Responsibilities:
+
+- Register models
+- Retrieve models
+- Run predictions
+- Calculate confidence
+- Build world state outputs
+
+#### `strategy_service.py`
+
+Provides strategy-level service operations.
+
+Public classes:
+
+- `StrategyService`
+- `StrategyDecision`
+
+Responsibilities:
+
+- Generate buy/sell/hold signals
+- Determine entry decisions
+- Determine exit decisions
+- Calculate strategy-level stop-loss
+- Calculate strategy-level take-profit
+- Build complete strategy decisions
+
+#### `backtest_service.py`
+
+Provides backtesting service operations.
+
+Public classes:
+
+- `BacktestService`
+- `BacktestRun`
+
+Responsibilities:
+
+- Run backtests
+- Store backtest results
+- Retrieve backtest runs
+- Generate reports
+- Generate text summaries
+- Select best run by profit
+
+#### `experiment_service.py`
+
+Provides experiment management operations.
+
+Public classes:
+
+- `ExperimentService`
+- `ExperimentRun`
+
+Responsibilities:
+
+- Create experiments
+- Start experiments
+- Complete experiments
+- Fail experiments
+- Add experiment results
+- Compare experiments by metrics
+
+### External Integration-Style Services
+
+These services are lightweight, in-memory abstractions for future real integrations.
+
+#### `market_data.py`
+
+Public classes:
+
+- `MarketDataService`
+- `MarketCandle`
+- `MarketDataFeed`
+
+Responsibilities:
+
+- Store OHLCV candles
+- Register symbol/timeframe feeds
+- Retrieve candles
+- Convert feeds to pandas DataFrames
+- Return close prices
+- Return latest candle
+
+Future integrations:
+
+- Binance
+- OANDA
+- MetaTrader
+- Polygon
+- Alpha Vantage
+- Twelve Data
+- Yahoo Finance
+
+#### `broker.py`
+
+Public classes:
+
+- `BrokerService`
+- `BrokerOrder`
+- `BrokerPosition`
+
+Responsibilities:
+
+- Place simulated orders
+- Cancel orders
+- Fill orders
+- Create positions
+- Close positions
+- Calculate realized profit
+
+Future integrations:
+
+- MetaTrader 5
+- OANDA
+- Alpaca
+- Binance
+- Interactive Brokers
+
+#### `news.py`
+
+Public classes:
+
+- `NewsService`
+- `NewsItem`
+
+Responsibilities:
+
+- Store financial news
+- Filter news by symbol
+- Filter news by source
+- Filter news by sentiment
+- Track impact score
+- Calculate average impact score
+
+Future integrations:
+
+- Finnhub
+- NewsAPI
+- Reuters-style feeds
+- Investing.com-style feeds
+- ForexFactory-style feeds
+
+#### `economic_calendar.py`
+
+Public classes:
+
+- `EconomicCalendarService`
+- `EconomicCalendarEvent`
+
+Responsibilities:
+
+- Store economic events
+- Filter by currency
+- Filter by country
+- Filter by impact
+- Find upcoming events
+- Find past events
+- Check high-impact events inside a time window
+
+Future integrations:
+
+- Trading Economics
+- ForexFactory-style calendar
+- Investing.com-style calendar
+
+#### `storage.py`
+
+Public classes:
+
+- `StorageService`
+- `StorageRecord`
+
+Responsibilities:
+
+- Save records by namespace
+- Load records
+- Update metadata
+- List records
+- List namespaces
+- Clear namespace
+- Clear storage
+
+Future integrations:
+
+- Local filesystem
+- SQLite
+- PostgreSQL
+- DuckDB
+- Parquet
+- S3
+- Azure Blob Storage
+
+### Services Package Exports
+
+All public service classes are exported from:
+
+```text
+src/aqos/services/__init__.py
+```
 
 # agents/
 

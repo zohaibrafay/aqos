@@ -695,6 +695,119 @@ Future improvements
 - Experiment comparison
 - Evaluation result persistence
 - Evaluation dashboard integration
+
+## Sprint 010 Service Enhancements
+
+Status: Foundation completed
+
+Sprint 010 completed the lightweight Services subsystem.
+
+The following items are intentionally left for future enhancement after the foundation is stable.
+
+### Market Data Enhancements
+
+- Add real market data provider adapters.
+- Add async data fetching.
+- Add retry and rate-limit handling.
+- Add provider health checks.
+- Add historical data pagination.
+- Add live tick/streaming support.
+- Add provider normalization layer.
+
+Potential providers:
+
+- Binance
+- OANDA
+- MetaTrader
+- Polygon
+- Alpha Vantage
+- Twelve Data
+- Yahoo Finance
+
+### Broker Enhancements
+
+- Add real broker adapters.
+- Add paper trading account state.
+- Add margin and leverage support.
+- Add partial fills.
+- Add order modification.
+- Add stop-loss and take-profit order attachment.
+- Add slippage and commission modeling.
+- Add broker reconciliation.
+
+Potential brokers:
+
+- MetaTrader 5
+- OANDA
+- Alpaca
+- Binance
+- Interactive Brokers
+
+### News Enhancements
+
+- Add real news provider adapters.
+- Add sentiment model integration.
+- Add article deduplication.
+- Add source credibility scoring.
+- Add symbol/entity extraction.
+- Add event clustering.
+- Add breaking-news alerting.
+
+Potential providers:
+
+- Finnhub
+- NewsAPI
+- Reuters-style feeds
+- Investing.com-style feeds
+- ForexFactory-style feeds
+
+### Economic Calendar Enhancements
+
+- Add real calendar provider adapters.
+- Add automatic high-impact risk windows.
+- Add currency-pair impact mapping.
+- Add before/after news volatility tagging.
+- Add forecast/actual surprise calculation.
+- Add event importance scoring.
+
+Potential providers:
+
+- Trading Economics
+- ForexFactory-style calendar
+- Investing.com-style calendar
+
+### Storage Enhancements
+
+- Add persistent storage backends.
+- Add filesystem storage.
+- Add SQLite storage.
+- Add PostgreSQL storage.
+- Add DuckDB/Parquet storage.
+- Add cloud object storage.
+- Add versioned artifacts.
+- Add experiment artifact tracking.
+
+Potential backends:
+
+- Local filesystem
+- SQLite
+- PostgreSQL
+- DuckDB
+- Parquet
+- S3
+- Azure Blob Storage
+
+### Service Layer Enhancements
+
+- Add dependency injection.
+- Add service configuration.
+- Add service health checks.
+- Add async service interfaces.
+- Add logging integration.
+- Add error codes.
+- Add typed schemas.
+- Add service-level telemetry.
+
 # Global Enhancements
 
 Future system-wide improvements

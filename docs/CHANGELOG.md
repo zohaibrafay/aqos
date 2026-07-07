@@ -95,6 +95,57 @@ Future changes will be listed here before the next release.
 - Updated enhancement backlog.
 - Updated architecture documentation.
 
+# [v0.10.0-dev] — 2026-07-07
+
+Status: Completed
+
+### Added
+
+- Added `DataService` for registering and managing market datasets.
+- Added `DatasetSnapshot` data structure.
+- Added `ModelService` for registering models, running predictions, calculating confidence, and building world states.
+- Added `ModelSnapshot` and `PredictionSnapshot`.
+- Added `StrategyService` for generating signals, entry/exit decisions, and strategy-level SL/TP planning.
+- Added `StrategyDecision`.
+- Added `BacktestService` for running, storing, retrieving, and reporting backtest results.
+- Added `BacktestRun`.
+- Added `ExperimentService` for creating, tracking, updating, failing, completing, and comparing experiments.
+- Added `ExperimentRun`.
+- Added `MarketDataService` for external-style OHLCV candle feed management.
+- Added `MarketCandle` and `MarketDataFeed`.
+- Added `BrokerService` for simulated broker order and position handling.
+- Added `BrokerOrder` and `BrokerPosition`.
+- Added `NewsService` for financial news storage, filtering, sentiment, and impact scoring.
+- Added `NewsItem`.
+- Added `EconomicCalendarService` for storing, filtering, and checking macroeconomic events.
+- Added `EconomicCalendarEvent`.
+- Added `StorageService` for generic namespace-based record persistence.
+- Added `StorageRecord`.
+- Added services export coverage through `src/aqos/services/__init__.py`.
+
+### Tests
+
+- Added unit tests for `DataService`.
+- Added unit tests for `ModelService`.
+- Added unit tests for `StrategyService`.
+- Added unit tests for `BacktestService`.
+- Added unit tests for `ExperimentService`.
+- Added unit tests for `MarketDataService`.
+- Added unit tests for `BrokerService`.
+- Added unit tests for `NewsService`.
+- Added unit tests for `EconomicCalendarService`.
+- Added unit tests for `StorageService`.
+- Added unit tests for services package exports.
+
+### Changed
+
+- Expanded the Services subsystem from only internal orchestration files to a complete service layer with both internal orchestration services and external integration-style service abstractions.
+
+### Notes
+
+- Real broker, market data, news, calendar, and persistence integrations are intentionally not connected yet.
+- Current implementations are deterministic, in-memory, lightweight, and testable.
+
 # [v0.8.0-dev] - 2026-07-07
 
 ## Added

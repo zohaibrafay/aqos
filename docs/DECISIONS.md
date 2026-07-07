@@ -24,7 +24,7 @@ Every architecture change should follow this template.
 
 ---
 
-## ADR-001
+## ADR-XXX
 
 ### Date
 
@@ -38,9 +38,9 @@ Sprint XXX
 
 Proposed | Accepted | Deprecated | Replaced
 
-### Decision
+### Title
 
-Short description.
+Short decision title.
 
 ### Context
 
@@ -48,11 +48,17 @@ Why this decision was necessary.
 
 ### Alternatives Considered
 
-Option 1
+Option A
 
-Option 2
+Description.
 
-Option 3
+Option B
+
+Description.
+
+Option C
+
+Description.
 
 ### Decision
 
@@ -60,17 +66,14 @@ Chosen solution.
 
 ### Benefits
 
--
-
--
-
--
+- Benefit 1
+- Benefit 2
+- Benefit 3
 
 ### Drawbacks
 
--
-
--
+- Drawback 1
+- Drawback 2
 
 ### Impact
 
@@ -100,15 +103,17 @@ Sprint 004
 
 Accepted
 
-### Decision
+### Title
 
 Freeze AQOS top-level architecture.
 
 ### Context
 
-During development we noticed new folders were being proposed while implementation was already in progress.
+During development, new top-level folders were being proposed while implementation was already in progress.
 
-Changing architecture repeatedly would create instability.
+Changing the architecture repeatedly during active sprint work would create instability, make the codebase harder to understand, and produce unnecessary Git history noise.
+
+AQOS is intended to become a large AI Quant Operating System, so the foundation must remain stable while individual subsystems evolve internally.
 
 ### Alternatives Considered
 
@@ -118,13 +123,15 @@ Continue changing folders during development.
 
 Option B
 
-Freeze architecture after Sprint 003.
+Freeze the top-level architecture after Sprint 003.
 
 ### Decision
 
-Freeze architecture after Sprint 003.
+Freeze the top-level AQOS architecture after Sprint 003.
 
 Architecture changes require discussion before implementation.
+
+No new top-level package may be added without an accepted ADR.
 
 ### Benefits
 
@@ -132,18 +139,46 @@ Architecture changes require discussion before implementation.
 - Easier maintenance
 - Better planning
 - Cleaner Git history
+- Easier onboarding
+- More predictable sprint execution
 
 ### Drawbacks
 
-Some future features may require architectural review.
+- Some future features may require architectural review before implementation.
+- Developers must think carefully before introducing new top-level packages.
 
 ### Impact
 
-Entire project.
+Affected scope:
+
+```text
+Entire AQOS project
+```
+
+Frozen top-level package structure:
+
+```text
+src/aqos/
+├── agents/
+├── common/
+├── core/
+├── data/
+├── evaluation/
+├── features/
+├── interfaces/
+├── learning/
+├── memory/
+├── models/
+├── risk/
+├── services/
+└── strategy/
+```
 
 ### Notes
 
-No top-level folders may be added without agreement.
+Internal subsystem files may evolve when necessary.
+
+Top-level architecture changes require a documented decision.
 
 ---
 
@@ -161,60 +196,99 @@ Sprint 004
 
 Accepted
 
-### Decision
+### Title
 
 Introduce dedicated strategy modules.
 
 ### Context
 
-Originally market intelligence was being placed inside planner.py.
+Originally, market intelligence logic was being placed inside `planner.py`.
 
-As the project evolved, it became clear that pattern detection, liquidity analysis, market regime detection, support/resistance, and trend analysis would each grow into large independent systems.
+As the project evolved, it became clear that pattern detection, liquidity analysis, market regime detection, support/resistance analysis, signal generation, and trend analysis would each grow into large independent systems.
 
-Keeping them together would violate the Single Responsibility Principle (SRP) and make testing and maintenance difficult.
+Keeping everything together would violate the Single Responsibility Principle and make testing, maintenance, and future AI integration difficult.
 
 ### Alternatives Considered
 
 Option A
 
-Implement everything inside planner.py.
+Implement all strategy logic inside `planner.py`.
 
 Option B
 
-Split strategy into specialized modules.
+Split the Strategy subsystem into specialized modules.
 
 ### Decision
 
-Create dedicated modules:
+Create dedicated strategy modules for independent strategy responsibilities.
 
-- pattern_detector.py
-- market_regime.py
-- support_resistance.py
-- liquidity.py
-- trend_structure.py
-- signal.py
+The Strategy subsystem includes:
 
-while keeping planner.py responsible for orchestration.
+```text
+strategy/
+├── __init__.py
+├── base.py
+├── planner.py
+├── pattern_detector.py
+├── market_regime.py
+├── support_resistance.py
+├── liquidity.py
+├── trend_structure.py
+├── signal.py
+├── entry.py
+├── exit.py
+├── stop_loss.py
+├── take_profit.py
+└── execution.py
+```
+
+Each module has a focused responsibility.
+
+`planner.py` remains responsible for future orchestration rather than containing all strategy logic directly.
 
 ### Benefits
 
 - Smaller modules
 - Easier testing
 - Better scalability
-- Easier AI integration
-- Cleaner codebase
+- Cleaner strategy architecture
+- Easier future AI integration
+- Better separation of concerns
+- Easier debugging
 
 ### Drawbacks
 
-Slightly more files.
+- Slightly more files.
+- Developers must understand the responsibility of each strategy module.
 
 ### Impact
 
-strategy/
+Affected folder:
+
+```text
+src/aqos/strategy/
+```
+
+Key affected files:
+
+```text
+src/aqos/strategy/pattern_detector.py
+src/aqos/strategy/market_regime.py
+src/aqos/strategy/support_resistance.py
+src/aqos/strategy/liquidity.py
+src/aqos/strategy/trend_structure.py
+src/aqos/strategy/signal.py
+src/aqos/strategy/entry.py
+src/aqos/strategy/exit.py
+src/aqos/strategy/stop_loss.py
+src/aqos/strategy/take_profit.py
+```
 
 ### Notes
 
-This is considered part of the frozen architecture.
+This decision is considered part of the frozen architecture.
+
+The top-level package structure did not change.
 
 ---
 
@@ -232,17 +306,19 @@ Sprint 004
 
 Accepted
 
-### Decision
+### Title
 
-Adopt a Documentation-First Development Workflow.
+Adopt a documentation-first development workflow.
 
 ### Context
 
-As AQOS grows into an institutional-grade AI Quant Research Platform, maintaining accurate documentation is as important as maintaining the source code.
+AQOS is growing into an institutional-grade AI Quant Research Platform.
 
-Without a structured workflow, documentation can quickly become outdated, making it difficult to understand project progress, architectural decisions, deferred enhancements, and future development plans.
+Maintaining accurate documentation is as important as maintaining source code.
 
-To ensure long-term maintainability and reproducibility, documentation will be treated as part of the development process rather than an afterthought.
+Without a structured workflow, documentation can quickly become outdated, making it difficult to understand project progress, architectural decisions, deferred enhancements, current limitations, and future development plans.
+
+To ensure long-term maintainability and reproducibility, documentation must be treated as part of the development process rather than an afterthought.
 
 ### Alternatives Considered
 
@@ -258,71 +334,76 @@ Maintain documentation continuously as part of every completed sprint.
 
 Documentation becomes a mandatory part of the Definition of Done.
 
-Every sprint must follow the workflow:
+Every sprint must follow this workflow:
 
+```text
 Implementation
-
-↓
-
+    ↓
 Unit Tests
-
-↓
-
-Integration Tests
-
-↓
-
+    ↓
+Integration Tests, when applicable
+    ↓
 Run All Tests
-
-↓
-
+    ↓
 Update Documentation
-
-↓
-
+    ↓
 Git Commit
-
-↓
-
+    ↓
 Move to Next Sprint
+```
 
 The following documents must be updated whenever applicable:
 
-- ROADMAP.md
-- DECISIONS.md
-- CHANGELOG.md
-- ARCHITECTURE.md
-- CODEBASE.md
-- CONTRIBUTING.md
-- TESTING.md
-- STYLE_GUIDE.md
-- ENHANCEMENTS.md
-- RESEARCH.md
-- API.md
-- PROJECT_STATE.md
+```text
+docs/ROADMAP.md
+docs/DECISIONS.md
+docs/CHANGELOG.md
+docs/ARCHITECTURE.md
+docs/CODEBASE.md
+docs/CONTRIBUTING.md
+docs/TESTING.md
+docs/STYLE_GUIDE.md
+docs/ENHANCEMENTS.md
+docs/RESEARCH.md
+docs/API.md
+docs/PROJECT_STATE.md
+```
 
 ### Benefits
 
 - Documentation always reflects the current state of the project.
-- Easier project maintenance and onboarding.
+- Easier project maintenance.
+- Easier onboarding.
 - Complete engineering history.
 - Better traceability of architectural decisions.
 - Prevents forgotten enhancements and technical debt.
 - Enables long-term project continuity.
+- Makes AQOS easier to resume after breaks.
 
 ### Drawbacks
 
-Requires additional effort at the end of every sprint.
+- Requires additional effort at the end of every sprint.
+- Sprint completion takes longer because documentation is part of the work.
 
 ### Impact
 
-Entire AQOS project.
+Affected scope:
+
+```text
+Entire AQOS project
+```
+
+Affected documentation:
+
+```text
+docs/
+```
 
 ### Notes
 
-Documentation is now considered part of the production codebase.
+Documentation is considered part of the production codebase.
 
-A sprint is **not complete** until:
+A sprint is not complete until:
 
 - Code is implemented.
 - Tests are passing.
@@ -345,7 +426,7 @@ Sprint 008
 
 Accepted
 
-### Decision
+### Title
 
 Expand the internal Risk subsystem architecture.
 
@@ -363,15 +444,15 @@ risk/
 
 This provided the foundation for position sizing, exposure management, drawdown management, and basic risk constraint validation.
 
-However, before moving into Evaluation, Paper Trading, Services, Agents, Broker Integration, and Live Trading, AQOS needs a more complete risk-management foundation.
+However, before moving into Evaluation, Paper Trading, Services, Agents, Broker Integration, and Live Trading, AQOS needed a more complete risk-management foundation.
 
-The system also needs a clear separation between:
+The system also needed a clear separation between:
 
 ```text
 strategy-level trade planning
 ```
 
-and
+and:
 
 ```text
 account-level risk control
@@ -386,7 +467,9 @@ strategy/take_profit.py
 
 These are responsible for strategy planning.
 
-But risk-level stop-loss and take-profit logic is different. Risk modules must validate whether the trade is safe for the account, whether reward-risk is acceptable, whether a stop loss has been triggered, and whether the trade violates portfolio-level risk rules.
+Risk-level stop-loss and take-profit logic is different.
+
+Risk modules must validate whether the trade is safe for the account, whether reward-risk is acceptable, whether a stop loss has been triggered, and whether the trade violates portfolio-level risk rules.
 
 ### Alternatives Considered
 
@@ -424,7 +507,7 @@ pipeline.py
 
 Expand the internal Risk subsystem during Sprint 008.
 
-The final Risk package now contains:
+The final Risk package contains:
 
 ```text
 risk/
@@ -448,7 +531,7 @@ No new top-level package was introduced.
 - Risk subsystem is complete enough before Evaluation begins.
 - Risk logic remains separate from strategy logic.
 - AQOS can perform unified trade-level risk assessment.
-- AQOS now supports portfolio-level risk checks.
+- AQOS supports portfolio-level risk checks.
 - Future Evaluation, Paper Trading, Agents, and Live Trading modules can depend on a stable `RiskPipeline`.
 - Risk rejection reasons can be explained clearly.
 - Stop-loss and take-profit now exist at both strategy and risk layers with different responsibilities.
@@ -462,19 +545,24 @@ No new top-level package was introduced.
 
 ### Impact
 
-Affected folders/files:
+Affected folder:
 
 ```text
 src/aqos/risk/
-├── __init__.py
-├── sizing.py
-├── exposure.py
-├── drawdown.py
-├── constraints.py
-├── stop_loss.py
-├── take_profit.py
-├── portfolio.py
-└── pipeline.py
+```
+
+Affected files:
+
+```text
+src/aqos/risk/__init__.py
+src/aqos/risk/sizing.py
+src/aqos/risk/exposure.py
+src/aqos/risk/drawdown.py
+src/aqos/risk/constraints.py
+src/aqos/risk/stop_loss.py
+src/aqos/risk/take_profit.py
+src/aqos/risk/portfolio.py
+src/aqos/risk/pipeline.py
 ```
 
 Affected tests:
@@ -533,41 +621,302 @@ This decision keeps account protection separate from market prediction and trade
 
 The top-level AQOS package structure remains frozen.
 
+---
+
+## ADR-005
+
+### Date
+
+2026-07-07
+
+### Sprint
+
+Sprint 010
+
+### Status
+
+Accepted
+
+### Title
+
+Expand the Services subsystem architecture.
+
+### Context
+
+Sprint 010 introduced the AQOS Services subsystem.
+
+The original service plan focused on internal orchestration services:
+
+```text
+data_service.py
+model_service.py
+strategy_service.py
+backtest_service.py
+experiment_service.py
+```
+
+These files are responsible for wrapping existing AQOS subsystems and making them easier to use from future interfaces.
+
+However, AQOS is not only a research library.
+
+AQOS is intended to become a full AI Quant Operating System that can eventually connect to:
+
+- Market data providers
+- Brokers
+- News providers
+- Economic calendar providers
+- Persistent storage backends
+- Future APIs
+- Future user interfaces
+- Future agent workflows
+
+Because of this, the Services subsystem also needs integration-style boundaries.
+
+These boundaries allow AQOS to prepare for real-world trading workflows without connecting live external APIs too early.
+
+### Alternatives Considered
+
+Option A
+
+Only implement internal orchestration services:
+
+```text
+data_service.py
+model_service.py
+strategy_service.py
+backtest_service.py
+experiment_service.py
+```
+
+Option B
+
+Create separate top-level packages for broker, market data, news, calendar, and storage integrations.
+
+Option C
+
+Expand the existing `services/` package to include both internal orchestration services and external integration-style service boundaries.
+
+### Decision
+
+Expand the Services subsystem during Sprint 010.
+
+The Services subsystem will include two categories:
+
+1. Internal orchestration services
+2. External integration-style services
+
+The final Sprint 010 service structure is:
+
+```text
+src/aqos/services/
+├── __init__.py
+├── backtest_service.py
+├── broker.py
+├── data_service.py
+├── economic_calendar.py
+├── experiment_service.py
+├── market_data.py
+├── model_service.py
+├── news.py
+├── storage.py
+└── strategy_service.py
+```
+
+No new top-level package was introduced.
+
+The top-level AQOS architecture remains frozen.
+
+### Internal Orchestration Services
+
+The following services wrap existing AQOS subsystems:
+
+```text
+data_service.py
+model_service.py
+strategy_service.py
+backtest_service.py
+experiment_service.py
+```
+
+Responsibilities:
+
+- Provide stable service-level APIs.
+- Coordinate lower-level AQOS modules.
+- Hide implementation details from future interfaces.
+- Make AQOS easier to call from CLI, API, agents, and UI layers.
+
+### External Integration-Style Services
+
+The following services define lightweight integration boundaries:
+
+```text
+market_data.py
+broker.py
+news.py
+economic_calendar.py
+storage.py
+```
+
+Responsibilities:
+
+- Represent external system boundaries.
+- Keep external concerns isolated from core domain modules.
+- Provide in-memory foundations before real integrations are added.
+- Prepare AQOS for real broker, provider, news, calendar, and storage integrations.
+
+### Benefits
+
+- AQOS now has a complete service layer.
+- Future Interfaces layer can depend on `services/` instead of directly calling every lower-level package.
+- Internal orchestration is separated from domain logic.
+- External integration boundaries are prepared early.
+- Real API connections can be added later behind stable service boundaries.
+- Current implementations remain deterministic and fully testable.
+- No network, broker, database, or external provider is required for current tests.
+- No new top-level package was needed.
+
+### Drawbacks
+
+- The Services subsystem now contains more files.
+- Some services are future-facing and currently use in-memory implementations.
+- Developers must understand the difference between orchestration services and integration-style services.
+- Real external integrations will still require future adapter work.
+
+### Impact
+
+Affected folder:
+
+```text
+src/aqos/services/
+```
+
+Affected service files:
+
+```text
+src/aqos/services/__init__.py
+src/aqos/services/data_service.py
+src/aqos/services/model_service.py
+src/aqos/services/strategy_service.py
+src/aqos/services/backtest_service.py
+src/aqos/services/experiment_service.py
+src/aqos/services/market_data.py
+src/aqos/services/broker.py
+src/aqos/services/news.py
+src/aqos/services/economic_calendar.py
+src/aqos/services/storage.py
+```
+
+Affected tests:
+
+```text
+tests/unit/test_data_service.py
+tests/unit/test_model_service.py
+tests/unit/test_strategy_service.py
+tests/unit/test_backtest_service.py
+tests/unit/test_experiment_service.py
+tests/unit/test_market_data.py
+tests/unit/test_broker.py
+tests/unit/test_news.py
+tests/unit/test_economic_calendar.py
+tests/unit/test_storage_service.py
+tests/unit/test_services_exports.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+```
+
+Architecture version updated from:
+
+```text
+1.1
+```
+
+to:
+
+```text
+1.2
+```
+
+### Notes
+
+The Services subsystem does not replace lower-level AQOS modules.
+
+Lower-level modules remain responsible for domain logic.
+
+Services are responsible for:
+
+- Orchestration
+- Input/output convenience
+- Workflow boundaries
+- Future integration boundaries
+
+Current Sprint 010 services are intentionally:
+
+- Lightweight
+- In-memory
+- Deterministic
+- Testable
+- Free from external API dependencies
+
+Future sprints may add:
+
+- Real market data adapters
+- Real broker adapters
+- News provider adapters
+- Economic calendar provider adapters
+- Persistent storage backends
+- Service-level configuration
+- Service health checks
+- Async service interfaces
+- API schemas
+
+---
+
 # Future Decision Log
 
 Every future architecture decision will be recorded below.
 
-Examples
+Examples:
 
-ADR-005
+## ADR-006
 
 Introduce Time Series Transformer.
 
-ADR-006
+## ADR-007
 
 Replace rule-based liquidity with SMC engine.
 
-ADR-007
+## ADR-008
 
 Introduce Vector Database.
 
-ADR-008
+## ADR-009
 
 Add Reinforcement Learning.
 
-ADR-009
+## ADR-010
 
 Replace pandas with Polars.
 
-ADR-010
+## ADR-011
 
 Introduce DuckDB Data Lake.
 
-ADR-011
+## ADR-012
 
 Distributed Training.
 
-ADR-012
+## ADR-013
 
 Live Trading Infrastructure.
 
@@ -575,20 +924,14 @@ Live Trading Infrastructure.
 
 # Decision Rules
 
-Before changing architecture we must answer:
+Before changing architecture, we must answer:
 
 1. Why is the current design insufficient?
-
 2. What alternatives were considered?
-
 3. Why is the proposed design better?
-
 4. What are the drawbacks?
-
 5. What files are affected?
-
 6. Is migration required?
-
 7. Is it backward compatible?
 
 If these questions cannot be answered, the architecture should not change.
@@ -603,8 +946,8 @@ AQOS follows:
 - DRY
 - KISS
 - Clean Architecture
-- Domain-Driven Design (DDD)
-- Test-Driven Development (where practical)
+- Domain-Driven Design
+- Test-Driven Development where practical
 - Modular Design
 - Separation of Concerns
 - Reproducibility

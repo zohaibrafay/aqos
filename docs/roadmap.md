@@ -11,7 +11,7 @@
 **Current Version**
 
 ```text
-v0.9.0-dev
+v0.10.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```text
-Sprint 010 — Services
+Sprint 011 — Interfaces
 ```
 
 **Current Task**
 
 ```text
-Task 10.1
+Task 11.1
 ```
 
 ---
@@ -48,8 +48,8 @@ Task 10.1
 | Sprint 007 | Memory | ✅ Complete |
 | Sprint 008 | Risk | ✅ Complete |
 | Sprint 009 | Evaluation | ✅ Complete |
-| Sprint 010 | Services | 🚧 In Progress |
-| Sprint 011 | Agents | ⏳ Planned |
+| Sprint 010 | Services | ✅ Complete |
+| Sprint 011 | Agents | 🚧 In Progress |
 | Sprint 012 | System Integration | ⏳ Planned |
 
 ---
@@ -188,22 +188,52 @@ Task 10.1
 
 ---
 
-# Next Sprint
+## Sprint 010 — Services
 
-Sprint 010
 
-Services
+Status: Completed
 
-Starting with:
+Sprint 010 completed the AQOS service layer.
 
-- Market Data Service
-- Broker Service
-- News Service
-- Economic Calendar Service
-- Storage Service
+The service layer now provides clean orchestration wrappers around the internal AQOS subsystems and lightweight external integration-style services for future API, broker, market data, news, calendar, and storage integrations.
 
----
+Completed service modules:
 
+- `data_service.py`
+- `model_service.py`
+- `strategy_service.py`
+- `backtest_service.py`
+- `experiment_service.py`
+- `market_data.py`
+- `broker.py`
+- `news.py`
+- `economic_calendar.py`
+- `storage.py`
+
+Completed capabilities:
+
+- Register and manage market datasets
+- Register and run models
+- Generate strategy decisions
+- Run and store backtests
+- Track experiment runs
+- Store external-style OHLCV candle feeds
+- Simulate broker orders and positions
+- Store and filter market news
+- Store and filter economic calendar events
+- Save and load generic records by namespace
+- Export all public service classes through `aqos.services`
+## Sprint 011 — Interfaces
+
+Status: Next
+
+Planned focus:
+
+- CLI/service interaction layer
+- API-facing interface contracts
+- UI/backend adapter readiness
+- Input/output schemas
+- Public application interfaces
 # Long-Term Goal
 
 Build an institutional-grade AI Quant Research Platform capable of:
