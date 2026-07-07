@@ -882,6 +882,245 @@ Future sprints may add:
 
 ---
 
+---
+
+## ADR-006
+
+### Date
+
+2026-07-07
+
+### Sprint
+
+Sprint 011
+
+### Status
+
+Accepted
+
+### Title
+
+Expand the Interfaces subsystem architecture.
+
+### Context
+
+Sprint 011 was originally planned around existing domain interface contract files:
+
+```text
+data_provider.py
+model.py
+strategy.py
+risk.py
+memory.py
+```
+
+These files define how core AQOS components should behave.
+
+However, after completing the Services subsystem in Sprint 010, AQOS also needed clear application-facing interfaces for future API, CLI, dashboard, and agent workflows.
+
+Without these interface boundaries, future external layers would either call lower-level modules directly or duplicate orchestration logic.
+
+AQOS needs a stable interface layer above `services/` so that future applications can interact with the system through consistent request and response patterns.
+
+### Alternatives Considered
+
+Option A
+
+Only implement domain contracts during Sprint 011 and delay application-facing interfaces.
+
+Option B
+
+Create separate top-level packages for API, CLI, dashboard, and agent access.
+
+Option C
+
+Expand the existing `interfaces/` package to include both domain contracts and application-facing interfaces.
+
+### Decision
+
+Expand the Interfaces subsystem during Sprint 011.
+
+The Interfaces subsystem will include two categories:
+
+1. Domain interface contracts
+2. Application-facing interfaces
+
+The final Sprint 011 interface structure is:
+
+```text
+src/aqos/interfaces/
+├── __init__.py
+├── agent_interface.py
+├── api_interface.py
+├── cli_interface.py
+├── dashboard_interface.py
+├── data_provider.py
+├── memory.py
+├── model.py
+├── risk.py
+├── schemas.py
+└── strategy.py
+```
+
+No new top-level package was introduced.
+
+The top-level AQOS architecture remains frozen.
+
+### Domain Interface Contracts
+
+The following files define contracts for internal components:
+
+```text
+data_provider.py
+model.py
+strategy.py
+risk.py
+memory.py
+```
+
+Responsibilities:
+
+- Define component behavior contracts.
+- Reduce coupling to concrete implementations.
+- Enable future provider/model/strategy/risk/memory replacements.
+- Improve testability.
+
+### Application-Facing Interfaces
+
+The following files define interfaces for external-facing workflows:
+
+```text
+schemas.py
+api_interface.py
+cli_interface.py
+dashboard_interface.py
+agent_interface.py
+```
+
+Responsibilities:
+
+- Define request and response schemas.
+- Provide API-style access.
+- Provide CLI-style command access.
+- Provide dashboard-style read access.
+- Provide agent-style action access.
+- Standardize outputs through `InterfaceEnvelope`.
+
+### Benefits
+
+- AQOS now has a complete interface layer.
+- Future APIs can depend on `APIInterface`.
+- Future CLI commands can depend on `CLIInterface`.
+- Future dashboards can depend on `DashboardInterface`.
+- Future agents can depend on `AgentInterface`.
+- External layers do not need to call low-level modules directly.
+- Interface responses are standardized through `InterfaceEnvelope`.
+- Domain contracts and application-facing interfaces stay inside the existing frozen architecture.
+- Tests remain deterministic and do not require external servers or services.
+
+### Drawbacks
+
+- The Interfaces subsystem now contains more files.
+- Application-facing interfaces are currently lightweight and not yet connected to real HTTP routes, terminal commands, dashboard UI, or autonomous agent runtimes.
+- Future work is required to connect these interfaces to real frameworks.
+
+### Impact
+
+Affected folder:
+
+```text
+src/aqos/interfaces/
+```
+
+Affected interface files:
+
+```text
+src/aqos/interfaces/__init__.py
+src/aqos/interfaces/data_provider.py
+src/aqos/interfaces/model.py
+src/aqos/interfaces/strategy.py
+src/aqos/interfaces/risk.py
+src/aqos/interfaces/memory.py
+src/aqos/interfaces/schemas.py
+src/aqos/interfaces/api_interface.py
+src/aqos/interfaces/cli_interface.py
+src/aqos/interfaces/dashboard_interface.py
+src/aqos/interfaces/agent_interface.py
+```
+
+Affected tests:
+
+```text
+tests/unit/test_data_provider_interface.py
+tests/unit/test_model_interface.py
+tests/unit/test_strategy_interface.py
+tests/unit/test_risk_interface.py
+tests/unit/test_memory_interface.py
+tests/unit/test_interface_schemas.py
+tests/unit/test_api_interface.py
+tests/unit/test_cli_interface.py
+tests/unit/test_dashboard_interface.py
+tests/unit/test_agent_interface.py
+tests/unit/test_interfaces_exports.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+```
+
+Architecture version updated from:
+
+```text
+1.2
+```
+
+to:
+
+```text
+1.3
+```
+
+### Notes
+
+Domain interface contracts answer:
+
+```text
+How should AQOS components behave?
+```
+
+Application-facing interfaces answer:
+
+```text
+How should external users, apps, dashboards, APIs, and agents call AQOS?
+```
+
+The Interfaces subsystem does not contain core trading logic.
+
+The Services subsystem remains responsible for orchestration.
+
+The Interfaces subsystem remains responsible for interaction boundaries.
+
+Future sprints may add:
+
+- Real FastAPI routes
+- Real CLI commands
+- Real dashboard DTOs
+- Real agent orchestration
+- Tool-call schemas
+- OpenAPI documentation
+- Pydantic models
+- Request IDs
+- Trace IDs
+- Error codes
 # Future Decision Log
 
 Every future architecture decision will be recorded below.

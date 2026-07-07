@@ -11,7 +11,7 @@
 **Current Version**
 
 ```text
-v0.10.0-dev
+v0.11.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```text
-Sprint 011 — Interfaces
+Sprint 012 — Agents
 ```
 
 **Current Task**
 
 ```text
-Task 11.1
+Task 12.1
 ```
 
 ---
@@ -49,8 +49,9 @@ Task 11.1
 | Sprint 008 | Risk | ✅ Complete |
 | Sprint 009 | Evaluation | ✅ Complete |
 | Sprint 010 | Services | ✅ Complete |
-| Sprint 011 | Agents | 🚧 In Progress |
-| Sprint 012 | System Integration | ⏳ Planned |
+| Sprint 011 | Interfaces | ✅ Complete  |
+| Sprint 012 | Agents | 🚧 In Progress |
+| Sprint 013 | System Integration | ⏳ Planned |
 
 ---
 
@@ -225,15 +226,52 @@ Completed capabilities:
 - Export all public service classes through `aqos.services`
 ## Sprint 011 — Interfaces
 
+Status: Completed
+
+Sprint 011 completed the AQOS Interfaces subsystem.
+
+The Interfaces subsystem now contains both domain-level interface contracts and application-facing interfaces.
+
+Completed interface modules:
+
+- `data_provider.py`
+- `model.py`
+- `strategy.py`
+- `risk.py`
+- `memory.py`
+- `schemas.py`
+- `api_interface.py`
+- `cli_interface.py`
+- `dashboard_interface.py`
+- `agent_interface.py`
+
+Completed capabilities:
+
+- Define market data provider contracts
+- Define model contracts
+- Define strategy contracts
+- Define risk contracts
+- Define memory contracts
+- Define request/response schemas
+- Provide API-facing access to AQOS services
+- Provide CLI-style command access
+- Provide dashboard-style read access
+- Provide agent-style action access
+- Export all public interface classes through `aqos.interfaces`
+
+## Sprint 012 — Agents
+
 Status: Next
 
 Planned focus:
 
-- CLI/service interaction layer
-- API-facing interface contracts
-- UI/backend adapter readiness
-- Input/output schemas
-- Public application interfaces
+- Research agent
+- Strategy agent
+- Risk agent
+- Execution agent
+- Evaluation agent
+- Agent orchestration
+- Agent-to-service workflows
 # Long-Term Goal
 
 Build an institutional-grade AI Quant Research Platform capable of:

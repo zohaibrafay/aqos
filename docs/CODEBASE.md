@@ -10,7 +10,7 @@
 # Current Version
 
 ```text
-v0.9.0-dev
+v0.11.0-dev
 ```
 
 ---
@@ -30,6 +30,7 @@ v0.9.0-dev
 | Sprint 008 | ✅ Complete |
 | Sprint 009 | ✅ Complete |
 | Sprint 010 | ✅ Complete |
+| Sprint 011 | ✅ Complete |
 
 ---
 
@@ -248,6 +249,208 @@ Responsible for external integrations.
 | `strategy_service` | Strategy Service | ✅ |
 
 ---
+# interfaces/
+
+Responsible for external integrations.
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `__init__.py` | interfaces package exports | ✅ |
+| `agent_interface.py` | Agent Interface | ✅ |
+| `api_interface.py` | API Interface | ✅ |
+| `cli_interface.py` | CLI Interface | ✅|
+| `dashboard_interface.py` | Dashboard Interface | ✅ |
+| `data_provider.py` | Data Provider Interface | ✅ |
+| `memory.py` | Memory Interface | ✅ |
+| `data_Service.py` | Data Interface | ✅ |
+| `model.py` | Model Interface | ✅ |
+| `risk.py` | Risk Interface | ✅ |
+| `schemas.py` | Schema Interface | ✅ |
+| `strategy` | Strategy Interface | ✅ |
+
+---
+### Domain Interface Contracts
+
+#### `data_provider.py`
+
+Public classes:
+
+- `DataProviderInterface`
+
+Responsibilities:
+
+- Define market data provider contract
+- Fetch OHLCV data
+- Check provider support for symbol/timeframe
+- Return latest candle
+- Return close prices
+- Validate required OHLCV columns
+
+#### `model.py`
+
+Public classes:
+
+- `ModelInterface`
+
+Responsibilities:
+
+- Define model contract
+- Train model
+- Run predictions
+- Predict one row
+- Save model
+- Load model
+- Validate features and targets
+
+#### `strategy.py`
+
+Public classes:
+
+- `StrategyInterface`
+- `StrategyInterfaceDecision`
+
+Responsibilities:
+
+- Define strategy contract
+- Generate buy/sell/hold signal
+- Decide entry
+- Decide exit
+- Build full strategy decision
+- Validate market state
+- Validate signal
+
+#### `risk.py`
+
+Public classes:
+
+- `RiskInterface`
+- `RiskInterfaceDecision`
+
+Responsibilities:
+
+- Define risk system contract
+- Validate trade request
+- Explain rejection reason
+- Calculate position size
+- Build full risk decision
+- Validate account balance, risk percent, prices, and position size
+
+#### `memory.py`
+
+Public classes:
+
+- `MemoryInterface`
+- `MemoryInterfaceRecord`
+- `MemoryInterfaceSearchResult`
+
+Responsibilities:
+
+- Define memory system contract
+- Store memory records
+- Retrieve memory records
+- Search memory records
+- Remove memory records
+- Store multiple records
+- Validate memory records and search results
+
+### Interface Schemas
+
+#### `schemas.py`
+
+Public classes:
+
+- `MarketDataRequest`
+- `PredictionRequest`
+- `PredictionResponse`
+- `StrategyRequest`
+- `StrategyResponse`
+- `RiskRequest`
+- `RiskResponse`
+- `BacktestRequest`
+- `BacktestResponse`
+- `ExperimentRequest`
+- `ExperimentResponse`
+- `InterfaceEnvelope`
+
+Responsibilities:
+
+- Define lightweight request/response shapes
+- Validate interface inputs
+- Standardize interface outputs
+- Provide shared schemas for API, CLI, dashboard, and agent layers
+
+### Application-Facing Interfaces
+
+#### `api_interface.py`
+
+Public classes:
+
+- `APIInterface`
+
+Responsibilities:
+
+- Provide API-style access to AQOS services
+- Return standardized `InterfaceEnvelope` responses
+- Retrieve market data
+- Run predictions
+- Generate strategy decisions
+- Assess risk through an injected risk manager
+- Run backtests
+- Create experiments
+
+#### `cli_interface.py`
+
+Public classes:
+
+- `CLIInterface`
+
+Responsibilities:
+
+- Provide CLI-style command execution
+- Normalize command names
+- Execute health, market-data, predict, strategy, risk, backtest, and experiment-create commands
+- Return standardized `InterfaceEnvelope` responses
+
+#### `dashboard_interface.py`
+
+Public classes:
+
+- `DashboardInterface`
+
+Responsibilities:
+
+- Provide dashboard-style read access
+- Return system overview
+- Return market data summary
+- Return backtest summary
+- Return experiment summary
+- Return broker summary
+- Return news summary
+- Return economic calendar summary
+- Return storage summary
+
+#### `agent_interface.py`
+
+Public classes:
+
+- `AgentInterface`
+
+Responsibilities:
+
+- Provide AI-agent-style action access
+- Execute health action
+- Retrieve dashboard overview
+- Retrieve market summary
+- Generate strategy decision
+- Run risk assessment
+- Run backtest
+- Store memory
+- Recall memory
+
+### Interfaces Package Exports
+
+All public interface classes are exported from:
+
 
 
 ### Service Directory

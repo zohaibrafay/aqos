@@ -225,7 +225,104 @@ tests/unit/test_news.py
 tests/unit/test_economic_calendar.py
 tests/unit/test_storage_service.py
 tests/unit/test_services_exports.py
-# Testing Standards
+```
+
+### Coverage Areas
+
+- Dataset registration and retrieval
+- Dataset validation
+- Model registration and prediction
+- Confidence calculation
+- World state building
+- Strategy signal generation
+- Strategy entry and exit decisions
+- Strategy stop-loss and take-profit calculation
+- Backtest execution
+- Backtest result storage
+- Backtest report generation
+- Experiment lifecycle management
+- Experiment metric comparison
+- Market candle validation
+- Market data feed management
+- Broker order placement
+- Broker order cancellation
+- Broker order filling
+- Broker position closing
+- Broker realized profit calculation
+- News item storage and filtering
+- News sentiment and impact scoring
+- Economic calendar event storage and filtering
+- High-impact event detection
+- Namespace-based storage operations
+- Services package exports
+
+### Notes
+
+The Services tests are deterministic and do not require external APIs, brokers, databases, news providers, or market data providers.
+
+---
+
+## Sprint 011 — Interfaces Tests
+
+Status: Completed
+
+Sprint 011 added unit test coverage for the full Interfaces subsystem.
+
+### Test Files
+
+```text
+tests/unit/test_data_provider_interface.py
+tests/unit/test_model_interface.py
+tests/unit/test_strategy_interface.py
+tests/unit/test_risk_interface.py
+tests/unit/test_memory_interface.py
+tests/unit/test_interface_schemas.py
+tests/unit/test_api_interface.py
+tests/unit/test_cli_interface.py
+tests/unit/test_dashboard_interface.py
+tests/unit/test_agent_interface.py
+tests/unit/test_interfaces_exports.py
+```
+
+### Coverage Areas
+
+- Data provider interface contract behavior
+- Market data validation
+- Latest candle retrieval
+- Close price extraction
+- Model interface contract behavior
+- Model training data validation
+- Model prediction validation
+- Single-row prediction
+- Model save/load contract behavior
+- Strategy interface contract behavior
+- Strategy decision generation
+- Strategy signal validation
+- Risk interface contract behavior
+- Risk trade assessment
+- Risk rejection reasons
+- Risk position sizing
+- Memory interface contract behavior
+- Memory storage
+- Memory retrieval
+- Memory search
+- Memory validation
+- Request schema validation
+- Response schema validation
+- Interface envelope validation
+- API-style interface access
+- CLI-style command access
+- Dashboard-style read access
+- Agent-style action access
+- Interfaces package exports
+
+### Notes
+
+The Interfaces tests are deterministic and do not require external APIs, databases, brokers, dashboards, HTTP servers, or live agent runtimes.
+
+---
+
+## Testing Standards
 
 Each module should test:
 
@@ -238,54 +335,49 @@ Each module should test:
 
 ---
 
-# Current Status
+## Current Status
 
-```
+```text
 All tests passing
 ```
 
-Current Development Version
+Current Development Version:
 
-```
-v0.9.0-dev
+```text
+v0.11.0-dev
 ```
 
 ---
 
-# Future Testing
+## Future Testing
 
-The following test categories will be added in later phases:
+The following test categories will be added in later phases.
 
-## Integration Tests
+### Integration Tests
 
 - Data → Features
 - Features → Models
 - Models → Learning
 - Learning → Memory
 - Strategy → Risk
-- Services → Agents
+- Services → Interfaces
+- Interfaces → Agents
 
----
-
-## System Tests
+### System Tests
 
 - Full prediction pipeline
 - Full trading pipeline
 - Research workflow
 - Multi-agent workflow
 
----
-
-## Performance Tests
+### Performance Tests
 
 - Large dataset handling
 - Model inference latency
 - Memory usage
 - Pipeline throughput
 
----
-
-## End-to-End Tests
+### End-to-End Tests
 
 - Historical backtesting
 - Paper trading
@@ -294,7 +386,7 @@ The following test categories will be added in later phases:
 
 ---
 
-# Testing Rules
+## Testing Rules
 
 1. Every source file must have a corresponding unit test.
 2. New features require new tests.
@@ -304,9 +396,71 @@ The following test categories will be added in later phases:
 
 ---
 
-# Notes
+## Notes
 
 Testing is considered a first-class citizen in AQOS.
 
 No sprint is complete until all implemented modules have passing tests.
+```text
+Status: Completed
 
+Sprint 011 added unit test coverage for the full Interfaces subsystem.
+
+### Test Files
+
+
+tests/unit/test_data_provider_interface.py
+tests/unit/test_model_interface.py
+tests/unit/test_strategy_interface.py
+tests/unit/test_risk_interface.py
+tests/unit/test_memory_interface.py
+tests/unit/test_interface_schemas.py
+tests/unit/test_api_interface.py
+tests/unit/test_cli_interface.py
+tests/unit/test_dashboard_interface.py
+tests/unit/test_agent_interface.py
+tests/unit/test_interfaces_exports.py
+
+
+### Coverage Areas
+
+- Data provider contract behavior
+- Market data validation
+- Latest candle retrieval
+- Close price extraction
+- Model contract behavior
+- Model training data validation
+- Model prediction validation
+- Single-row prediction
+- Model save/load contract behavior
+- Strategy contract behavior
+- Strategy decision generation
+- Strategy signal validation
+- Risk contract behavior
+- Risk trade assessment
+- Risk rejection reasons
+- Risk position sizing
+- Memory contract behavior
+- Memory storage
+- Memory retrieval
+- Memory search
+- Memory validation
+- Request schema validation
+- Response schema validation
+- Interface envelope validation
+- API-style interface access
+- CLI-style command access
+- Dashboard-style read access
+- Agent-style action access
+- Interfaces package exports
+
+### Command
+
+
+python -m pytest
+
+
+### Notes
+
+The interface tests are deterministic and do not require external APIs, databases, brokers, dashboards, HTTP servers, or live agent runtimes.
+```

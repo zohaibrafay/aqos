@@ -95,6 +95,65 @@ Future changes will be listed here before the next release.
 - Updated enhancement backlog.
 - Updated architecture documentation.
 
+
+# [v0.11.0-dev] — 2026-07-07
+
+Status: Completed
+
+### Added
+
+- Added `DataProviderInterface` for market data provider contracts.
+- Added `ModelInterface` for model training, prediction, saving, and loading contracts.
+- Added `StrategyInterface` for strategy signal, entry, and exit contracts.
+- Added `StrategyInterfaceDecision`.
+- Added `RiskInterface` for trade validation, rejection explanation, and position sizing contracts.
+- Added `RiskInterfaceDecision`.
+- Added `MemoryInterface` for memory storage, retrieval, search, and removal contracts.
+- Added `MemoryInterfaceRecord`.
+- Added `MemoryInterfaceSearchResult`.
+- Added interface request and response schemas.
+- Added `MarketDataRequest`.
+- Added `PredictionRequest`.
+- Added `PredictionResponse`.
+- Added `StrategyRequest`.
+- Added `StrategyResponse`.
+- Added `RiskRequest`.
+- Added `RiskResponse`.
+- Added `BacktestRequest`.
+- Added `BacktestResponse`.
+- Added `ExperimentRequest`.
+- Added `ExperimentResponse`.
+- Added `InterfaceEnvelope`.
+- Added `APIInterface` for API-style access to AQOS services.
+- Added `CLIInterface` for CLI-style command access.
+- Added `DashboardInterface` for dashboard-style read access.
+- Added `AgentInterface` for AI-agent-style action access.
+- Added interfaces export coverage through `src/aqos/interfaces/__init__.py`.
+
+### Tests
+
+- Added unit tests for `DataProviderInterface`.
+- Added unit tests for `ModelInterface`.
+- Added unit tests for `StrategyInterface`.
+- Added unit tests for `RiskInterface`.
+- Added unit tests for `MemoryInterface`.
+- Added unit tests for interface schemas.
+- Added unit tests for `APIInterface`.
+- Added unit tests for `CLIInterface`.
+- Added unit tests for `DashboardInterface`.
+- Added unit tests for `AgentInterface`.
+- Added unit tests for interfaces package exports.
+
+### Changed
+
+- Expanded the Interfaces subsystem from only domain contracts to a complete interface layer with both domain contracts and application-facing interfaces.
+
+### Notes
+
+- Sprint 011 does not create a live HTTP server, web dashboard, or autonomous agent runtime.
+- Current interfaces are lightweight, deterministic, testable, and in-memory friendly.
+- Real FastAPI routes, terminal commands, dashboard UI, and agent orchestration can be built later on top of these interfaces.
+
 # [v0.10.0-dev] — 2026-07-07
 
 Status: Completed

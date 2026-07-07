@@ -13,7 +13,7 @@
 Current Version
 
 ```
-v0.5.0-dev
+v0.11.0-dev
 ```
 
 ---
@@ -696,7 +696,18 @@ Future improvements
 - Evaluation result persistence
 - Evaluation dashboard integration
 
-## Sprint 010 Service Enhancements
+
+
+
+
+
+
+
+
+
+
+
+# Sprint 010 Service Enhancements
 
 Status: Foundation completed
 
@@ -807,6 +818,81 @@ Potential backends:
 - Add error codes.
 - Add typed schemas.
 - Add service-level telemetry.
+
+# Sprint 011 Interface Enhancements
+
+Status: Foundation completed
+
+Sprint 011 completed the lightweight Interfaces subsystem.
+
+The following items are intentionally left for future enhancement after the foundation is stable.
+
+### Domain Contract Enhancements
+
+- Add richer typing for market data providers.
+- Add async provider contracts.
+- Add batch prediction contracts.
+- Add streaming prediction contracts.
+- Add strategy explainability contracts.
+- Add risk explanation schemas.
+- Add memory ranking and filtering contracts.
+- Add interface-level telemetry hooks.
+
+### Schema Enhancements
+
+- Add Pydantic schemas when API layer becomes real HTTP.
+- Add JSON serialization helpers.
+- Add strict schema versioning.
+- Add request IDs.
+- Add trace IDs.
+- Add error codes.
+- Add validation error details.
+- Add pagination schemas.
+- Add streaming response schemas.
+
+### API Interface Enhancements
+
+- Add real FastAPI routes.
+- Add request/response serialization.
+- Add authentication hooks.
+- Add rate limiting hooks.
+- Add error-code mapping.
+- Add OpenAPI documentation.
+- Add async handlers.
+- Add API health checks.
+
+### CLI Interface Enhancements
+
+- Add real CLI command integration.
+- Add Typer or Click command bindings.
+- Add command help text.
+- Add output formatting.
+- Add JSON output mode.
+- Add table output mode.
+- Add config file support.
+- Add environment profile selection.
+
+### Dashboard Interface Enhancements
+
+- Add dashboard DTOs.
+- Add chart-ready payloads.
+- Add equity curve payloads.
+- Add trade timeline payloads.
+- Add risk summary payloads.
+- Add model performance payloads.
+- Add experiment comparison payloads.
+- Add real-time refresh support.
+
+### Agent Interface Enhancements
+
+- Add agent orchestration layer.
+- Add tool-call compatible schemas.
+- Add research agent actions.
+- Add strategy agent actions.
+- Add risk agent actions.
+- Add evaluation agent actions.
+- Add memory-aware agent workflows.
+- Add natural language explanation outputs.
 
 # Global Enhancements
 
