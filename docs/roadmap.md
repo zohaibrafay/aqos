@@ -11,25 +11,21 @@
 **Current Version**
 
 ```text
-v0.14.0-dev
+v0.15.0-dev
 ```
 
-**Current Phase**
 
-```text
-Phase 1 — Foundation
-```
 
 **Current Sprint**
 
 ```text
-Sprint 015 — API Layer
+Sprint 016 — CLI Layer
 ```
 
 **Current Task**
 
 ```text
-Task 15.1
+Task 16.1
 ```
 
 ---
@@ -53,7 +49,8 @@ Task 15.1
 | Sprint 012 | Agents | ✅ Complete |
 | Sprint 013 | Common Utilities | ✅ Complete|
 | Sprint 014 | System Integration | ✅ Complete |
-| Sprint 015 | API Layer | 🚧 In Progress |
+| Sprint 015 | API Layer | ✅ Complete|
+| Sprint 015 | CLI Layer | 🚧 In Progress |
 
 ---
 
@@ -326,7 +323,31 @@ Completed capabilities:
 - Safe execution helpers
 - Public exports through `aqos.common`
 ## Sprint 014 — System Integration
+## Sprint 015 — API Layer
 
+
+
+
+
+Status: Completed
+
+Sprint 015 introduced a dedicated framework-independent API package.
+
+Completed package:
+
+```text
+src/aqos/api/
+├── __init__.py
+├── responses.py
+├── health.py
+├── market.py
+├── strategy.py
+├── risk.py
+├── execution.py
+├── evaluation.py
+├── research.py
+├── memory.py
+└── orchestrator.py
 Status: Completed
 
 Sprint 014 completed the first AQOS System Integration testing layer.
@@ -393,3 +414,22 @@ Build an institutional-grade AI Quant Research Platform capable of:
 - Paper Trading
 - Live Trading
 - Multi-Agent AI
+
+
+## Sprint 016 — CLI Layer
+
+Status: Next
+
+Planned focus:
+
+- CLI package scaffold
+- CLI command response formatting
+- Health commands
+- Market commands
+- Strategy commands
+- Risk commands
+- Execution commands
+- Evaluation commands
+- Research commands
+- Memory commands
+- Orchestrator workflow commands

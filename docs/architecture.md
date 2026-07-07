@@ -16,7 +16,7 @@
 |------|------|
 | Project | AI Quant Operating System (AQOS) |
 | Author | Zohaib Hussain |
-| Architecture Version | 1.6 |
+| Architecture Version | 1.7 |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -798,7 +798,9 @@ Circular dependencies are not allowed.
 | Sprint 011 | Interfaces | ✅  |
 | Sprint 012 | Agents | ✅ |
 | Sprint 013 | Common Utilities |✅ |
-| Sprint 014 | Full Integration | ⏳ |
+| Sprint 014 | Full Integration | ✅ |
+| Sprint 014 | API Layer | ✅ |
+| Sprint 014 | CLI Layer | ⏳ |
 
 ---
 
@@ -873,7 +875,116 @@ Includes
 10. Strategy logic and risk logic must remain separated.
 
 ---
+## API Layer
 
+Status: Completed in Sprint 015
+
+Sprint 015 introduced the AQOS API Layer.
+
+Path:
+
+```text
+src/aqos/api/
+```
+
+The API Layer is framework-independent.
+
+It does not depend on:
+
+- FastAPI
+- Flask
+- Django
+- HTTP servers
+- routers
+- web middleware
+
+### API Layer Position
+
+```text
+external caller
+    ↓
+api/
+    ↓
+agents/
+    ↓
+services/
+    ↓
+domain subsystems
+    ↓
+common/
+```
+
+### Purpose
+
+The API Layer provides stable request/response boundaries for AQOS.
+
+It converts external-style inputs into validated agent/orchestrator payloads.
+
+It converts agent/orchestrator outputs into consistent API response envelopes.
+
+### API Package
+
+```text
+src/aqos/api/
+├── responses.py
+├── health.py
+├── market.py
+├── strategy.py
+├── risk.py
+├── execution.py
+├── evaluation.py
+├── research.py
+├── memory.py
+└── orchestrator.py
+```
+
+### API Response Envelope
+
+All API operations return:
+
+```text
+ApiResponse
+```
+
+The response envelope contains:
+
+- success
+- status
+- message
+- data
+- errors
+- metadata
+
+### API Design Rules
+
+API modules should:
+
+- remain framework-independent
+- validate inputs before calling agents
+- normalize request payloads
+- wrap outputs in `ApiResponse`
+- avoid direct database dependencies
+- avoid direct HTTP dependencies
+- avoid live broker dependencies
+- avoid UI dependencies
+- call agents or orchestrators as the boundary layer
+- return predictable response envelopes
+
+### Top-Level Architecture Flexibility
+
+AQOS top-level architecture is flexible.
+
+New top-level packages are allowed when they represent a meaningful system boundary.
+
+Sprint 015 added:
+
+```text
+src/aqos/api/
+```
+
+because API is a major product boundary.
+
+Future top-level packages may be added when they are justified by architecture needs and documented through ADRs.
 # Architecture Version History
 
 | Version | Description |

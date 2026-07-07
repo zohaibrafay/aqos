@@ -1167,6 +1167,70 @@ The following items are intentionally left for future enhancement after the foun
 - Add deterministic seed helpers.
 - Add test data builders.
 - Add scenario fixtures.
+
+## Sprint 015 API Layer Enhancements
+
+Status: Foundation completed
+
+Sprint 015 completed the framework-independent API Layer.
+
+The following enhancements are intentionally left for future sprints.
+
+### HTTP Framework Enhancements
+
+- Add FastAPI adapter layer.
+- Add API router modules.
+- Add HTTP status code mapping.
+- Add OpenAPI schema generation.
+- Add request/response models for FastAPI.
+- Add authentication middleware.
+- Add API key support.
+- Add JWT support.
+- Add rate limiting.
+- Add CORS configuration.
+- Add API version routing.
+
+### API Runtime Enhancements
+
+- Add API server entrypoint.
+- Add environment-based API config.
+- Add production logging middleware.
+- Add request tracing.
+- Add request timing.
+- Add structured API logs.
+- Add error correlation IDs.
+- Add API health readiness checks.
+- Add API liveness checks.
+
+### API Integration Enhancements
+
+- Add API → Agents integration tests.
+- Add API → Services integration tests.
+- Add API → Orchestrator integration tests.
+- Add API → CLI integration tests.
+- Add Dashboard → API integration tests.
+- Add API contract tests.
+- Add API schema snapshot tests.
+
+### API Response Enhancements
+
+- Add pagination envelope.
+- Add batch response envelope.
+- Add streaming response support.
+- Add warning envelope.
+- Add partial-success response support.
+- Add standard error code registry.
+- Add API status-code mapper.
+
+### API Security Enhancements
+
+- Add input sanitization layer.
+- Add request signature verification.
+- Add role-based access policy hooks.
+- Add audit logging for sensitive API operations.
+- Add trade execution confirmation gates.
+- Add API permission model.
+
 # Global Enhancements
 
 Future system-wide improvements

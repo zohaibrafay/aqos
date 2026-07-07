@@ -1620,10 +1620,195 @@ Introduce Vector Database.
 
 Add Reinforcement Learning.
 
+---
+
 ## ADR-010
 
-Replace pandas with Polars.
+### Date
 
+2026-07-07
+
+### Sprint
+
+Sprint 015
+
+### Status
+
+Accepted
+
+### Title
+
+Allow flexible top-level architecture and introduce dedicated API package.
+
+### Context
+
+Earlier AQOS development kept a conservative top-level package structure.
+
+This helped avoid random folders and uncontrolled architecture growth.
+
+However, AQOS is becoming a larger AI Quant Operating System.
+
+After Sprint 014, AQOS had:
+
+- domain subsystems
+- service layer
+- agent layer
+- common utilities
+- system integration tests
+
+Sprint 015 needed a clear API boundary.
+
+Forcing API code into an existing package would reduce clarity because API is a major product-facing boundary.
+
+### Decision
+
+AQOS top-level architecture is flexible.
+
+New top-level packages are allowed when they:
+
+- represent a meaningful product or architecture boundary
+- improve separation of concerns
+- make the system easier to scale
+- make the system easier to test
+- make production integration cleaner
+- are documented in architecture docs
+- are supported by tests
+
+Sprint 015 introduces:
+
+```text
+src/aqos/api/
+```
+
+as a dedicated top-level API package.
+
+### API Package Scope
+
+The API package is framework-independent.
+
+It contains:
+
+```text
+src/aqos/api/__init__.py
+src/aqos/api/responses.py
+src/aqos/api/health.py
+src/aqos/api/market.py
+src/aqos/api/strategy.py
+src/aqos/api/risk.py
+src/aqos/api/execution.py
+src/aqos/api/evaluation.py
+src/aqos/api/research.py
+src/aqos/api/memory.py
+src/aqos/api/orchestrator.py
+```
+
+### Non-Goals
+
+Sprint 015 does not add:
+
+- FastAPI runtime
+- Flask runtime
+- Django runtime
+- HTTP routes
+- API server process
+- authentication middleware
+- database persistence
+- live broker connectivity
+
+### Benefits
+
+- Gives AQOS a clean API boundary.
+- Keeps API code separate from interfaces, services, and agents.
+- Allows future FastAPI or CLI layers to reuse the same API operations.
+- Keeps response format consistent.
+- Makes API behavior easy to unit test.
+- Avoids mixing HTTP concerns into domain subsystems.
+- Supports productization of AQOS.
+
+### Drawbacks
+
+- Adds a new top-level package.
+- Requires documentation discipline to avoid architecture sprawl.
+- Public API exports must be maintained.
+- Future API runtime adapters must not duplicate API business logic.
+
+### Rule Going Forward
+
+New top-level AQOS packages are allowed, but they must be justified.
+
+Each major new top-level package should be documented in:
+
+```text
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+docs/CODEBASE.md
+```
+
+and tested through unit or integration tests.
+
+### Impact
+
+Affected package:
+
+```text
+src/aqos/api/
+```
+
+Affected tests:
+
+```text
+tests/unit/test_api_responses.py
+tests/unit/test_api_health.py
+tests/unit/test_api_market.py
+tests/unit/test_api_strategy.py
+tests/unit/test_api_risk.py
+tests/unit/test_api_execution.py
+tests/unit/test_api_evaluation.py
+tests/unit/test_api_research.py
+tests/unit/test_api_memory.py
+tests/unit/test_api_orchestrator.py
+tests/unit/test_api_exports.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+docs/API.md
+```
+
+Architecture version updated from:
+
+```text
+1.6
+```
+
+to:
+
+```text
+1.7
+```
+
+### Future Work
+
+Future sprints may add:
+
+- CLI layer using API operations
+- FastAPI adapter
+- API route modules
+- OpenAPI schemas
+- API authentication
+- API authorization
+- API request tracing
+- dashboard API integration
+- production API server entrypoint
 ## ADR-011
 
 Introduce DuckDB Data Lake.

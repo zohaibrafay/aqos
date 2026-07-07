@@ -14,7 +14,7 @@
 | Item | Value |
 |------|-------|
 | Project | AI Quant Operating System (AQOS) |
-| Current Version | v0.14.0-dev |
+| Current Version | v0.15.0-dev |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -25,19 +25,19 @@
 ## Current Sprint
 
 ```text
-Sprint 015 — API Layer
+Sprint 016 — CLI Layer
 ```
 
 ## Current Task
 
 ```text
-Task 15.1
+Task 16.1
 ```
 
 ## Previous Sprint
 
 ```text
-Sprint 014 — System Integration
+Sprint 015 — API Layer
 ```
 
 
@@ -60,7 +60,8 @@ Sprint 014 — System Integration
 | Sprint 012 | Agents | ✅ Complete|
 | Sprint 013 | Common Utilities | ✅ Complete |
 | Sprint 014 | Full System Integration | ✅ Complete  |
-| Sprint 015 | API Layer| 🚧 In Progress |
+| Sprint 015 | API Layer| ✅ Complete |
+| Sprint 015 | CLI Layer| 🚧 In Progress |
 
 ---
 
@@ -80,112 +81,154 @@ Sprint 014 — System Integration
 - Agents
 - Common Utilities
 - System Integration Tests
+- API Layer
 
-## Sprint 014 Summary
+## Sprint 015 Summary
 
-Sprint 014 completed the first AQOS System Integration testing layer.
+Sprint 015 completed the first AQOS API Layer.
 
-The goal of Sprint 014 was to validate that completed AQOS subsystems can work together across realistic in-memory workflows.
-
-This sprint did not introduce a new runtime subsystem.
-
-Instead, it introduced integration coverage that proves AQOS components can communicate across subsystem boundaries.
-
-## Completed Integration Test Files
+This sprint introduced a dedicated top-level API package:
 
 ```text
-tests/integration/
-├── conftest.py
-├── test_system_integration_scaffold.py
-├── test_data_to_features_integration.py
-├── test_services_to_agents_integration.py
-├── test_market_strategy_risk_integration.py
-├── test_full_trade_workflow_integration.py
-├── test_backtest_evaluation_integration.py
-├── test_research_memory_integration.py
-└── test_common_utilities_adoption.py
+src/aqos/api/
 ```
 
-Existing integration tests remain:
+The API layer is framework-independent.
+
+It provides stable Python API boundaries that can later be connected to:
+
+- FastAPI
+- Flask
+- Django
+- CLI commands
+- dashboards
+- external service adapters
+- internal orchestration tools
+
+Sprint 015 does not start an HTTP server.
+
+Sprint 015 does not introduce live routes.
+
+Sprint 015 creates the clean API operation layer that future web or CLI layers can call.
+
+## Completed API Files
 
 ```text
-tests/integration/
-├── test_core.py
-├── test_features.py
-└── test_feature_pipeline.py
+src/aqos/api/
+├── __init__.py
+├── responses.py
+├── health.py
+├── market.py
+├── strategy.py
+├── risk.py
+├── execution.py
+├── evaluation.py
+├── research.py
+├── memory.py
+└── orchestrator.py
 ```
 
-## Completed Integration Coverage
+## Completed API Test Files
 
-Sprint 014 validates:
+```text
+tests/unit/
+├── test_api_responses.py
+├── test_api_health.py
+├── test_api_market.py
+├── test_api_strategy.py
+├── test_api_risk.py
+├── test_api_execution.py
+├── test_api_evaluation.py
+├── test_api_research.py
+├── test_api_memory.py
+├── test_api_orchestrator.py
+└── test_api_exports.py
+```
 
-- Integration fixtures load correctly
-- Shared services can be reused across agents
-- Shared agents can be wired into `AgentOrchestrator`
-- Market data can flow into feature engineering
-- DataAgent can prepare OHLCV records for feature pipelines
-- DataAgent quality checks can run before feature pipelines
-- MarketAgent can generate market state
-- StrategyAgent can consume market state
-- RiskAgent can consume strategy handoffs
-- ExecutionAgent can consume risk handoffs
-- AgentOrchestrator can run trade workflows
-- EvaluationAgent can run backtests
-- AgentOrchestrator can run backtest workflows
-- ResearchAgent can generate hypotheses and experiment plans
-- ResearchAgent findings can be persisted through StorageService
-- Research outputs can be stored and recalled through MemoryAgent
-- Common Utilities can operate on real AQOS outputs
+## Completed API Capabilities
 
-## Current Architecture Status
+AQOS now has API wrappers for:
 
-AQOS now has completed foundational subsystems plus integration test coverage.
+- response envelopes
+- health checks
+- agent health checks
+- multi-agent health checks
+- market state
+- market snapshots
+- trend summary
+- regime summary
+- news context
+- economic calendar context
+- strategy signal
+- strategy decision
+- strategy explanation
+- strategy entry check
+- strategy exit check
+- strategy handoff
+- position sizing
+- trade risk assessment
+- trade approval
+- trade rejection reason
+- risk handoff
+- trade execution
+- order placement
+- order fill
+- order cancellation
+- order status
+- position closing
+- execution summary
+- backtest execution
+- backtest summary
+- backtest comparison
+- performance grading
+- evaluation reports
+- research hypotheses
+- experiment plans
+- experiment creation
+- research finding recording
+- research summary
+- memory storage
+- memory recall
+- memory lookup
+- memory deletion
+- memory summary
+- pattern memory
+- trade memory
+- orchestrator route workflow
+- market-strategy workflow
+- strategy-risk workflow
+- risk-execution workflow
+- full trade workflow
+- research workflow
+- backtest workflow
+- memory workflow
 
-The system can currently:
+## Architecture Note
 
-- Register and manage datasets
-- Manage OHLCV market data
-- Prepare close prices and OHLCV records
-- Generate feature-engineered market data
-- Generate market snapshots
-- Analyze simple trend and regime context
-- Store and summarize news items
-- Store and summarize economic calendar events
-- Run model predictions
-- Build world state outputs
-- Generate strategy signals
-- Generate strategy decisions
-- Create strategy handoff payloads
-- Assess trade risk
-- Calculate position sizing
-- Generate risk handoff payloads
-- Place simulated broker orders
-- Fill orders manually
-- Cancel orders
-- Close positions
-- Summarize execution state
-- Run backtests
-- Generate evaluation reports
-- Compare backtests
-- Track experiments
-- Generate research hypotheses
-- Generate experiment plans
-- Store and recall agent memory
-- Run orchestrated workflows across market, strategy, risk, execution, evaluation, research, and memory agents
-- Use common utilities for constants, validation, IDs, time handling, serialization, math, and error formatting
-- Validate cross-subsystem workflows through integration tests
+AQOS top-level architecture is flexible.
 
-## Important Integration Boundary
+New top-level packages are allowed when they improve clarity, separation of concerns, and production readiness.
 
-The current full trade workflow creates simulated broker orders through the execution agent.
+Sprint 015 added:
 
-It does not automatically fill every order into a position.
+```text
+src/aqos/api/
+```
 
-Position creation still happens through explicit fill workflows.
+because API is a major AQOS product boundary.
 
-This boundary is intentional for now because order placement and order filling are separate execution lifecycle steps.
+## Current System Status
 
-## Next Step
+AQOS now has:
+
+- domain subsystems
+- service layer
+- agent layer
+- common utilities
+- integration test coverage
+- API boundary layer
+
+The project is ready for Sprint 016 CLI Layer.
 
 Sprint 015 will focus on the API Layer.
 

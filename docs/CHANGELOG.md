@@ -11,7 +11,76 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 
 
 Future changes will be listed here before the next release.
-## [v0.14.0-dev] — Sprint 014 System Integration
+
+
+# [v0.15.0-dev] — Sprint 015 API Layer
+
+Status: Completed
+
+### Added
+
+- Added dedicated `src/aqos/api/` package.
+- Added framework-independent API response envelope utilities.
+- Added framework-independent API health operations.
+- Added framework-independent API market operations.
+- Added framework-independent API strategy operations.
+- Added framework-independent API risk operations.
+- Added framework-independent API execution operations.
+- Added framework-independent API evaluation operations.
+- Added framework-independent API research operations.
+- Added framework-independent API memory operations.
+- Added framework-independent API orchestrator operations.
+- Added public API package exports.
+- Added API export tests.
+
+### Added API Files
+
+- Added `src/aqos/api/__init__.py`.
+- Added `src/aqos/api/responses.py`.
+- Added `src/aqos/api/health.py`.
+- Added `src/aqos/api/market.py`.
+- Added `src/aqos/api/strategy.py`.
+- Added `src/aqos/api/risk.py`.
+- Added `src/aqos/api/execution.py`.
+- Added `src/aqos/api/evaluation.py`.
+- Added `src/aqos/api/research.py`.
+- Added `src/aqos/api/memory.py`.
+- Added `src/aqos/api/orchestrator.py`.
+
+### Added Tests
+
+- Added `tests/unit/test_api_responses.py`.
+- Added `tests/unit/test_api_health.py`.
+- Added `tests/unit/test_api_market.py`.
+- Added `tests/unit/test_api_strategy.py`.
+- Added `tests/unit/test_api_risk.py`.
+- Added `tests/unit/test_api_execution.py`.
+- Added `tests/unit/test_api_evaluation.py`.
+- Added `tests/unit/test_api_research.py`.
+- Added `tests/unit/test_api_memory.py`.
+- Added `tests/unit/test_api_orchestrator.py`.
+- Added `tests/unit/test_api_exports.py`.
+
+### Notes
+
+- Sprint 015 API Layer is framework-independent.
+- No HTTP server was added.
+- No FastAPI dependency was added.
+- No Flask dependency was added.
+- No Django dependency was added.
+- API modules wrap existing agent and orchestrator operations.
+- API modules return consistent `ApiResponse` envelopes.
+- API request objects validate and normalize API payloads before passing them into agents.
+- Public API exports are tested through `tests/unit/test_api_exports.py`.
+
+### Architecture
+
+- Added ADR-010.
+- Top-level AQOS architecture is now flexible.
+- New top-level packages are allowed when justified by clean architecture needs.
+- Added dedicated `src/aqos/api/` package as a major product boundary.
+
+# [v0.14.0-dev] — Sprint 014 System Integration
 
 Status: Completed
 

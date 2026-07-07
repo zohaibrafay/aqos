@@ -629,6 +629,95 @@ The serialization tests may show harmless Pytest collection warnings if helper c
 - Agents → Orchestrator
 - Common Utilities → Subsystem Adoption
 - End-to-End Trade Workflow
+
+## Sprint 015 — API Layer Tests
+
+Status: Completed
+
+Sprint 015 introduced unit tests for the framework-independent API Layer.
+
+### Test Files
+
+```text
+tests/unit/test_api_responses.py
+tests/unit/test_api_health.py
+tests/unit/test_api_market.py
+tests/unit/test_api_strategy.py
+tests/unit/test_api_risk.py
+tests/unit/test_api_execution.py
+tests/unit/test_api_evaluation.py
+tests/unit/test_api_research.py
+tests/unit/test_api_memory.py
+tests/unit/test_api_orchestrator.py
+tests/unit/test_api_exports.py
+```
+
+### Coverage Areas
+
+- API response envelope
+- API error envelope
+- API metadata
+- validation failure responses
+- not-found failure responses
+- exception failure responses
+- health API operations
+- market API operations
+- strategy API operations
+- risk API operations
+- execution API operations
+- evaluation API operations
+- research API operations
+- memory API operations
+- orchestrator API workflow operations
+- public API exports
+
+### API Unit Test Rule
+
+API unit tests use fake agents and simple response objects.
+
+They do not use real services.
+
+They do not use real agent internals unless the test is explicitly an integration test.
+
+This keeps API unit tests focused on:
+
+```text
+API request validation → agent call → ApiResponse envelope
+```
+
+Integration tests remain responsible for:
+
+```text
+real services → real agents → real orchestrator workflows
+```
+
+### Command
+
+```bash
+python -m pytest tests/unit/test_api_responses.py
+python -m pytest tests/unit/test_api_health.py
+python -m pytest tests/unit/test_api_market.py
+python -m pytest tests/unit/test_api_strategy.py
+python -m pytest tests/unit/test_api_risk.py
+python -m pytest tests/unit/test_api_execution.py
+python -m pytest tests/unit/test_api_evaluation.py
+python -m pytest tests/unit/test_api_research.py
+python -m pytest tests/unit/test_api_memory.py
+python -m pytest tests/unit/test_api_orchestrator.py
+python -m pytest tests/unit/test_api_exports.py
+```
+
+Full test suite:
+
+```bash
+python -m pytest
+```
+
+### Current Development Version
+
+```text
+v0.15.0-dev
+```
 ## Testing Standards
 
 Each module should test:
