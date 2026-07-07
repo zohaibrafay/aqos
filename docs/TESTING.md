@@ -411,7 +411,148 @@ python -m pytest
 ### Notes
 
 The Agents tests are deterministic and do not require external APIs, live brokers, real market data providers, dashboards, HTTP servers, LLM calls, or autonomous runtimes.
+## Sprint 013 — Common Utilities Tests
 
+Status: Completed
+
+Sprint 013 added unit test coverage for the Common Utilities subsystem.
+
+### Test Files
+
+```text
+tests/unit/test_common_constants.py
+tests/unit/test_common_validators.py
+tests/unit/test_common_id_helpers.py
+tests/unit/test_common_time_utils.py
+tests/unit/test_common_serialization.py
+tests/unit/test_common_math_utils.py
+tests/unit/test_common_error_helpers.py
+tests/unit/test_common_exports.py
+```
+
+### Coverage Areas
+
+- Project constants
+- Default trading constants
+- Valid signal constants
+- Valid side constants
+- Valid order type constants
+- Valid status constants
+- Valid sentiment constants
+- Valid impact constants
+- Valid memory type constants
+- Valid timeframe constants
+- OHLCV column constants
+- Namespace constants
+- Message constants
+- Non-empty string validation
+- Non-empty list validation
+- Non-empty dictionary validation
+- Payload validation
+- Metadata validation
+- Positive number validation
+- Non-negative number validation
+- Positive integer validation
+- Ratio validation
+- Allowed value validation
+- Required key validation
+- Required column validation
+- OHLCV column validation
+- OHLCV record validation
+- Symbol validation
+- Timeframe validation
+- Signal validation
+- Side validation
+- Order type validation
+- Sentiment validation
+- Impact validation
+- Memory type validation
+- Account balance validation
+- Risk percent validation
+- Price validation
+- Quantity validation
+- UUID generation
+- Short ID generation
+- Prefixed ID generation
+- Compound ID generation
+- Timestamp ID generation
+- ID normalization
+- ID validation
+- Unique ID generation
+- UTC datetime helpers
+- Date parsing
+- Datetime parsing
+- UTC conversion
+- Datetime formatting
+- Date formatting
+- Timestamp conversion
+- Time arithmetic
+- Time difference calculations
+- Past and future checks
+- Time-window checks
+- Payload datetime normalization
+- JSON-safe serialization
+- Dictionary serialization
+- List serialization
+- JSON conversion
+- Safe dictionary access
+- Dictionary compaction
+- Dictionary flattening
+- Dictionary unflattening
+- Dictionary merging
+- Deep dictionary merging
+- Numeric validation
+- Safe division
+- Percentage change
+- Percentage return
+- Clamp logic
+- Decimal rounding
+- Mean
+- Median
+- Variance
+- Standard deviation
+- Min-max normalization
+- Weighted average
+- Rolling mean
+- Cumulative sum
+- Maximum drawdown
+- Profit factor
+- Win rate
+- ErrorInfo conversion
+- Error code normalization
+- Error message normalization
+- Error builders
+- Exception conversion
+- Error collection
+- Safe raise helpers
+- Safe execution helper
+- Common package exports
+
+### Command
+
+```bash
+python -m pytest
+```
+
+### Notes
+
+The Common Utilities tests are deterministic and do not require external APIs, live brokers, real market data providers, dashboards, HTTP servers, LLM calls, or autonomous runtimes.
+
+The serialization tests may show harmless Pytest collection warnings if helper classes start with `Test`.
+
+
+### Integration Tests
+
+- Data → Features
+- Features → Models
+- Models → Learning
+- Learning → Memory
+- Strategy → Risk
+- Services → Interfaces
+- Interfaces → Agents
+- Agents → Orchestrator
+- Common Utilities → Subsystem Adoption
+- End-to-End Trade Workflow
 ## Testing Standards
 
 Each module should test:
@@ -434,7 +575,7 @@ All tests passing
 Current Development Version:
 
 ```text
-v0.12.0-dev
+v0.13.0-dev
 ```
 
 ---

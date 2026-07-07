@@ -1387,6 +1387,217 @@ Future sprints may add:
 - Real paper trading loops
 - Live broker adapters
 
+---
+
+## ADR-008
+
+### Date
+
+2026-07-07
+
+### Sprint
+
+Sprint 013
+
+### Status
+
+Accepted
+
+### Title
+
+Introduce the Common Utilities subsystem.
+
+### Context
+
+After Sprint 012, AQOS had completed its Agents subsystem and supported deterministic multi-agent workflows.
+
+At this stage, several shared patterns existed across modules:
+
+- default constants
+- repeated validation logic
+- repeated ID construction
+- timestamp and datetime handling
+- dictionary serialization
+- numeric helper logic
+- error formatting patterns
+
+Without a completed Common Utilities subsystem, future integration work would duplicate utility logic across agents, services, interfaces, risk, strategy, evaluation, and data modules.
+
+The frozen top-level architecture already included:
+
+```text
+src/aqos/common/
+```
+
+so this sprint completed the existing common package without introducing a new top-level package.
+
+### Decision
+
+Implement the Common Utilities subsystem in Sprint 013.
+
+The completed modules are:
+
+```text
+src/aqos/common/constants.py
+src/aqos/common/validators.py
+src/aqos/common/id_helpers.py
+src/aqos/common/time_utils.py
+src/aqos/common/serialization.py
+src/aqos/common/math_utils.py
+src/aqos/common/error_helpers.py
+```
+
+The completed public utilities are exported through:
+
+```text
+src/aqos/common/__init__.py
+```
+
+### Reserved Files
+
+The following existing files remain reserved for future use:
+
+```text
+src/aqos/common/decorators.py
+src/aqos/common/enums.py
+src/aqos/common/helpers.py
+src/aqos/common/types.py
+```
+
+They were not removed because they already existed in the package and may be used in future sprints.
+
+### Alternatives Considered
+
+Option A
+
+Leave common utilities empty until later.
+
+Option B
+
+Implement only validators.
+
+Option C
+
+Implement a complete lightweight common utilities foundation now.
+
+### Decision Outcome
+
+Option C was selected.
+
+Sprint 013 implemented a complete deterministic common utilities foundation covering:
+
+- constants
+- validation
+- ID helpers
+- time helpers
+- serialization
+- math helpers
+- error helpers
+
+### Benefits
+
+- Reduces future duplication.
+- Provides stable common primitives.
+- Makes future integration cleaner.
+- Supports reusable validation across modules.
+- Supports standardized ID generation.
+- Supports UTC-first datetime handling.
+- Supports JSON-safe output formatting.
+- Supports structured error responses.
+- Supports common trading math helpers.
+- Keeps common utilities dependency-minimal.
+
+### Drawbacks
+
+- Adds more public exports to maintain.
+- Some existing modules do not yet use these utilities.
+- Future refactoring is required to adopt common utilities across older code.
+- Some reserved common files remain empty until future need is clear.
+
+### Impact
+
+Affected folder:
+
+```text
+src/aqos/common/
+```
+
+Affected files:
+
+```text
+src/aqos/common/__init__.py
+src/aqos/common/constants.py
+src/aqos/common/validators.py
+src/aqos/common/id_helpers.py
+src/aqos/common/time_utils.py
+src/aqos/common/serialization.py
+src/aqos/common/math_utils.py
+src/aqos/common/error_helpers.py
+```
+
+Affected tests:
+
+```text
+tests/unit/test_common_constants.py
+tests/unit/test_common_validators.py
+tests/unit/test_common_id_helpers.py
+tests/unit/test_common_time_utils.py
+tests/unit/test_common_serialization.py
+tests/unit/test_common_math_utils.py
+tests/unit/test_common_error_helpers.py
+tests/unit/test_common_exports.py
+```
+
+Affected documentation:
+
+```text
+docs/ROADMAP.md
+docs/PROJECT_STATE.md
+docs/CHANGELOG.md
+docs/CODEBASE.md
+docs/TESTING.md
+docs/ENHANCEMENTS.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+```
+
+Architecture version updated from:
+
+```text
+1.4
+```
+
+to:
+
+```text
+1.5
+```
+
+### Design Rule
+
+The Common Utilities subsystem must remain dependency-minimal.
+
+It may be imported by high-level modules.
+
+It should not import high-level modules.
+
+This avoids circular dependencies and keeps common helpers stable.
+
+### Future Work
+
+Future sprints may add:
+
+- decorators
+- enums
+- shared types
+- generic helper wrappers
+- pandas-specific validators
+- numpy-specific serializers
+- market calendar utilities
+- advanced trading metrics
+- HTTP/API error mapping
+- common utilities adoption across existing AQOS modules
+
 # Future Decision Log
 
 Every future architecture decision will be recorded below.

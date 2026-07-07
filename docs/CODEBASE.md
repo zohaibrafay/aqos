@@ -10,7 +10,7 @@
 # Current Version
 
 ```text
-v0.12.0-dev
+v0.13.0-dev
 ```
 
 ---
@@ -32,6 +32,7 @@ v0.12.0-dev
 | Sprint 010 | ✅ Complete |
 | Sprint 011 | ✅ Complete |
 | Sprint 012 | ✅ Complete |
+| Sprint 013 | ✅ Complete |
 
 ---
 
@@ -290,8 +291,213 @@ Responsible for external integrations.
 | `strategy_agent` | Strategy Agent | ✅ |
 
 ---
+# common/
+
+Responsible for external integrations.
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `__init__.py` | Common package exports | ✅ |
+| `constants.py` | Constants | ✅ |
+| `decorators.py` | Decorator | ✅ |
+| `error_helpers.py` | Error Helpers | ✅|
+| `helpers.py` | Helpers| ✅ |
+| `id_helpers.py` | id Helper| ✅ |
+| `math_utils.py` | Math Utils | ✅ |
+| `serialization.py` | serialization | ✅ |
+| `time_utils.py` | Time Utils | ✅ |
+| `types.py` | Types | ✅ |
+| `validators` | Validators | ✅ |
+
+---
 
 
+Completed modules:
+
+```text
+constants.py
+validators.py
+id_helpers.py
+time_utils.py
+serialization.py
+math_utils.py
+error_helpers.py
+```
+
+Reserved placeholder modules:
+
+```text
+decorators.py
+enums.py
+helpers.py
+types.py
+```
+
+### `constants.py`
+
+Responsibilities:
+
+- Project constants
+- Default AQOS trading constants
+- Valid signal constants
+- Valid side constants
+- Valid order type constants
+- Valid order status constants
+- Valid position status constants
+- Valid experiment status constants
+- Valid sentiment constants
+- Valid impact constants
+- Valid memory type constants
+- Valid timeframe constants
+- OHLCV column constants
+- Price column constants
+- Namespace constants
+- Common status constants
+- Common message constants
+
+### `validators.py`
+
+Responsibilities:
+
+- Validate non-empty strings
+- Validate non-empty lists
+- Validate non-empty dictionaries
+- Validate payload dictionaries
+- Validate metadata dictionaries
+- Validate positive numbers
+- Validate non-negative numbers
+- Validate positive integers
+- Validate ratios
+- Validate allowed values
+- Validate required keys
+- Validate required columns
+- Validate OHLCV columns
+- Validate symbols
+- Validate timeframes
+- Validate signals
+- Validate sides
+- Validate order types
+- Validate sentiments
+- Validate impacts
+- Validate memory types
+- Validate account balances
+- Validate risk percent values
+- Validate prices
+- Validate quantities
+- Validate OHLCV records
+
+### `id_helpers.py`
+
+Responsibilities:
+
+- Generate UUIDs
+- Generate short IDs
+- Generate prefixed IDs
+- Generate compound IDs
+- Generate timestamp IDs
+- Normalize ID parts
+- Normalize complete IDs
+- Validate IDs
+- Validate prefixes
+- Validate separators
+- Ensure unique IDs
+- Check ID validity
+
+### `time_utils.py`
+
+Responsibilities:
+
+- Return current UTC datetime
+- Return current UTC datetime as ISO string
+- Return current UTC date
+- Parse datetime values
+- Parse date values
+- Convert datetimes to UTC
+- Format datetimes
+- Format dates
+- Convert datetimes to timestamps
+- Convert timestamps to datetimes
+- Add seconds, minutes, hours, and days
+- Calculate seconds, minutes, hours, and days between datetimes
+- Check whether a datetime is in the past
+- Check whether a datetime is in the future
+- Check whether a datetime is inside a time window
+- Normalize datetime values from payload dictionaries
+
+### `serialization.py`
+
+Responsibilities:
+
+- Convert values to JSON-safe values
+- Serialize dictionaries
+- Serialize lists
+- Convert values to JSON strings
+- Parse JSON strings
+- Safely access dictionary values
+- Remove `None` values from dictionaries
+- Compact dictionaries
+- Flatten nested dictionaries
+- Unflatten dictionaries
+- Merge dictionaries
+- Deep merge dictionaries
+
+### `math_utils.py`
+
+Responsibilities:
+
+- Validate numeric values
+- Validate numeric iterables
+- Safely divide numbers
+- Calculate percentage change
+- Calculate percentage return
+- Clamp values
+- Round values
+- Calculate mean
+- Calculate median
+- Calculate variance
+- Calculate standard deviation
+- Normalize values using min-max normalization
+- Calculate weighted averages
+- Calculate rolling means
+- Calculate cumulative sums
+- Calculate maximum drawdown
+- Calculate profit factor
+- Calculate win rate
+
+### `error_helpers.py`
+
+Public classes:
+
+- `ErrorInfo`
+
+Responsibilities:
+
+- Normalize error codes
+- Normalize error messages
+- Build structured error info
+- Build structured error dictionaries
+- Build not-found errors
+- Build validation errors
+- Build type errors
+- Extract exception names
+- Convert exceptions to `ErrorInfo`
+- Convert exceptions to dictionaries
+- Format error messages
+- Collect errors
+- Check if errors exist
+- Return first error
+- Combine error messages
+- Raise conditionally
+- Raise if value is `None`
+- Execute callables safely
+
+### Common Package Exports
+
+All completed common utilities are exported from:
+
+```text
+src/aqos/common/__init__.py
+```
 
 
 ### Domain Interface Contracts

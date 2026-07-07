@@ -16,7 +16,7 @@
 |------|------|
 | Project | AI Quant Operating System (AQOS) |
 | Author | Zohaib Hussain |
-| Architecture Version | 1.4 |
+| Architecture Version | 1.5 |
 | Current Phase | Phase 1 – Foundation |
 | Status | Active Development |
 
@@ -797,7 +797,7 @@ Circular dependencies are not allowed.
 | Sprint 010 | Services | ✅ |
 | Sprint 011 | Interfaces | ✅  |
 | Sprint 012 | Agents | ✅ |
-| Sprint 013 | Common Utilities |⏳ |
+| Sprint 013 | Common Utilities |✅ |
 | Sprint 014 | Full Integration | ⏳ |
 
 ---
@@ -882,7 +882,256 @@ Includes
 | 1.1 | Expanded Risk subsystem during Sprint 008 |
 
 ---
+## Common Utilities Subsystem
 
+Status: Completed in Sprint 013
+
+The Common Utilities subsystem defines shared utility primitives for AQOS.
+
+Path:
+
+```text
+src/aqos/common/
+```
+
+Common Utilities are used to reduce duplication and create stable shared behavior across AQOS modules.
+
+### Common Layer Position
+
+```text
+all AQOS subsystems
+    ↓
+common/
+```
+
+The Common Utilities subsystem can be used by:
+
+- core
+- data
+- features
+- strategy
+- models
+- learning
+- memory
+- risk
+- evaluation
+- services
+- interfaces
+- agents
+
+### Common Modules
+
+```text
+common/
+├── constants.py
+├── validators.py
+├── id_helpers.py
+├── time_utils.py
+├── serialization.py
+├── math_utils.py
+└── error_helpers.py
+```
+
+Reserved future modules:
+
+```text
+common/
+├── decorators.py
+├── enums.py
+├── helpers.py
+└── types.py
+```
+
+### Design Responsibility
+
+Common Utilities are responsible for:
+
+- shared constants
+- shared validation
+- shared ID handling
+- shared datetime handling
+- shared serialization
+- shared math helpers
+- shared error formatting
+
+Common Utilities are not responsible for:
+
+- trading strategy decisions
+- model predictions
+- service orchestration
+- agent workflows
+- live broker execution
+- API routing
+- dashboard rendering
+
+### Shared Constants
+
+`constants.py` defines stable shared values such as:
+
+- AQOS project names
+- default symbol
+- default timeframe
+- default risk percent
+- valid signals
+- valid sides
+- valid order types
+- valid statuses
+- valid sentiments
+- valid impacts
+- valid memory types
+- valid timeframes
+- OHLCV columns
+- namespaces
+- common messages
+
+### Shared Validators
+
+`validators.py` defines reusable validation helpers for:
+
+- strings
+- lists
+- dictionaries
+- payloads
+- metadata
+- numbers
+- ratios
+- required keys
+- required columns
+- OHLCV records
+- symbols
+- timeframes
+- signals
+- sides
+- order types
+- sentiments
+- impacts
+- memory types
+- account balances
+- risk percent values
+- prices
+- quantities
+
+### ID Helpers
+
+`id_helpers.py` defines reusable ID helpers for:
+
+- UUIDs
+- short IDs
+- prefixed IDs
+- compound IDs
+- timestamp IDs
+- ID normalization
+- ID validation
+- uniqueness checks
+
+### Time Utilities
+
+`time_utils.py` defines reusable UTC-first time helpers for:
+
+- current UTC datetime
+- current UTC date
+- datetime parsing
+- date parsing
+- UTC conversion
+- datetime formatting
+- date formatting
+- timestamp conversion
+- time arithmetic
+- time differences
+- past/future checks
+- time-window checks
+
+### Serialization Helpers
+
+`serialization.py` defines JSON-safe serialization helpers for:
+
+- primitive values
+- dataclasses
+- dictionaries
+- lists
+- tuples
+- sets
+- decimals
+- dates
+- datetimes
+- enums
+- paths
+- objects with `to_dict`
+- objects with `__dict__`
+
+It also includes helpers for:
+
+- JSON conversion
+- dictionary compaction
+- dictionary flattening
+- dictionary unflattening
+- shallow merging
+- deep merging
+
+### Math Utilities
+
+`math_utils.py` defines reusable numeric helpers for:
+
+- safe division
+- percentage change
+- percentage return
+- clamping
+- rounding
+- mean
+- median
+- variance
+- standard deviation
+- min-max normalization
+- weighted average
+- rolling mean
+- cumulative sum
+- maximum drawdown
+- profit factor
+- win rate
+
+### Error Helpers
+
+`error_helpers.py` defines structured error helpers.
+
+Public class:
+
+```text
+ErrorInfo
+```
+
+Responsibilities:
+
+- normalize error codes
+- normalize error messages
+- build error info
+- build error dictionaries
+- build not-found errors
+- build validation errors
+- build type errors
+- convert exceptions to structured errors
+- collect errors
+- combine errors
+- raise conditionally
+- safely execute callables
+
+### Design Boundary
+
+The Common Utilities subsystem provides generic reusable primitives.
+
+It must remain lightweight and dependency-minimal.
+
+It should not depend on high-level AQOS subsystems such as:
+
+- agents
+- services
+- interfaces
+- strategy
+- risk
+- models
+- learning
+- evaluation
+
+This keeps common utilities safe to import from anywhere in AQOS.
 # Architecture Decision Records
 
 Architecture decisions are recorded in:

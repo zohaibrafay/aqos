@@ -9,6 +9,140 @@ The format is inspired by **Keep a Changelog** and follows **Semantic Versioning
 # [Unreleased]
 
 Future changes will be listed here before the next release.
+# [v0.13.0-dev] — Sprint 013 Common Utilities
+
+Status: Completed
+
+### Added
+
+- Added `constants.py` for shared AQOS constants.
+- Added `validators.py` for reusable validation helpers.
+- Added `id_helpers.py` for ID generation, normalization, validation, and uniqueness helpers.
+- Added `time_utils.py` for UTC datetime, date, timestamp, and time-window helpers.
+- Added `serialization.py` for JSON-safe serialization and dictionary helpers.
+- Added `math_utils.py` for common numeric, trading, and statistical helpers.
+- Added `error_helpers.py` for structured error handling and exception conversion.
+- Added complete common package exports through `src/aqos/common/__init__.py`.
+
+### Added Constants
+
+- Added project constants.
+- Added default trading constants.
+- Added valid signal constants.
+- Added valid side constants.
+- Added valid order type constants.
+- Added valid status constants.
+- Added valid sentiment constants.
+- Added valid impact constants.
+- Added valid memory type constants.
+- Added valid timeframe constants.
+- Added OHLCV column constants.
+- Added namespace constants.
+- Added message constants.
+
+### Added Validators
+
+- Added string, list, dictionary, payload, and metadata validators.
+- Added positive number, non-negative number, positive integer, and ratio validators.
+- Added required key and required column validators.
+- Added OHLCV column and OHLCV record validators.
+- Added symbol, timeframe, signal, side, order type, sentiment, impact, and memory type validators.
+- Added account balance, risk percent, price, and quantity validators.
+
+### Added ID Helpers
+
+- Added UUID generation.
+- Added short ID generation.
+- Added prefixed ID generation.
+- Added compound ID generation.
+- Added timestamp ID generation.
+- Added ID normalization.
+- Added ID validation.
+- Added separator validation.
+- Added unique ID helper.
+- Added ID validity check helper.
+
+### Added Time Utilities
+
+- Added UTC now helpers.
+- Added ISO datetime parsing.
+- Added date parsing.
+- Added UTC conversion.
+- Added datetime formatting.
+- Added date formatting.
+- Added timestamp conversion helpers.
+- Added time addition helpers.
+- Added time difference helpers.
+- Added past/future checks.
+- Added time-window checks.
+- Added payload datetime normalization.
+
+### Added Serialization Helpers
+
+- Added JSON-safe value conversion.
+- Added dictionary serialization.
+- Added list serialization.
+- Added JSON conversion helpers.
+- Added safe dictionary access.
+- Added dictionary compaction.
+- Added none-value removal.
+- Added dictionary flattening.
+- Added dictionary unflattening.
+- Added shallow dictionary merging.
+- Added deep dictionary merging.
+
+### Added Math Helpers
+
+- Added numeric validation.
+- Added safe division.
+- Added percentage change.
+- Added percentage return.
+- Added clamping.
+- Added decimal rounding.
+- Added mean.
+- Added median.
+- Added variance.
+- Added standard deviation.
+- Added min-max normalization.
+- Added weighted average.
+- Added rolling mean.
+- Added cumulative sum.
+- Added maximum drawdown.
+- Added profit factor.
+- Added win rate.
+
+### Added Error Helpers
+
+- Added `ErrorInfo`.
+- Added error code normalization.
+- Added error message normalization.
+- Added structured error builders.
+- Added not-found error builder.
+- Added validation error builder.
+- Added type error builder.
+- Added exception-to-error conversion.
+- Added exception-to-dictionary conversion.
+- Added error message formatting.
+- Added error collection helpers.
+- Added safe raise helpers.
+- Added safe execution helper.
+
+### Tests
+
+- Added unit tests for common constants.
+- Added unit tests for common validators.
+- Added unit tests for ID helpers.
+- Added unit tests for time utilities.
+- Added unit tests for serialization helpers.
+- Added unit tests for math utilities.
+- Added unit tests for error helpers.
+- Added unit tests for common package exports.
+
+### Notes
+
+- Sprint 013 utilities are deterministic and do not require external services.
+- Existing placeholder files `decorators.py`, `enums.py`, `helpers.py`, and `types.py` remain reserved for future use.
+- Common utilities are now ready to be adopted across future AQOS integration work.
 
 # [v0.12.0-dev] — Sprint 012 Agents
 

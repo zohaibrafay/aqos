@@ -893,7 +893,8 @@ The following items are intentionally left for future enhancement after the foun
 - Add evaluation agent actions.
 - Add memory-aware agent workflows.
 - Add natural language explanation outputs.
-## Sprint 012 Agent Enhancements
+
+# Sprint 012 Agent Enhancements
 
 Status: Foundation completed
 
@@ -1008,6 +1009,98 @@ The following items are intentionally left for future enhancement after the foun
 - Add workflow replay.
 - Add workflow visualization.
 
+# Sprint 013 Common Utilities Enhancements
+
+Status: Foundation completed
+
+Sprint 013 completed the deterministic Common Utilities subsystem.
+
+The following items are intentionally left for future enhancement after the foundation is stable.
+
+### Constants Enhancements
+
+- Add market session constants.
+- Add asset class constants.
+- Add broker provider constants.
+- Add model provider constants.
+- Add strategy family constants.
+- Add default logging constants.
+- Add default API response constants.
+
+### Validators Enhancements
+
+- Add pandas DataFrame validators.
+- Add numpy array validators.
+- Add broker order validators.
+- Add portfolio validators.
+- Add strategy configuration validators.
+- Add model configuration validators.
+- Add experiment configuration validators.
+- Add nested schema validators.
+
+### ID Helper Enhancements
+
+- Add deterministic hash IDs.
+- Add namespace-aware IDs.
+- Add ULID support.
+- Add sortable IDs.
+- Add ID collision tracking.
+- Add batch ID generation.
+- Add ID parsing helpers.
+
+### Time Utility Enhancements
+
+- Add market session helpers.
+- Add timezone conversion helpers.
+- Add trading calendar helpers.
+- Add candle interval helpers.
+- Add timeframe-to-timedelta conversion.
+- Add session overlap detection.
+- Add business day helpers.
+
+### Serialization Enhancements
+
+- Add pandas serialization helpers.
+- Add numpy serialization helpers.
+- Add parquet-safe serialization helpers.
+- Add CSV-safe serialization helpers.
+- Add model artifact metadata serialization.
+- Add compressed JSON helpers.
+- Add schema versioning helpers.
+
+### Math Utility Enhancements
+
+- Add Sharpe ratio helper.
+- Add Sortino ratio helper.
+- Add Calmar ratio helper.
+- Add expectancy helper.
+- Add Kelly fraction helper.
+- Add z-score helper.
+- Add correlation helper.
+- Add covariance helper.
+- Add beta helper.
+- Add volatility helper.
+- Add ATR-style utility helpers.
+
+### Error Helper Enhancements
+
+- Add AQOS-specific error codes.
+- Add error severity levels.
+- Add retryable error classification.
+- Add HTTP error mapping.
+- Add API response error formatting.
+- Add structured validation error trees.
+- Add traceback-safe debug formatting.
+- Add logging integration.
+
+### Common Package Enhancements
+
+- Implement reserved `decorators.py`.
+- Implement reserved `enums.py`.
+- Implement reserved `helpers.py`.
+- Implement reserved `types.py`.
+- Gradually refactor existing AQOS modules to use common utilities.
+- Add integration tests for common utility adoption.
 # Global Enhancements
 
 Future system-wide improvements

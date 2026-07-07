@@ -11,7 +11,7 @@
 **Current Version**
 
 ```text
-v0.12.0-dev
+v0.13.0-dev
 ```
 
 **Current Phase**
@@ -23,13 +23,13 @@ Phase 1 — Foundation
 **Current Sprint**
 
 ```text
-Sprint 013 — Common Utilities
+Sprint 014 — System Integration
 ```
 
 **Current Task**
 
 ```text
-Task 13.1
+Task 14.1
 ```
 
 ---
@@ -51,8 +51,8 @@ Task 13.1
 | Sprint 010 | Services | ✅ Complete |
 | Sprint 011 | Interfaces | ✅ Complete  |
 | Sprint 012 | Agents | ✅ Complete |
-| Sprint 013 | Common Utilities | 🚧 In Progress |
-| Sprint 014 | System Integration | ⏳ Planned |
+| Sprint 013 | Common Utilities | ✅ Complete|
+| Sprint 014 | System Integration | 🚧 In Progress |
 
 ---
 
@@ -295,17 +295,48 @@ Completed capabilities:
 
 ## Sprint 013 — Common Utilities
 
+Status: Completed
+
+Sprint 013 completed the AQOS Common Utilities subsystem.
+
+Completed common utility modules:
+
+- `constants.py`
+- `validators.py`
+- `id_helpers.py`
+- `time_utils.py`
+- `serialization.py`
+- `math_utils.py`
+- `error_helpers.py`
+
+Completed capabilities:
+
+- Shared AQOS constants
+- Shared validation helpers
+- Symbol, timeframe, signal, side, order type, sentiment, impact, and memory type validation
+- OHLCV record and column validation
+- ID generation, normalization, and uniqueness helpers
+- UTC datetime parsing, formatting, conversion, and window checks
+- JSON-safe serialization helpers
+- Dictionary flattening, unflattening, merging, and compaction
+- Numeric helpers for division, returns, drawdown, win rate, profit factor, variance, standard deviation, and rolling means
+- Structured error helpers
+- Exception-to-dictionary conversion
+- Safe execution helpers
+- Public exports through `aqos.common`
+## Sprint 014 — System Integration
+
 Status: Next
 
 Planned focus:
 
-- Shared constants
-- Common validators
-- ID helpers
-- Time utilities
-- Serialization helpers
-- Error helpers
-- Lightweight common utilities used across AQOS
+- Cross-subsystem integration tests
+- End-to-end AQOS workflow tests
+- Agent-to-service workflow validation
+- Common utilities adoption in selected modules
+- System-level workflow examples
+- Integration documentation
+
 # Long-Term Goal
 
 Build an institutional-grade AI Quant Research Platform capable of:
