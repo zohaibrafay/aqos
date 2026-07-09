@@ -209,8 +209,12 @@ def raw_json_row_to_news_feed_article(
         or row.get("event_id")
         or row.get("id")
         or row.get("guid")
+        or row.get("objectID")
+        or row.get("story_id")
         or row.get("url")
-        or row.get("url_mobile")
+        or row.get("story_url")
+        or row.get("title")
+        or row.get("story_title")
         or ""
     )
     published_at = str(
@@ -218,25 +222,48 @@ def raw_json_row_to_news_feed_article(
         or row.get("timestamp")
         or row.get("date")
         or row.get("created_at")
+        or row.get("created_at_i")
         or row.get("seendate")
         or ""
     )
-    title = str(row.get("title") or row.get("headline") or row.get("name") or "")
+    title=str(row.get("title") or row.get("story_title") or row.get("comment_text") or "")
 
     return build_news_feed_article(
         article_id=article_id,
         published_at=published_at,
         title=title,
-        source=str(row.get("source") or row.get("publisher") or row.get("domain") or ""),
+        source=str(
+            row.get("source")
+            or row.get("publisher")
+            or row.get("domain")
+            or ("news.ycombinator.com" if row.get("objectID") else "")
+            or ""
+        ),
         source_type=str(row.get("source_type") or "local_json"),
-        url=str(row.get("url") or row.get("link") or ""),
+        url=str(row.get("url") or row.get("story_url") or ""),
         author=str(row.get("author") or ""),
-        description=str(row.get("description") or row.get("summary") or ""),
-        content=str(row.get("content") or row.get("body") or ""),
+        description=str(
+            row.get("description")
+            or row.get("summary")
+            or row.get("story_text")
+            or row.get("comment_text")
+            or row.get("title")
+            or row.get("story_title")
+            or ""
+        ),
+        content=str(
+            row.get("content")
+            or row.get("body")
+            or row.get("story_text")
+            or row.get("comment_text")
+            or row.get("title")
+            or row.get("story_title")
+            or ""
+        ),
         language=str(row.get("language") or ""),
         country=str(row.get("country") or row.get("sourcecountry") or ""),
         symbol=str(row.get("symbol") or default_symbol),
-        topics=list(row.get("topics") or []),
+        topics=list(row.get("topics") or ["macro"]),
         event_type=str(row.get("event_type") or HistoricalEventType.NEWS.value),
         impact=str(row.get("impact") or HistoricalEventImpact.UNKNOWN.value),
         sentiment=str(row.get("sentiment") or HistoricalEventSentiment.UNKNOWN.value),
@@ -261,8 +288,12 @@ def raw_json_row_to_news_event_record(
         or row.get("article_id")
         or row.get("id")
         or row.get("guid")
+        or row.get("objectID")
+        or row.get("story_id")
         or row.get("url")
-        or row.get("url_mobile")
+        or row.get("story_url")
+        or row.get("title")
+        or row.get("story_title")
         or ""
     )
     timestamp = str(
@@ -270,10 +301,11 @@ def raw_json_row_to_news_event_record(
         or row.get("published_at")
         or row.get("date")
         or row.get("created_at")
+        or row.get("created_at_i")
         or row.get("seendate")
         or ""
     )
-    title = str(row.get("title") or row.get("headline") or row.get("name") or "")
+    title=str(row.get("title") or row.get("story_title") or row.get("comment_text") or "")
 
     return build_news_event_record(
         event_id=event_id,
@@ -283,10 +315,24 @@ def raw_json_row_to_news_event_record(
         symbol=str(row.get("symbol") or default_symbol),
         impact=str(row.get("impact") or HistoricalEventImpact.UNKNOWN.value),
         sentiment=str(row.get("sentiment") or HistoricalEventSentiment.UNKNOWN.value),
-        source=str(row.get("source") or row.get("publisher") or row.get("domain") or ""),
+        source=str(
+            row.get("source")
+            or row.get("publisher")
+            or row.get("domain")
+            or ("news.ycombinator.com" if row.get("objectID") else "")
+            or ""
+        ),
         provider_id=str(row.get("provider_id") or provider_id),
-        url=str(row.get("url") or row.get("link") or ""),
-        description=str(row.get("description") or row.get("summary") or row.get("content") or ""),
+        url=str(row.get("url") or row.get("story_url") or ""),
+        description=str(
+            row.get("description")
+            or row.get("summary")
+            or row.get("story_text")
+            or row.get("comment_text")
+            or row.get("title")
+            or row.get("story_title")
+            or ""
+        ),
         country=str(row.get("country") or row.get("sourcecountry") or ""),
         currency=str(row.get("currency") or ""),
         relevance_score=float(row.get("relevance_score") or 0.0),
