@@ -71,6 +71,9 @@ class HistoricalEventRow:
     impact: HistoricalEventImpact | str = HistoricalEventImpact.UNKNOWN
     sentiment: HistoricalEventSentiment | str = HistoricalEventSentiment.UNKNOWN
     source: str = ""
+    url: str = ""
+    country: str = ""
+    currency: str = ""
     description: str = ""
     actual_value: float | None = None
     forecast_value: float | None = None
@@ -92,6 +95,9 @@ class HistoricalEventRow:
         normalize_historical_event_impact(self.impact)
         normalize_historical_event_sentiment(self.sentiment)
         validate_string(self.source, "Source")
+        validate_string(self.url, "URL")
+        validate_string(self.country, "Country")
+        validate_string(self.currency, "Currency")
         validate_string(self.description, "Description")
 
         if self.actual_value is not None:
@@ -149,6 +155,9 @@ class HistoricalEventRow:
             "impact": normalize_historical_event_impact(self.impact).value,
             "sentiment": normalize_historical_event_sentiment(self.sentiment).value,
             "source": self.source.strip(),
+            "url": self.url.strip(),
+            "country": self.country.strip().upper(),
+            "currency": self.currency.strip().upper(),
             "description": self.description.strip(),
             "actual_value": self.actual_value,
             "forecast_value": self.forecast_value,
@@ -409,6 +418,9 @@ def build_historical_event_row(
     impact: HistoricalEventImpact | str = HistoricalEventImpact.UNKNOWN,
     sentiment: HistoricalEventSentiment | str = HistoricalEventSentiment.UNKNOWN,
     source: str = "",
+    url: str = "",
+    country: str = "",
+    currency: str = "",
     description: str = "",
     actual_value: float | None = None,
     forecast_value: float | None = None,
@@ -427,6 +439,9 @@ def build_historical_event_row(
         impact=impact,
         sentiment=sentiment,
         source=source,
+        url=url,
+        country=country,
+        currency=currency,
         description=description,
         actual_value=actual_value,
         forecast_value=forecast_value,
@@ -454,6 +469,9 @@ def raw_row_to_historical_event_row(
         impact=str(row.get("impact", HistoricalEventImpact.UNKNOWN.value)),
         sentiment=str(row.get("sentiment", HistoricalEventSentiment.UNKNOWN.value)),
         source=str(row.get("source", "")),
+        url=str(row.get("url") or ""),
+        country=str(row.get("country") or ""),
+        currency=str(row.get("currency") or ""),
         description=str(row.get("description", "")),
         actual_value=row.get("actual_value"),
         forecast_value=row.get("forecast_value"),
