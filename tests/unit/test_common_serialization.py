@@ -26,12 +26,12 @@ from aqos.common import (
 )
 
 
-class TestEnum(Enum):
+class SampleEnum(Enum):
     BUY = "buy"
 
 
 @dataclass
-class TestRecord:
+class SampleRecord:
     symbol: str
     price: float
 
@@ -86,7 +86,7 @@ def test_to_serializable_date():
 
 
 def test_to_serializable_enum():
-    assert to_serializable(TestEnum.BUY) == "buy"
+    assert to_serializable(SampleEnum.BUY) == "buy"
 
 
 def test_to_serializable_path():
@@ -94,7 +94,7 @@ def test_to_serializable_path():
 
 
 def test_to_serializable_dataclass():
-    record = TestRecord(
+    record = SampleRecord(
         symbol="XAUUSD",
         price=2000.0,
     )
