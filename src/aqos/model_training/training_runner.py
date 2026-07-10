@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -17,11 +18,26 @@ from aqos.model_training.dataset_quality import (
     build_dataset_quality_report,
     write_dataset_quality_report,
 )
+from aqos.model_training.dataset_versioning import read_dataset_version_metadata
+from aqos.model_training.experiment_registry import (
+    ExperimentArtifact,
+    ExperimentArtifactType,
+    ExperimentRunMetadata,
+    append_experiment_run_to_registry,
+    build_experiment_artifact,
+    build_experiment_run_metadata,
+    write_experiment_run_metadata,
+)
 from aqos.model_training.feature_schema import (
     select_model_feature_columns,
     validate_signal_training_dataset,
 )
 from aqos.model_training.leakage_guard import raise_if_feature_columns_have_leakage
+from aqos.model_training.model_versioning import (
+    ModelVersionMetadata,
+    build_model_version_metadata,
+    write_model_version_metadata,
+)
 
 
 @dataclass(frozen=True)
@@ -41,6 +57,25 @@ class SignalTrainingRunConfig:
     validate_quality: bool = True
     quality_report_filename: str = "training_dataset_quality.json"
     max_majority_class_ratio: float = 0.8
+    enable_experiment_registry: bool = True
+    experiment_name: str = "aqos_baseline_signal_model"
+    experiment_tags: tuple[str, ...] = (
+        "aqos",
+        "model-training",
+        "baseline-signal-model",
+    )
+    experiment_notes: str | None = None
+    experiment_run_metadata_filename: str = "experiment_run_metadata.json"
+    experiment_registry_filename: str = "experiment_registry.json"
+    dataset_version_metadata_path: str | Path | None = None
+    enable_model_versioning: bool = True
+    model_version_metadata_filename: str = "model_version_metadata.json"
+    model_version_description: str = "AQOS trained baseline signal model."
+    model_version_tags: tuple[str, ...] = (
+        "aqos",
+        "model-training",
+        "baseline-signal-model",
+    )
 
 
 @dataclass(frozen=True)
@@ -48,8 +83,13 @@ class SignalTrainingRunOutput:
     model_path: Path
     metrics_path: Path
     quality_report_path: Path | None
+    experiment_run_metadata_path: Path | None
+    experiment_registry_path: Path | None
+    model_version_metadata_path: Path | None
     training_result: SignalModelTrainingResult
     quality_report: DatasetQualityReport | None = None
+    experiment_run: ExperimentRunMetadata | None = None
+    model_version_metadata: ModelVersionMetadata | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -60,10 +100,35 @@ class SignalTrainingRunOutput:
                 if self.quality_report_path is not None
                 else None
             ),
+            "experiment_run_metadata_path": (
+                self.experiment_run_metadata_path.as_posix()
+                if self.experiment_run_metadata_path is not None
+                else None
+            ),
+            "experiment_registry_path": (
+                self.experiment_registry_path.as_posix()
+                if self.experiment_registry_path is not None
+                else None
+            ),
+            "model_version_metadata_path": (
+                self.model_version_metadata_path.as_posix()
+                if self.model_version_metadata_path is not None
+                else None
+            ),
             "training_result": self.training_result.to_dict(),
             "quality_report": (
                 self.quality_report.to_dict()
                 if self.quality_report is not None
+                else None
+            ),
+            "experiment_run": (
+                self.experiment_run.to_dict()
+                if self.experiment_run is not None
+                else None
+            ),
+            "model_version_metadata": (
+                self.model_version_metadata.to_dict()
+                if self.model_version_metadata is not None
                 else None
             ),
         }
@@ -161,6 +226,198 @@ def write_training_metrics(
     return metrics_path
 
 
+def discover_dataset_version_metadata_path(
+    dataset_path: str | Path,
+    run_config: SignalTrainingRunConfig,
+) -> Path | None:
+    if run_config.dataset_version_metadata_path is not None:
+        explicit_path = Path(run_config.dataset_version_metadata_path)
+        if explicit_path.exists():
+            return explicit_path
+        raise FileNotFoundError(
+            f"Dataset version metadata file does not exist: {explicit_path}"
+        )
+
+    default_path = Path(dataset_path).parent / "signal_ml_dataset_version.json"
+
+    if default_path.exists():
+        return default_path
+
+    return None
+
+
+def extract_dataset_version_reference(
+    dataset_version_metadata_path: str | Path | None,
+) -> tuple[str | None, str | None]:
+    if dataset_version_metadata_path is None:
+        return None, None
+
+    payload = read_dataset_version_metadata(dataset_version_metadata_path)
+
+    return (
+        payload.get("dataset_id"),
+        payload.get("dataset_version"),
+    )
+
+
+def build_training_experiment_parameters(
+    run_config: SignalTrainingRunConfig,
+) -> dict[str, Any]:
+    return {
+        "target_column": run_config.target_column,
+        "feature_columns": list(run_config.feature_columns)
+        if run_config.feature_columns is not None
+        else None,
+        "test_size": run_config.test_size,
+        "random_state": run_config.random_state,
+        "n_estimators": run_config.n_estimators,
+        "max_depth": run_config.max_depth,
+        "min_samples_leaf": run_config.min_samples_leaf,
+        "validate_schema": run_config.validate_schema,
+        "validate_quality": run_config.validate_quality,
+        "max_majority_class_ratio": run_config.max_majority_class_ratio,
+    }
+
+
+def build_training_experiment_artifacts(
+    run_config: SignalTrainingRunConfig,
+    model_path: Path,
+    metrics_path: Path,
+    quality_report_path: Path | None,
+    dataset_version_metadata_path: Path | None,
+    model_version_metadata_path: Path | None = None,
+) -> tuple[ExperimentArtifact, ...]:
+    artifacts: list[ExperimentArtifact] = [
+        build_experiment_artifact(
+            run_config.dataset_path,
+            ExperimentArtifactType.TRAINING_DATASET,
+            name="training_dataset",
+        ),
+        build_experiment_artifact(
+            model_path,
+            ExperimentArtifactType.MODEL,
+            name="trained_model",
+        ),
+        build_experiment_artifact(
+            metrics_path,
+            ExperimentArtifactType.METRICS,
+            name="training_metrics",
+        ),
+    ]
+
+    if quality_report_path is not None:
+        artifacts.append(
+            build_experiment_artifact(
+                quality_report_path,
+                ExperimentArtifactType.QUALITY_REPORT,
+                name="training_quality_report",
+            )
+        )
+
+    if dataset_version_metadata_path is not None:
+        artifacts.append(
+            build_experiment_artifact(
+                dataset_version_metadata_path,
+                ExperimentArtifactType.DATASET_VERSION_METADATA,
+                name="dataset_version_metadata",
+            )
+        )
+    if model_version_metadata_path is not None:
+        artifacts.append(
+            build_experiment_artifact(
+                model_version_metadata_path,
+                ExperimentArtifactType.MODEL_VERSION_METADATA,
+                name="model_version_metadata",
+            )
+        )
+
+    return tuple(artifacts)
+
+
+def build_training_experiment_run(
+    run_config: SignalTrainingRunConfig,
+    output_dir: Path,
+    model_path: Path,
+    metrics_path: Path,
+    quality_report_path: Path | None,
+    training_result: SignalModelTrainingResult,
+) -> tuple[Path | None, Path | None, ExperimentRunMetadata | None]:
+    if not run_config.enable_experiment_registry:
+        return None, None, None
+
+    dataset_version_metadata_path = discover_dataset_version_metadata_path(
+        run_config.dataset_path,
+        run_config,
+    )
+    dataset_id, dataset_version = extract_dataset_version_reference(
+        dataset_version_metadata_path
+    )
+
+    artifacts = build_training_experiment_artifacts(
+        run_config=run_config,
+        model_path=model_path,
+        metrics_path=metrics_path,
+        quality_report_path=quality_report_path,
+        dataset_version_metadata_path=dataset_version_metadata_path,
+    )
+
+    experiment_run = build_experiment_run_metadata(
+        experiment_name=run_config.experiment_name,
+        dataset_id=dataset_id,
+        dataset_version=dataset_version,
+        model_name=training_result.model_name,
+        parameters=build_training_experiment_parameters(run_config),
+        metrics=training_result.to_dict(),
+        artifacts=artifacts,
+        tags=run_config.experiment_tags,
+        notes=run_config.experiment_notes,
+    )
+
+    experiment_run_metadata_path = output_dir / run_config.experiment_run_metadata_filename
+    experiment_registry_path = output_dir / run_config.experiment_registry_filename
+
+    write_experiment_run_metadata(
+        experiment_run_metadata_path,
+        experiment_run,
+    )
+    append_experiment_run_to_registry(
+        experiment_registry_path,
+        experiment_run,
+    )
+
+    return experiment_run_metadata_path, experiment_registry_path, experiment_run
+
+
+def build_training_model_version_metadata(
+    run_config: SignalTrainingRunConfig,
+    model_path: Path,
+    training_result: SignalModelTrainingResult,
+    experiment_run: ExperimentRunMetadata | None,
+) -> ModelVersionMetadata | None:
+    if not run_config.enable_model_versioning:
+        return None
+
+    dataset_version_metadata_path = discover_dataset_version_metadata_path(
+        run_config.dataset_path,
+        run_config,
+    )
+    dataset_id, dataset_version = extract_dataset_version_reference(
+        dataset_version_metadata_path
+    )
+
+    return build_model_version_metadata(
+        model_name=training_result.model_name,
+        model_path=model_path,
+        dataset_id=dataset_id,
+        dataset_version=dataset_version,
+        experiment_run_id=experiment_run.run_id if experiment_run is not None else None,
+        training_parameters=build_training_experiment_parameters(run_config),
+        training_metrics=training_result.to_dict(),
+        description=run_config.model_version_description,
+        tags=run_config.model_version_tags,
+    )
+
+
 def train_baseline_signal_model_from_csv(
     run_config: SignalTrainingRunConfig,
 ) -> SignalTrainingRunOutput:
@@ -172,7 +429,10 @@ def train_baseline_signal_model_from_csv(
 
     model_path = output_dir / run_config.model_filename
     metrics_path = output_dir / run_config.metrics_filename
-    quality_report_path = output_dir / run_config.quality_report_filename
+    quality_report_path: Path | None = output_dir / run_config.quality_report_filename
+    model_version_metadata_path: Path | None = (
+        output_dir / run_config.model_version_metadata_filename
+    )
 
     quality_report = build_training_dataset_quality_report(dataset, run_config)
 
@@ -192,17 +452,111 @@ def train_baseline_signal_model_from_csv(
 
     saved_model_path = model.save(model_path)
 
-    output = SignalTrainingRunOutput(
+    dataset_version_metadata_path = (
+        discover_dataset_version_metadata_path(run_config.dataset_path, run_config)
+        if run_config.enable_experiment_registry or run_config.enable_model_versioning
+        else None
+    )
+    dataset_id, dataset_version = extract_dataset_version_reference(
+        dataset_version_metadata_path
+    )
+
+    preliminary_experiment_run: ExperimentRunMetadata | None = None
+
+    if run_config.enable_experiment_registry:
+        preliminary_experiment_run = build_experiment_run_metadata(
+            experiment_name=run_config.experiment_name,
+            dataset_id=dataset_id,
+            dataset_version=dataset_version,
+            model_name=result.model_name,
+            parameters=build_training_experiment_parameters(run_config),
+            metrics=result.to_dict(),
+            artifacts=(),
+            tags=run_config.experiment_tags,
+            notes=run_config.experiment_notes,
+        )
+
+    model_version_metadata = build_training_model_version_metadata(
+        run_config=run_config,
+        model_path=saved_model_path,
+        training_result=result,
+        experiment_run=preliminary_experiment_run,
+    )
+
+    if model_version_metadata is not None:
+        write_model_version_metadata(
+            model_version_metadata_path,
+            model_version_metadata,
+        )
+    else:
+        model_version_metadata_path = None
+
+    metrics_output = SignalTrainingRunOutput(
         model_path=saved_model_path,
         metrics_path=metrics_path,
         quality_report_path=quality_report_path,
+        experiment_run_metadata_path=None,
+        experiment_registry_path=None,
+        model_version_metadata_path=model_version_metadata_path,
         training_result=result,
         quality_report=quality_report,
+        experiment_run=None,
+        model_version_metadata=model_version_metadata,
     )
 
-    write_training_metrics(metrics_path, output)
+    write_training_metrics(metrics_path, metrics_output)
 
-    return output
+    experiment_run_metadata_path: Path | None = None
+    experiment_registry_path: Path | None = None
+    experiment_run: ExperimentRunMetadata | None = None
+
+    if preliminary_experiment_run is not None:
+        artifacts = build_training_experiment_artifacts(
+            run_config=run_config,
+            model_path=saved_model_path,
+            metrics_path=metrics_path,
+            quality_report_path=quality_report_path,
+            dataset_version_metadata_path=dataset_version_metadata_path,
+            model_version_metadata_path=model_version_metadata_path,
+        )
+
+        experiment_run = build_experiment_run_metadata(
+            experiment_name=run_config.experiment_name,
+            created_at_utc=preliminary_experiment_run.created_at_utc,
+            dataset_id=dataset_id,
+            dataset_version=dataset_version,
+            model_name=result.model_name,
+            parameters=build_training_experiment_parameters(run_config),
+            metrics=result.to_dict(),
+            artifacts=artifacts,
+            tags=run_config.experiment_tags,
+            notes=run_config.experiment_notes,
+        )
+
+        experiment_run_metadata_path = output_dir / run_config.experiment_run_metadata_filename
+        experiment_registry_path = output_dir / run_config.experiment_registry_filename
+
+        write_experiment_run_metadata(
+            experiment_run_metadata_path,
+            experiment_run,
+        )
+        append_experiment_run_to_registry(
+            experiment_registry_path,
+            experiment_run,
+        )
+
+    return SignalTrainingRunOutput(
+        model_path=saved_model_path,
+        metrics_path=metrics_path,
+        quality_report_path=quality_report_path,
+        experiment_run_metadata_path=experiment_run_metadata_path,
+        experiment_registry_path=experiment_registry_path,
+        model_version_metadata_path=model_version_metadata_path,
+        training_result=result,
+        quality_report=quality_report,
+        experiment_run=experiment_run,
+        model_version_metadata=model_version_metadata,
+    )
 
 
 __all__ = [
@@ -210,6 +564,12 @@ __all__ = [
     "SignalTrainingRunOutput",
     "build_signal_model_training_config",
     "build_training_dataset_quality_report",
+    "build_training_experiment_artifacts",
+    "build_training_experiment_parameters",
+    "build_training_experiment_run",
+    "build_training_model_version_metadata",
+    "discover_dataset_version_metadata_path",
+    "extract_dataset_version_reference",
     "load_signal_training_dataset",
     "resolve_training_feature_columns",
     "train_baseline_signal_model_from_csv",

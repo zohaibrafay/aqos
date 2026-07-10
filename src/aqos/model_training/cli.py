@@ -4,6 +4,8 @@ import argparse
 import json
 from collections.abc import Sequence
 
+from aqos.model_training.experiment_registry import read_experiment_registry
+
 from aqos.model_training.dataset_builder import (
     SignalMLDatasetBuildConfig,
     build_signal_ml_training_dataset_from_csv,
@@ -73,6 +75,14 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
     quality_parser = subparsers.add_parser(
         "quality-report",
         help="Build JSON quality report for an existing ML training dataset.",
+    )
+    list_experiments_parser = subparsers.add_parser(
+        "list-experiments",
+        help="List experiment runs from an AQOS experiment registry JSON file.",
+    )
+    list_experiments_parser.add_argument(
+        "--registry-path",
+        default="tmp/model_training/experiment_registry.json",
     )
     quality_parser.add_argument("--dataset-path", required=True)
     quality_parser.add_argument("--output-path", required=True)
@@ -265,6 +275,10 @@ def run_model_training_cli(argv: Sequence[str] | None = None) -> int:
             build_training_run_config_from_args(args)
         )
         print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
+        return 0
+    if args.command == "list-experiments":
+        registry = read_experiment_registry(args.registry_path)
+        print(json.dumps(registry, indent=2, sort_keys=True))
         return 0
 
     if args.command == "predict":

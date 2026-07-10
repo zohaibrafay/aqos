@@ -113,8 +113,11 @@
       "src/aqos/model_training/cli.py",
       "src/aqos/model_training/dataset_builder.py",
       "src/aqos/model_training/dataset_quality.py",
+      "src/aqos/model_training/dataset_versioning.py",
+      "src/aqos/model_training/experiment_registry.py",
       "src/aqos/model_training/feature_schema.py",
       "src/aqos/model_training/leakage_guard.py",
+      "src/aqos/model_training/model_versioning.py",
       "src/aqos/model_training/ohlcv_feature_builder.py",
       "src/aqos/model_training/prediction_runner.py",
       "src/aqos/model_training/target_label_builder.py",
@@ -355,15 +358,22 @@
       "tests/unit/test_model_training_baseline_signal_model.py",
       "tests/unit/test_model_training_cli.py",
       "tests/unit/test_model_training_dataset_builder.py",
+      "tests/unit/test_model_training_dataset_builder_versioning.py",
       "tests/unit/test_model_training_dataset_quality.py",
+      "tests/unit/test_model_training_dataset_versioning.py",
+      "tests/unit/test_model_training_experiment_model_version_link.py",
+      "tests/unit/test_model_training_experiment_registered_training.py",
+      "tests/unit/test_model_training_experiment_registry.py",
       "tests/unit/test_model_training_feature_schema.py",
       "tests/unit/test_model_training_leakage_guard.py",
+      "tests/unit/test_model_training_model_versioning.py",
       "tests/unit/test_model_training_ohlcv_feature_builder.py",
       "tests/unit/test_model_training_prediction_runner.py",
       "tests/unit/test_model_training_quality_gated_training.py",
       "tests/unit/test_model_training_runner.py",
       "tests/unit/test_model_training_schema_integration.py",
       "tests/unit/test_model_training_target_label_builder.py",
+      "tests/unit/test_model_training_versioned_training.py",
       "tests/unit/test_news.py",
       "tests/unit/test_news_providers_connector_registry.py",
       "tests/unit/test_news_providers_cryptopanic_connector.py",
@@ -4908,8 +4918,8 @@
       "imports": [
         "aqos"
       ],
-      "lines_code": 169,
-      "lines_total": 172,
+      "lines_code": 271,
+      "lines_total": 275,
       "path": "src/aqos/model_training/__init__.py",
       "reason": "Contains executable code."
     },
@@ -4985,8 +4995,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 250,
-      "lines_total": 286,
+      "lines_code": 263,
+      "lines_total": 300,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -5002,6 +5012,7 @@
       ],
       "functions": [
         "__post_init__",
+        "build_signal_dataset_version_parameters",
         "build_signal_ml_training_dataset",
         "build_signal_ml_training_dataset_from_csv",
         "to_dict",
@@ -5021,8 +5032,8 @@
         "pathlib",
         "typing"
       ],
-      "lines_code": 140,
-      "lines_total": 174,
+      "lines_code": 182,
+      "lines_total": 222,
       "path": "src/aqos/model_training/dataset_builder.py",
       "reason": "Contains executable class/function logic."
     },
@@ -5071,6 +5082,101 @@
       "lines_code": 321,
       "lines_total": 384,
       "path": "src/aqos/model_training/dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetArtifactType",
+        "DatasetFingerprint",
+        "DatasetVersionMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_dataframe_fingerprint",
+        "build_dataset_version_metadata",
+        "build_dataset_version_string",
+        "build_schema_payload",
+        "build_schema_sha256",
+        "columns_count",
+        "compute_file_sha256",
+        "dataframe_to_canonical_csv_bytes",
+        "dataset_id",
+        "read_dataset_version_metadata",
+        "sha256_bytes",
+        "sha256_text",
+        "short_hash",
+        "to_dict",
+        "to_dict",
+        "utc_now_iso",
+        "write_dataset_version_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "hashlib",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 229,
+      "lines_total": 288,
+      "path": "src/aqos/model_training/dataset_versioning.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "ExperimentArtifact",
+        "ExperimentArtifactType",
+        "ExperimentRunMetadata",
+        "ExperimentRunStatus"
+      ],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "append_experiment_run_to_registry",
+        "build_experiment_artifact",
+        "build_experiment_run_id",
+        "build_experiment_run_metadata",
+        "experiment_utc_now_iso",
+        "normalize_experiment_name",
+        "read_experiment_registry",
+        "read_experiment_run_metadata",
+        "to_dict",
+        "to_dict",
+        "write_experiment_run_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 232,
+      "lines_total": 287,
+      "path": "src/aqos/model_training/experiment_registry.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -5153,6 +5259,49 @@
       "lines_code": 78,
       "lines_total": 105,
       "path": "src/aqos/model_training/leakage_guard.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "ModelArtifactFormat",
+        "ModelArtifactReference",
+        "ModelVersionMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_model_artifact_reference",
+        "build_model_version_metadata",
+        "build_model_version_string",
+        "infer_model_artifact_format",
+        "model_id",
+        "model_utc_now_iso",
+        "normalize_model_name",
+        "read_model_version_metadata",
+        "to_dict",
+        "to_dict",
+        "write_model_version_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 199,
+      "lines_total": 251,
+      "path": "src/aqos/model_training/model_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -5277,6 +5426,12 @@
       "functions": [
         "build_signal_model_training_config",
         "build_training_dataset_quality_report",
+        "build_training_experiment_artifacts",
+        "build_training_experiment_parameters",
+        "build_training_experiment_run",
+        "build_training_model_version_metadata",
+        "discover_dataset_version_metadata_path",
+        "extract_dataset_version_reference",
         "load_signal_training_dataset",
         "resolve_training_feature_columns",
         "to_dict",
@@ -5294,10 +5449,11 @@
         "dataclasses",
         "json",
         "pandas",
-        "pathlib"
+        "pathlib",
+        "typing"
       ],
-      "lines_code": 171,
-      "lines_total": 218,
+      "lines_code": 493,
+      "lines_total": 578,
       "path": "src/aqos/model_training/training_runner.py",
       "reason": "Contains executable class/function logic."
     },
@@ -15712,12 +15868,14 @@
         "build_raw_ohlcv_dataset",
         "build_training_dataset",
         "test_model_training_cli_parser_accepts_build_dataset_command",
+        "test_model_training_cli_parser_accepts_list_experiments_command",
         "test_model_training_cli_parser_accepts_predict_command",
         "test_model_training_cli_parser_accepts_quality_report_command",
         "test_model_training_cli_parser_accepts_train_command",
         "test_parse_feature_columns_parses_comma_separated_values",
         "test_parse_feature_columns_returns_none_for_empty_value",
         "test_run_model_training_cli_builds_dataset_from_raw_ohlcv_csv",
+        "test_run_model_training_cli_lists_experiment_registry",
         "test_run_model_training_cli_predicts_from_saved_model",
         "test_run_model_training_cli_trains_model_from_csv",
         "test_run_model_training_cli_writes_quality_report"
@@ -15732,8 +15890,8 @@
         "json",
         "pandas"
       ],
-      "lines_code": 306,
-      "lines_total": 360,
+      "lines_code": 352,
+      "lines_total": 415,
       "path": "tests/unit/test_model_training_cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -15765,9 +15923,37 @@
         "pandas",
         "pytest"
       ],
-      "lines_code": 151,
-      "lines_total": 187,
+      "lines_code": 160,
+      "lines_total": 195,
       "path": "tests/unit/test_model_training_dataset_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_raw_ohlcv_dataset",
+        "test_dataset_builder_metadata_includes_version_payload",
+        "test_dataset_builder_writes_version_metadata_file",
+        "test_dataset_version_parameters_are_serializable"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 97,
+      "lines_total": 123,
+      "path": "tests/unit/test_model_training_dataset_builder_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15803,6 +15989,138 @@
       "lines_code": 90,
       "lines_total": 123,
       "path": "tests/unit/test_model_training_dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_dataset",
+        "test_build_dataframe_fingerprint_changes_when_content_changes",
+        "test_build_dataframe_fingerprint_is_stable_for_same_dataframe",
+        "test_build_dataframe_fingerprint_rejects_empty_dataset",
+        "test_build_dataset_version_metadata_creates_traceable_payload",
+        "test_build_dataset_version_string_contains_hash",
+        "test_build_schema_payload_contains_columns_and_dtypes",
+        "test_build_schema_sha256_changes_when_schema_changes",
+        "test_compute_file_sha256_hashes_file_content",
+        "test_compute_file_sha256_rejects_missing_file",
+        "test_dataset_version_metadata_json_is_serializable",
+        "test_read_dataset_version_metadata_rejects_missing_file",
+        "test_sha256_text_is_stable",
+        "test_write_and_read_dataset_version_metadata_roundtrip"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 130,
+      "lines_total": 177,
+      "path": "tests/unit/test_model_training_dataset_versioning.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_valid_training_dataset",
+        "test_experiment_registry_links_model_version_metadata_artifact"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 59,
+      "lines_total": 77,
+      "path": "tests/unit/test_model_training_experiment_model_version_link.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_valid_training_dataset",
+        "test_build_training_experiment_parameters_are_serializable",
+        "test_training_experiment_artifact_hashes_match_files",
+        "test_training_runner_auto_discovers_dataset_version_metadata",
+        "test_training_runner_can_disable_experiment_registry",
+        "test_training_runner_supports_explicit_dataset_version_metadata_path",
+        "test_training_runner_writes_experiment_metadata_and_registry"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 176,
+      "lines_total": 220,
+      "path": "tests/unit/test_model_training_experiment_registered_training.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pytest"
+      ],
+      "functions": [
+        "test_append_experiment_run_to_registry_replaces_existing_run",
+        "test_append_experiment_run_to_registry_writes_sorted_runs",
+        "test_build_experiment_artifact_hashes_file",
+        "test_build_experiment_artifact_rejects_missing_file",
+        "test_build_experiment_run_id_changes_when_dataset_changes",
+        "test_build_experiment_run_id_is_stable_for_same_inputs",
+        "test_build_experiment_run_metadata_creates_serializable_payload",
+        "test_normalize_experiment_name_creates_safe_name",
+        "test_read_experiment_registry_returns_empty_registry_when_missing",
+        "test_read_experiment_run_metadata_rejects_missing_file",
+        "test_write_and_read_experiment_run_metadata_roundtrip"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pytest"
+      ],
+      "lines_code": 167,
+      "lines_total": 212,
+      "path": "tests/unit/test_model_training_experiment_registry.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15876,6 +16194,39 @@
       "lines_code": 124,
       "lines_total": 161,
       "path": "tests/unit/test_model_training_leakage_guard.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pytest"
+      ],
+      "functions": [
+        "test_build_model_artifact_reference_hashes_file",
+        "test_build_model_artifact_reference_rejects_missing_file",
+        "test_build_model_version_metadata_creates_traceable_payload",
+        "test_build_model_version_string_is_stable_for_same_inputs",
+        "test_infer_model_artifact_format_detects_known_extensions",
+        "test_model_version_metadata_json_is_serializable",
+        "test_normalize_model_name_creates_safe_name",
+        "test_read_model_version_metadata_rejects_missing_file",
+        "test_write_and_read_model_version_metadata_roundtrip"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pytest"
+      ],
+      "lines_code": 105,
+      "lines_total": 140,
+      "path": "tests/unit/test_model_training_model_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -16076,6 +16427,39 @@
       "lines_code": 152,
       "lines_total": 191,
       "path": "tests/unit/test_model_training_target_label_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [
+        "TrainingResult"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_valid_training_dataset",
+        "test_build_training_model_version_metadata_returns_none_when_disabled",
+        "test_training_metrics_file_contains_model_version_metadata",
+        "test_training_runner_can_disable_model_versioning",
+        "test_training_runner_model_version_uses_dataset_version_reference",
+        "test_training_runner_writes_model_version_metadata",
+        "to_dict"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 132,
+      "lines_total": 169,
+      "path": "tests/unit/test_model_training_versioned_training.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -20777,7 +21161,7 @@
       "reason": "Contains executable class/function logic."
     }
   ],
-  "generated_at": "2026-07-10T17:48:57.586180+00:00",
+  "generated_at": "2026-07-10T19:21:22.502514+00:00",
   "placeholder_code_files": [
     {
       "area": "cli",
@@ -21404,8 +21788,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 250,
-      "lines_total": 286,
+      "lines_code": 263,
+      "lines_total": 300,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -21421,6 +21805,7 @@
       ],
       "functions": [
         "__post_init__",
+        "build_signal_dataset_version_parameters",
         "build_signal_ml_training_dataset",
         "build_signal_ml_training_dataset_from_csv",
         "to_dict",
@@ -21440,8 +21825,8 @@
         "pathlib",
         "typing"
       ],
-      "lines_code": 140,
-      "lines_total": 174,
+      "lines_code": 182,
+      "lines_total": 222,
       "path": "src/aqos/model_training/dataset_builder.py",
       "reason": "Contains executable class/function logic."
     },
@@ -21490,6 +21875,101 @@
       "lines_code": 321,
       "lines_total": 384,
       "path": "src/aqos/model_training/dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetArtifactType",
+        "DatasetFingerprint",
+        "DatasetVersionMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_dataframe_fingerprint",
+        "build_dataset_version_metadata",
+        "build_dataset_version_string",
+        "build_schema_payload",
+        "build_schema_sha256",
+        "columns_count",
+        "compute_file_sha256",
+        "dataframe_to_canonical_csv_bytes",
+        "dataset_id",
+        "read_dataset_version_metadata",
+        "sha256_bytes",
+        "sha256_text",
+        "short_hash",
+        "to_dict",
+        "to_dict",
+        "utc_now_iso",
+        "write_dataset_version_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "hashlib",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 229,
+      "lines_total": 288,
+      "path": "src/aqos/model_training/dataset_versioning.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "ExperimentArtifact",
+        "ExperimentArtifactType",
+        "ExperimentRunMetadata",
+        "ExperimentRunStatus"
+      ],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "append_experiment_run_to_registry",
+        "build_experiment_artifact",
+        "build_experiment_run_id",
+        "build_experiment_run_metadata",
+        "experiment_utc_now_iso",
+        "normalize_experiment_name",
+        "read_experiment_registry",
+        "read_experiment_run_metadata",
+        "to_dict",
+        "to_dict",
+        "write_experiment_run_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 232,
+      "lines_total": 287,
+      "path": "src/aqos/model_training/experiment_registry.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -21577,6 +22057,49 @@
     {
       "area": "model_training",
       "classes": [
+        "ModelArtifactFormat",
+        "ModelArtifactReference",
+        "ModelVersionMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_model_artifact_reference",
+        "build_model_version_metadata",
+        "build_model_version_string",
+        "infer_model_artifact_format",
+        "model_id",
+        "model_utc_now_iso",
+        "normalize_model_name",
+        "read_model_version_metadata",
+        "to_dict",
+        "to_dict",
+        "write_model_version_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 199,
+      "lines_total": 251,
+      "path": "src/aqos/model_training/model_versioning.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
         "SignalPredictionRunConfig",
         "SignalPredictionRunOutput"
       ],
@@ -21619,6 +22142,12 @@
       "functions": [
         "build_signal_model_training_config",
         "build_training_dataset_quality_report",
+        "build_training_experiment_artifacts",
+        "build_training_experiment_parameters",
+        "build_training_experiment_run",
+        "build_training_model_version_metadata",
+        "discover_dataset_version_metadata_path",
+        "extract_dataset_version_reference",
         "load_signal_training_dataset",
         "resolve_training_feature_columns",
         "to_dict",
@@ -21636,10 +22165,11 @@
         "dataclasses",
         "json",
         "pandas",
-        "pathlib"
+        "pathlib",
+        "typing"
       ],
-      "lines_code": 171,
-      "lines_total": 218,
+      "lines_code": 493,
+      "lines_total": 578,
       "path": "src/aqos/model_training/training_runner.py",
       "reason": "Contains executable class/function logic."
     },
@@ -21982,7 +22512,7 @@
       "learning": 7,
       "main.py": 1,
       "memory": 7,
-      "model_training": 11,
+      "model_training": 14,
       "models": 9,
       "news_providers": 18,
       "observability": 8,
@@ -21995,24 +22525,24 @@
       "security": 8,
       "services": 11,
       "strategy": 12,
-      "tests": 248,
+      "tests": 255,
       "training_data": 10,
       "version.py": 1
     },
     "classification_counts": {
       "cli_entrypoint": 1,
       "constants_module": 1,
-      "implemented": 482,
+      "implemented": 492,
       "tooling_script": 5,
       "valid_contract": 10
     },
     "script_python_files": 0,
-    "src_python_files": 251,
-    "test_python_files": 248,
-    "total_classes": 713,
-    "total_code_lines": 137528,
-    "total_functions": 8211,
-    "total_python_files": 499
+    "src_python_files": 254,
+    "test_python_files": 255,
+    "total_classes": 724,
+    "total_code_lines": 139588,
+    "total_functions": 8318,
+    "total_python_files": 509
   },
   "tests_root_exists": true
 }

@@ -131,6 +131,7 @@ def test_build_signal_ml_training_dataset_from_csv_writes_dataset_and_metadata(t
     dataset = pd.read_csv(output.dataset_path)
     metadata = json.loads(output.metadata_path.read_text(encoding="utf-8"))
     quality = json.loads(output.quality_report_path.read_text(encoding="utf-8"))
+    version = json.loads(output.version_metadata_path.read_text(encoding="utf-8"))
 
     assert output.quality_report_path.exists()
     assert quality["valid"] is True
@@ -144,8 +145,15 @@ def test_build_signal_ml_training_dataset_from_csv_writes_dataset_and_metadata(t
     assert "return_1" in dataset.columns
     assert metadata["rows"] == 37
     assert metadata["validation"]["valid"] is True
-
-
+    assert output.version_metadata_path.exists()
+    assert version["dataset_name"] == "signal_ml_training_dataset"
+    assert version["artifact_type"] == "training_dataset"
+    assert version["dataset_path"].endswith("signal_ml_dataset.csv")
+    assert version["quality_report_path"].endswith("signal_ml_dataset_quality.json")
+    assert version["fingerprint"]["rows"] == 37
+    assert version["fingerprint"]["source_file_sha256"] is not None
+    assert metadata["version_metadata_path"].endswith("signal_ml_dataset_version.json")
+    
 def test_built_signal_ml_dataset_can_train_baseline_model(tmp_path) -> None:
     input_path = tmp_path / "raw_ohlcv.csv"
     dataset_path = tmp_path / "training" / "signal_ml_dataset.csv"

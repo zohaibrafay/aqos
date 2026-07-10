@@ -358,3 +358,58 @@ def test_run_model_training_cli_predicts_from_saved_model(tmp_path, capsys) -> N
     assert payload["prediction_column"] == "predicted_signal"
     assert "predicted_signal" in predictions.columns
     assert any(column.startswith("probability_") for column in predictions.columns)
+    
+def test_model_training_cli_parser_accepts_list_experiments_command() -> None:
+    parser = build_model_training_cli_parser()
+
+    args = parser.parse_args(
+        [
+            "list-experiments",
+            "--registry-path",
+            "experiment_registry.json",
+        ]
+    )
+
+    assert args.command == "list-experiments"
+    assert args.registry_path == "experiment_registry.json"
+    
+def test_run_model_training_cli_lists_experiment_registry(tmp_path, capsys) -> None:
+    dataset_path = tmp_path / "training.csv"
+    output_dir = tmp_path / "artifacts"
+    registry_path = output_dir / "experiment_registry.json"
+
+    build_training_dataset().to_csv(dataset_path, index=False)
+
+    train_exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "113",
+        ]
+    )
+    capsys.readouterr()
+
+    list_exit_code = run_model_training_cli(
+        [
+            "list-experiments",
+            "--registry-path",
+            str(registry_path),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert train_exit_code == 0
+    assert list_exit_code == 0
+    assert registry_path.exists()
+    assert payload["registry_version"] == "1.0"
+    assert len(payload["runs"]) == 1
+    assert payload["runs"][0]["experiment_name"] == "aqos_baseline_signal_model"
+    assert payload["runs"][0]["model_name"] == "baseline_random_forest_signal_model"
