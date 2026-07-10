@@ -1,22 +1,22 @@
 # AQOS Codebase Reality Audit
 
-Generated at: `2026-07-10T12:57:47.938946+00:00`
+Generated at: `2026-07-10T17:48:57.586180+00:00`
 
 ## Summary
 
-- Total Python files: `485`
-- Source Python files: `245`
-- Test Python files: `240`
+- Total Python files: `499`
+- Source Python files: `251`
+- Test Python files: `248`
 - Script Python files: `0`
-- Total code lines: `134739`
-- Total classes: `697`
-- Total functions: `8061`
+- Total code lines: `137528`
+- Total classes: `713`
+- Total functions: `8211`
 
 ## Classification Counts
 
 - cli_entrypoint: `1`
 - constants_module: `1`
-- implemented: `468`
+- implemented: `482`
 - tooling_script: `5`
 - valid_contract: `10`
 
@@ -78,6 +78,7 @@ Possible missing dependencies:
 - `pipeline.py` appears `6` times
 - `storage.py` appears `2` times
 - `metrics.py` appears `2` times
+- `dataset_builder.py` appears `2` times
 - `economic_calendar.py` appears `2` times
 - `http_provider.py` appears `2` times
 - `market_data.py` appears `2` times

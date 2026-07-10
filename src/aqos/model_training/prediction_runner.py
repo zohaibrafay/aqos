@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from aqos.model_training.baseline_signal_model import BaselineSignalModel
+from aqos.model_training.feature_schema import validate_signal_prediction_dataset
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,7 @@ class SignalPredictionRunConfig:
     features_path: str | Path
     output_path: str | Path = "tmp/model_training/baseline_signal_predictions.csv"
     include_probabilities: bool = True
+    validate_schema: bool = True
 
 
 @dataclass(frozen=True)
@@ -49,11 +51,23 @@ def load_signal_prediction_features(features_path: str | Path) -> pd.DataFrame:
     return features
 
 
+def validate_prediction_features_for_run(
+    features: pd.DataFrame,
+    run_config: SignalPredictionRunConfig,
+) -> None:
+    if not run_config.validate_schema:
+        return
+
+    result = validate_signal_prediction_dataset(features)
+    result.raise_if_invalid()
+
+
 def predict_signals_from_csv(
     run_config: SignalPredictionRunConfig,
 ) -> SignalPredictionRunOutput:
     model = BaselineSignalModel.load(run_config.model_path)
     features = load_signal_prediction_features(run_config.features_path)
+    validate_prediction_features_for_run(features, run_config)
 
     predictions = model.predict(features)
     output = features.copy()
@@ -83,4 +97,5 @@ __all__ = [
     "SignalPredictionRunOutput",
     "load_signal_prediction_features",
     "predict_signals_from_csv",
+    "validate_prediction_features_for_run",
 ]

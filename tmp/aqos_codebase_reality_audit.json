@@ -111,7 +111,13 @@
       "src/aqos/model_training/__init__.py",
       "src/aqos/model_training/baseline_signal_model.py",
       "src/aqos/model_training/cli.py",
+      "src/aqos/model_training/dataset_builder.py",
+      "src/aqos/model_training/dataset_quality.py",
+      "src/aqos/model_training/feature_schema.py",
+      "src/aqos/model_training/leakage_guard.py",
+      "src/aqos/model_training/ohlcv_feature_builder.py",
       "src/aqos/model_training/prediction_runner.py",
+      "src/aqos/model_training/target_label_builder.py",
       "src/aqos/model_training/training_runner.py",
       "src/aqos/models/__init__.py",
       "src/aqos/models/dataset.py",
@@ -348,8 +354,16 @@
       "tests/unit/test_model_service.py",
       "tests/unit/test_model_training_baseline_signal_model.py",
       "tests/unit/test_model_training_cli.py",
+      "tests/unit/test_model_training_dataset_builder.py",
+      "tests/unit/test_model_training_dataset_quality.py",
+      "tests/unit/test_model_training_feature_schema.py",
+      "tests/unit/test_model_training_leakage_guard.py",
+      "tests/unit/test_model_training_ohlcv_feature_builder.py",
       "tests/unit/test_model_training_prediction_runner.py",
+      "tests/unit/test_model_training_quality_gated_training.py",
       "tests/unit/test_model_training_runner.py",
+      "tests/unit/test_model_training_schema_integration.py",
+      "tests/unit/test_model_training_target_label_builder.py",
       "tests/unit/test_news.py",
       "tests/unit/test_news_providers_connector_registry.py",
       "tests/unit/test_news_providers_cryptopanic_connector.py",
@@ -543,6 +557,7 @@
     "duplicate_file_names": {
       "base.py": 14,
       "cli.py": 2,
+      "dataset_builder.py": 2,
       "economic_calendar.py": 2,
       "evaluation.py": 2,
       "execution.py": 2,
@@ -4893,8 +4908,8 @@
       "imports": [
         "aqos"
       ],
-      "lines_code": 48,
-      "lines_total": 49,
+      "lines_code": 169,
+      "lines_total": 172,
       "path": "src/aqos/model_training/__init__.py",
       "reason": "Contains executable code."
     },
@@ -4950,8 +4965,10 @@
       "classification": "implemented",
       "external_imports": [],
       "functions": [
+        "build_dataset_run_config_from_args",
         "build_model_training_cli_parser",
         "build_prediction_run_config_from_args",
+        "build_quality_report_config_from_args",
         "build_training_run_config_from_args",
         "main",
         "parse_feature_columns",
@@ -4968,9 +4985,214 @@
         "collections",
         "json"
       ],
-      "lines_code": 108,
-      "lines_total": 132,
+      "lines_code": 250,
+      "lines_total": 286,
       "path": "src/aqos/model_training/cli.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "SignalMLDatasetBuildConfig",
+        "SignalMLDatasetBuildOutput"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_signal_ml_training_dataset",
+        "build_signal_ml_training_dataset_from_csv",
+        "to_dict",
+        "validate_signal_ml_training_dataset",
+        "write_signal_ml_dataset_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 140,
+      "lines_total": 174,
+      "path": "src/aqos/model_training/dataset_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetQualityConfig",
+        "DatasetQualityIssue",
+        "DatasetQualityReport",
+        "DatasetQualitySeverity",
+        "FeatureQualitySummary"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_dataset_quality_report",
+        "build_target_distribution",
+        "build_target_ratios",
+        "errors",
+        "optional_float",
+        "raise_if_invalid",
+        "summarize_feature_quality",
+        "to_dict",
+        "to_dict",
+        "to_dict",
+        "warnings",
+        "write_dataset_quality_report"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 321,
+      "lines_total": 384,
+      "path": "src/aqos/model_training/dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetIssueSeverity",
+        "DatasetValidationIssue",
+        "DatasetValidationResult",
+        "FeatureColumnRole",
+        "FeatureColumnSpec",
+        "MLFeatureSchema"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "available_feature_columns",
+        "build_default_signal_feature_schema",
+        "categorical_feature_columns",
+        "errors",
+        "numeric_feature_columns",
+        "raise_if_invalid",
+        "required_columns",
+        "select_model_feature_columns",
+        "select_model_features",
+        "target_column",
+        "to_dict",
+        "to_dict",
+        "validate",
+        "validate_signal_prediction_dataset",
+        "validate_signal_training_dataset",
+        "warnings"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "enum",
+        "pandas",
+        "typing"
+      ],
+      "lines_code": 387,
+      "lines_total": 455,
+      "path": "src/aqos/model_training/feature_schema.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "LeakageCheckResult"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "check_feature_columns_for_leakage",
+        "drop_leakage_columns",
+        "find_leakage_columns",
+        "raise_if_feature_columns_have_leakage",
+        "raise_if_invalid",
+        "to_dict"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "pandas",
+        "typing"
+      ],
+      "lines_code": 78,
+      "lines_total": 105,
+      "path": "src/aqos/model_training/leakage_guard.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "OHLCVFeatureBuilderConfig"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "add_candle_structure_features",
+        "add_price_return_features",
+        "add_time_features",
+        "add_trend_distance_features",
+        "add_volatility_features",
+        "add_volume_features",
+        "build_ohlcv_ml_features",
+        "build_ohlcv_ml_features_from_csv",
+        "clean_feature_values",
+        "load_ohlcv_csv",
+        "resolve_session",
+        "safe_divide",
+        "validate_ohlcv_dataframe"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "math",
+        "pandas",
+        "pathlib"
+      ],
+      "lines_code": 196,
+      "lines_total": 276,
+      "path": "src/aqos/model_training/ohlcv_feature_builder.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -4986,7 +5208,8 @@
       "functions": [
         "load_signal_prediction_features",
         "predict_signals_from_csv",
-        "to_dict"
+        "to_dict",
+        "validate_prediction_features_for_run"
       ],
       "has_ellipsis": true,
       "has_not_implemented_error": false,
@@ -4999,9 +5222,46 @@
         "pandas",
         "pathlib"
       ],
-      "lines_code": 62,
-      "lines_total": 86,
+      "lines_code": 74,
+      "lines_total": 101,
       "path": "src/aqos/model_training/prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "SignalTargetLabelConfig"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "add_future_movement_columns",
+        "add_signal_targets",
+        "add_trade_outcome_columns",
+        "add_trade_quality_score",
+        "assign_signal_target",
+        "build_signal_target_labels",
+        "build_signal_target_labels_from_csv",
+        "future_rolling_max",
+        "future_rolling_min"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "pandas",
+        "pathlib"
+      ],
+      "lines_code": 181,
+      "lines_total": 242,
+      "path": "src/aqos/model_training/target_label_builder.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -5016,9 +5276,12 @@
       ],
       "functions": [
         "build_signal_model_training_config",
+        "build_training_dataset_quality_report",
         "load_signal_training_dataset",
+        "resolve_training_feature_columns",
         "to_dict",
         "train_baseline_signal_model_from_csv",
+        "validate_training_dataset_for_run",
         "write_training_metrics"
       ],
       "has_ellipsis": true,
@@ -5033,8 +5296,8 @@
         "pandas",
         "pathlib"
       ],
-      "lines_code": 97,
-      "lines_total": 130,
+      "lines_code": 171,
+      "lines_total": 218,
       "path": "src/aqos/model_training/training_runner.py",
       "reason": "Contains executable class/function logic."
     },
@@ -15446,13 +15709,18 @@
         "pandas"
       ],
       "functions": [
+        "build_raw_ohlcv_dataset",
         "build_training_dataset",
+        "test_model_training_cli_parser_accepts_build_dataset_command",
         "test_model_training_cli_parser_accepts_predict_command",
+        "test_model_training_cli_parser_accepts_quality_report_command",
         "test_model_training_cli_parser_accepts_train_command",
         "test_parse_feature_columns_parses_comma_separated_values",
         "test_parse_feature_columns_returns_none_for_empty_value",
+        "test_run_model_training_cli_builds_dataset_from_raw_ohlcv_csv",
         "test_run_model_training_cli_predicts_from_saved_model",
-        "test_run_model_training_cli_trains_model_from_csv"
+        "test_run_model_training_cli_trains_model_from_csv",
+        "test_run_model_training_cli_writes_quality_report"
       ],
       "has_ellipsis": false,
       "has_not_implemented_error": false,
@@ -15464,9 +15732,188 @@
         "json",
         "pandas"
       ],
-      "lines_code": 157,
-      "lines_total": 191,
+      "lines_code": 306,
+      "lines_total": 360,
       "path": "tests/unit/test_model_training_cli.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_raw_ohlcv_dataset",
+        "test_build_signal_ml_training_dataset_can_disable_time_features",
+        "test_build_signal_ml_training_dataset_creates_labels_and_features",
+        "test_build_signal_ml_training_dataset_from_csv_writes_dataset_and_metadata",
+        "test_build_signal_ml_training_dataset_rejects_invalid_raw_ohlcv",
+        "test_built_signal_ml_dataset_can_train_baseline_model",
+        "test_signal_ml_training_dataset_is_schema_valid_and_leakage_safe"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 151,
+      "lines_total": 187,
+      "path": "tests/unit/test_model_training_dataset_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_quality_dataset",
+        "test_build_dataset_quality_report_is_invalid_for_missing_target",
+        "test_build_dataset_quality_report_returns_valid_report_for_good_dataset",
+        "test_build_dataset_quality_report_warns_about_class_imbalance",
+        "test_build_dataset_quality_report_warns_about_constant_features",
+        "test_build_target_distribution_counts_labels",
+        "test_build_target_ratios_calculates_percentages",
+        "test_dataset_quality_report_raise_if_invalid",
+        "test_write_dataset_quality_report_writes_json"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 90,
+      "lines_total": 123,
+      "path": "tests/unit/test_model_training_dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_valid_training_dataset",
+        "test_custom_schema_supports_optional_features",
+        "test_dataset_issue_to_dict_contains_serializable_values",
+        "test_default_signal_feature_schema_validates_prediction_dataset_without_target",
+        "test_default_signal_feature_schema_validates_training_dataset",
+        "test_select_model_feature_columns_returns_available_numeric_features",
+        "test_select_model_features_returns_feature_dataframe",
+        "test_signal_feature_schema_detects_missing_required_column",
+        "test_signal_feature_schema_detects_negative_volume",
+        "test_signal_feature_schema_detects_non_numeric_feature",
+        "test_signal_feature_schema_detects_null_values",
+        "test_signal_feature_schema_detects_unsupported_target_values",
+        "test_validation_result_raise_if_invalid"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 131,
+      "lines_total": 186,
+      "path": "tests/unit/test_model_training_feature_schema.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_labeled_feature_dataset",
+        "build_ohlcv_dataset",
+        "test_check_feature_columns_for_leakage_returns_valid_result_for_safe_columns",
+        "test_drop_leakage_columns_removes_outcome_columns_from_dataframe",
+        "test_find_leakage_columns_detects_future_and_outcome_columns",
+        "test_raise_if_feature_columns_have_leakage_raises_for_leaked_columns",
+        "test_resolve_training_feature_columns_excludes_leakage_columns",
+        "test_signal_training_schema_keeps_label_columns_but_not_as_features",
+        "test_training_runner_rejects_manual_leakage_feature_selection",
+        "test_training_runner_trains_on_labeled_feature_dataset_without_leakage"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 124,
+      "lines_total": 161,
+      "path": "tests/unit/test_model_training_leakage_guard.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_ohlcv_dataset",
+        "test_build_ohlcv_ml_features_adds_price_and_candle_features",
+        "test_build_ohlcv_ml_features_adds_time_features_when_timestamp_exists",
+        "test_build_ohlcv_ml_features_adds_volatility_trend_and_volume_features",
+        "test_build_ohlcv_ml_features_can_skip_time_features",
+        "test_build_ohlcv_ml_features_from_csv_writes_output_file",
+        "test_build_ohlcv_ml_features_output_passes_signal_training_schema",
+        "test_load_ohlcv_csv_rejects_missing_file",
+        "test_load_ohlcv_csv_rejects_non_csv_file",
+        "test_validate_ohlcv_dataframe_accepts_valid_ohlcv_data",
+        "test_validate_ohlcv_dataframe_rejects_invalid_high_low_relationships",
+        "test_validate_ohlcv_dataframe_rejects_missing_required_column",
+        "test_validate_ohlcv_dataframe_rejects_negative_volume"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 124,
+      "lines_total": 171,
+      "path": "tests/unit/test_model_training_ohlcv_feature_builder.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15496,9 +15943,40 @@
         "pandas",
         "pytest"
       ],
-      "lines_code": 107,
-      "lines_total": 143,
+      "lines_code": 122,
+      "lines_total": 158,
       "path": "tests/unit/test_model_training_prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_valid_training_dataset",
+        "test_build_training_dataset_quality_report_returns_report",
+        "test_training_quality_report_can_be_disabled",
+        "test_training_runner_rejects_quality_invalid_dataset",
+        "test_training_runner_writes_quality_report_before_training"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 88,
+      "lines_total": 114,
+      "path": "tests/unit/test_model_training_quality_gated_training.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15528,9 +16006,76 @@
         "pandas",
         "pytest"
       ],
-      "lines_code": 94,
-      "lines_total": 122,
+      "lines_code": 109,
+      "lines_total": 137,
       "path": "tests/unit/test_model_training_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_valid_dataset",
+        "test_prediction_runner_rejects_features_that_fail_schema",
+        "test_prediction_validation_can_be_disabled_for_legacy_experiments",
+        "test_training_runner_rejects_dataset_that_fails_schema",
+        "test_training_runner_uses_schema_feature_columns_when_not_explicit",
+        "test_training_validation_can_be_disabled_for_legacy_experiments"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 98,
+      "lines_total": 120,
+      "path": "tests/unit/test_model_training_schema_integration.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_mixed_ohlcv_dataset",
+        "test_assign_signal_target_maps_future_returns_to_labels",
+        "test_build_signal_target_labels_adds_future_and_outcome_columns",
+        "test_build_signal_target_labels_can_keep_incomplete_horizon_rows",
+        "test_build_signal_target_labels_creates_multiple_target_classes",
+        "test_build_signal_target_labels_from_csv_writes_output_file",
+        "test_build_signal_target_labels_rejects_dataset_shorter_than_horizon",
+        "test_future_rolling_max_and_min_use_only_future_bars",
+        "test_labeled_feature_dataset_passes_signal_training_schema",
+        "test_signal_target_label_config_rejects_invalid_values"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "pandas",
+        "pytest",
+        "unittest"
+      ],
+      "lines_code": 152,
+      "lines_total": 191,
+      "path": "tests/unit/test_model_training_target_label_builder.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -20232,7 +20777,7 @@
       "reason": "Contains executable class/function logic."
     }
   ],
-  "generated_at": "2026-07-10T12:57:47.938946+00:00",
+  "generated_at": "2026-07-10T17:48:57.586180+00:00",
   "placeholder_code_files": [
     {
       "area": "cli",
@@ -20839,8 +21384,10 @@
       "classification": "implemented",
       "external_imports": [],
       "functions": [
+        "build_dataset_run_config_from_args",
         "build_model_training_cli_parser",
         "build_prediction_run_config_from_args",
+        "build_quality_report_config_from_args",
         "build_training_run_config_from_args",
         "main",
         "parse_feature_columns",
@@ -20857,9 +21404,174 @@
         "collections",
         "json"
       ],
-      "lines_code": 108,
-      "lines_total": 132,
+      "lines_code": 250,
+      "lines_total": 286,
       "path": "src/aqos/model_training/cli.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "SignalMLDatasetBuildConfig",
+        "SignalMLDatasetBuildOutput"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_signal_ml_training_dataset",
+        "build_signal_ml_training_dataset_from_csv",
+        "to_dict",
+        "validate_signal_ml_training_dataset",
+        "write_signal_ml_dataset_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 140,
+      "lines_total": 174,
+      "path": "src/aqos/model_training/dataset_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetQualityConfig",
+        "DatasetQualityIssue",
+        "DatasetQualityReport",
+        "DatasetQualitySeverity",
+        "FeatureQualitySummary"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "build_dataset_quality_report",
+        "build_target_distribution",
+        "build_target_ratios",
+        "errors",
+        "optional_float",
+        "raise_if_invalid",
+        "summarize_feature_quality",
+        "to_dict",
+        "to_dict",
+        "to_dict",
+        "warnings",
+        "write_dataset_quality_report"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 321,
+      "lines_total": 384,
+      "path": "src/aqos/model_training/dataset_quality.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "DatasetIssueSeverity",
+        "DatasetValidationIssue",
+        "DatasetValidationResult",
+        "FeatureColumnRole",
+        "FeatureColumnSpec",
+        "MLFeatureSchema"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "available_feature_columns",
+        "build_default_signal_feature_schema",
+        "categorical_feature_columns",
+        "errors",
+        "numeric_feature_columns",
+        "raise_if_invalid",
+        "required_columns",
+        "select_model_feature_columns",
+        "select_model_features",
+        "target_column",
+        "to_dict",
+        "to_dict",
+        "validate",
+        "validate_signal_prediction_dataset",
+        "validate_signal_training_dataset",
+        "warnings"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "enum",
+        "pandas",
+        "typing"
+      ],
+      "lines_code": 387,
+      "lines_total": 455,
+      "path": "src/aqos/model_training/feature_schema.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "LeakageCheckResult"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "check_feature_columns_for_leakage",
+        "drop_leakage_columns",
+        "find_leakage_columns",
+        "raise_if_feature_columns_have_leakage",
+        "raise_if_invalid",
+        "to_dict"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "pandas",
+        "typing"
+      ],
+      "lines_code": 78,
+      "lines_total": 105,
+      "path": "src/aqos/model_training/leakage_guard.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -20875,7 +21587,8 @@
       "functions": [
         "load_signal_prediction_features",
         "predict_signals_from_csv",
-        "to_dict"
+        "to_dict",
+        "validate_prediction_features_for_run"
       ],
       "has_ellipsis": true,
       "has_not_implemented_error": false,
@@ -20888,8 +21601,8 @@
         "pandas",
         "pathlib"
       ],
-      "lines_code": 62,
-      "lines_total": 86,
+      "lines_code": 74,
+      "lines_total": 101,
       "path": "src/aqos/model_training/prediction_runner.py",
       "reason": "Contains executable class/function logic."
     },
@@ -20905,9 +21618,12 @@
       ],
       "functions": [
         "build_signal_model_training_config",
+        "build_training_dataset_quality_report",
         "load_signal_training_dataset",
+        "resolve_training_feature_columns",
         "to_dict",
         "train_baseline_signal_model_from_csv",
+        "validate_training_dataset_for_run",
         "write_training_metrics"
       ],
       "has_ellipsis": true,
@@ -20922,8 +21638,8 @@
         "pandas",
         "pathlib"
       ],
-      "lines_code": 97,
-      "lines_total": 130,
+      "lines_code": 171,
+      "lines_total": 218,
       "path": "src/aqos/model_training/training_runner.py",
       "reason": "Contains executable class/function logic."
     },
@@ -21266,7 +21982,7 @@
       "learning": 7,
       "main.py": 1,
       "memory": 7,
-      "model_training": 5,
+      "model_training": 11,
       "models": 9,
       "news_providers": 18,
       "observability": 8,
@@ -21279,24 +21995,24 @@
       "security": 8,
       "services": 11,
       "strategy": 12,
-      "tests": 240,
+      "tests": 248,
       "training_data": 10,
       "version.py": 1
     },
     "classification_counts": {
       "cli_entrypoint": 1,
       "constants_module": 1,
-      "implemented": 468,
+      "implemented": 482,
       "tooling_script": 5,
       "valid_contract": 10
     },
     "script_python_files": 0,
-    "src_python_files": 245,
-    "test_python_files": 240,
-    "total_classes": 697,
-    "total_code_lines": 134739,
-    "total_functions": 8061,
-    "total_python_files": 485
+    "src_python_files": 251,
+    "test_python_files": 248,
+    "total_classes": 713,
+    "total_code_lines": 137528,
+    "total_functions": 8211,
+    "total_python_files": 499
   },
   "tests_root_exists": true
 }

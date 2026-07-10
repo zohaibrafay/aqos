@@ -18,6 +18,11 @@ def build_training_dataset() -> pd.DataFrame:
     for index in range(24):
         rows.append(
             {
+                "open": 2300.0 + index,
+                "high": 2302.0 + index,
+                "low": 2298.0 + index,
+                "close": 2301.0 + index,
+                "volume": 1000 + index,
                 "rsi_14": 22 + index,
                 "macd_histogram": 0.4 + index * 0.01,
                 "atr_14": 1.2 + index * 0.02,
@@ -29,6 +34,11 @@ def build_training_dataset() -> pd.DataFrame:
     for index in range(24):
         rows.append(
             {
+                "open": 2350.0 - index,
+                "high": 2352.0 - index,
+                "low": 2348.0 - index,
+                "close": 2349.0 - index,
+                "volume": 1200 + index,
                 "rsi_14": 78 - index,
                 "macd_histogram": -0.4 - index * 0.01,
                 "atr_14": 1.4 + index * 0.02,
@@ -40,6 +50,11 @@ def build_training_dataset() -> pd.DataFrame:
     for index in range(24):
         rows.append(
             {
+                "open": 2320.0 + (index % 3),
+                "high": 2321.0 + (index % 3),
+                "low": 2319.0 + (index % 3),
+                "close": 2320.5 + (index % 3),
+                "volume": 900 + index,
                 "rsi_14": 48 + (index % 4),
                 "macd_histogram": 0.0,
                 "atr_14": 1.0 + index * 0.01,
