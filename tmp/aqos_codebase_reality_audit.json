@@ -119,7 +119,9 @@
       "src/aqos/model_training/leakage_guard.py",
       "src/aqos/model_training/model_versioning.py",
       "src/aqos/model_training/ohlcv_feature_builder.py",
+      "src/aqos/model_training/prediction_registry.py",
       "src/aqos/model_training/prediction_runner.py",
+      "src/aqos/model_training/prediction_versioning.py",
       "src/aqos/model_training/target_label_builder.py",
       "src/aqos/model_training/training_runner.py",
       "src/aqos/models/__init__.py",
@@ -368,11 +370,15 @@
       "tests/unit/test_model_training_leakage_guard.py",
       "tests/unit/test_model_training_model_versioning.py",
       "tests/unit/test_model_training_ohlcv_feature_builder.py",
+      "tests/unit/test_model_training_prediction_registry.py",
       "tests/unit/test_model_training_prediction_runner.py",
+      "tests/unit/test_model_training_prediction_runner_registry.py",
+      "tests/unit/test_model_training_prediction_versioning.py",
       "tests/unit/test_model_training_quality_gated_training.py",
       "tests/unit/test_model_training_runner.py",
       "tests/unit/test_model_training_schema_integration.py",
       "tests/unit/test_model_training_target_label_builder.py",
+      "tests/unit/test_model_training_versioned_prediction_runner.py",
       "tests/unit/test_model_training_versioned_training.py",
       "tests/unit/test_news.py",
       "tests/unit/test_news_providers_connector_registry.py",
@@ -4918,8 +4924,8 @@
       "imports": [
         "aqos"
       ],
-      "lines_code": 271,
-      "lines_total": 275,
+      "lines_code": 315,
+      "lines_total": 320,
       "path": "src/aqos/model_training/__init__.py",
       "reason": "Contains executable code."
     },
@@ -4995,8 +5001,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 263,
-      "lines_total": 300,
+      "lines_code": 307,
+      "lines_total": 342,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -5346,6 +5352,34 @@
     },
     {
       "area": "model_training",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "append_prediction_run_to_registry",
+        "build_prediction_registry_entry",
+        "find_prediction_registry_run",
+        "list_prediction_registry_runs",
+        "read_prediction_registry"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 85,
+      "lines_total": 110,
+      "path": "src/aqos/model_training/prediction_registry.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
       "classes": [
         "SignalPredictionRunConfig",
         "SignalPredictionRunOutput"
@@ -5355,6 +5389,9 @@
         "pandas"
       ],
       "functions": [
+        "append_prediction_metadata_to_registry",
+        "build_prediction_metadata_for_output",
+        "build_prediction_metadata_parameters",
         "load_signal_prediction_features",
         "predict_signals_from_csv",
         "to_dict",
@@ -5369,11 +5406,57 @@
         "aqos",
         "dataclasses",
         "pandas",
-        "pathlib"
+        "pathlib",
+        "typing"
       ],
-      "lines_code": 74,
-      "lines_total": 101,
+      "lines_code": 177,
+      "lines_total": 221,
       "path": "src/aqos/model_training/prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "PredictionArtifactReference",
+        "PredictionArtifactType",
+        "PredictionRunMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_prediction_artifact_reference",
+        "build_prediction_run_id",
+        "build_prediction_run_metadata",
+        "extract_model_version_reference",
+        "normalize_prediction_name",
+        "prediction_utc_now_iso",
+        "read_prediction_run_metadata",
+        "to_dict",
+        "to_dict",
+        "write_prediction_run_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 259,
+      "lines_total": 318,
+      "path": "src/aqos/model_training/prediction_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15869,13 +15952,17 @@
         "build_training_dataset",
         "test_model_training_cli_parser_accepts_build_dataset_command",
         "test_model_training_cli_parser_accepts_list_experiments_command",
+        "test_model_training_cli_parser_accepts_list_predictions_command",
         "test_model_training_cli_parser_accepts_predict_command",
         "test_model_training_cli_parser_accepts_quality_report_command",
         "test_model_training_cli_parser_accepts_train_command",
         "test_parse_feature_columns_parses_comma_separated_values",
         "test_parse_feature_columns_returns_none_for_empty_value",
         "test_run_model_training_cli_builds_dataset_from_raw_ohlcv_csv",
+        "test_run_model_training_cli_list_predictions_prints_prediction_registry",
         "test_run_model_training_cli_lists_experiment_registry",
+        "test_run_model_training_cli_predict_can_disable_prediction_metadata",
+        "test_run_model_training_cli_predict_writes_prediction_metadata",
         "test_run_model_training_cli_predicts_from_saved_model",
         "test_run_model_training_cli_trains_model_from_csv",
         "test_run_model_training_cli_writes_quality_report"
@@ -15890,8 +15977,8 @@
         "json",
         "pandas"
       ],
-      "lines_code": 352,
-      "lines_total": 415,
+      "lines_code": 522,
+      "lines_total": 608,
       "path": "tests/unit/test_model_training_cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -16272,6 +16359,40 @@
       "classes": [],
       "classification": "implemented",
       "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_input_features",
+        "build_prediction_metadata",
+        "build_predictions",
+        "test_append_prediction_run_to_registry_replaces_existing_prediction_id",
+        "test_append_prediction_run_to_registry_sorts_runs_by_created_at",
+        "test_append_prediction_run_to_registry_writes_registry_file",
+        "test_build_prediction_registry_entry_contains_trace_fields",
+        "test_find_prediction_registry_run_returns_matching_run",
+        "test_list_prediction_registry_runs_returns_tuple",
+        "test_read_prediction_registry_returns_empty_registry_when_missing"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 166,
+      "lines_total": 212,
+      "path": "tests/unit/test_model_training_prediction_registry.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
         "pandas",
         "pytest"
       ],
@@ -16297,6 +16418,76 @@
       "lines_code": 122,
       "lines_total": 158,
       "path": "tests/unit/test_model_training_prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_training_dataset",
+        "test_cli_prediction_output_contains_prediction_registry_path",
+        "test_prediction_output_dict_contains_prediction_registry_path",
+        "test_prediction_runner_can_disable_prediction_registry",
+        "test_prediction_runner_registry_disabled_when_versioning_disabled",
+        "test_prediction_runner_supports_custom_prediction_registry_filename",
+        "test_prediction_runner_writes_prediction_registry",
+        "train_test_model"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 182,
+      "lines_total": 235,
+      "path": "tests/unit/test_model_training_prediction_runner_registry.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_input_features",
+        "build_predictions",
+        "test_build_prediction_artifact_reference_hashes_file",
+        "test_build_prediction_artifact_reference_rejects_missing_file",
+        "test_build_prediction_run_id_is_stable_for_same_inputs",
+        "test_build_prediction_run_metadata_creates_traceable_payload",
+        "test_build_prediction_run_metadata_rejects_empty_predictions",
+        "test_extract_model_version_reference_reads_model_metadata",
+        "test_normalize_prediction_name_creates_safe_name",
+        "test_prediction_metadata_json_is_serializable",
+        "test_read_prediction_run_metadata_rejects_missing_file",
+        "test_write_and_read_prediction_run_metadata_roundtrip"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 203,
+      "lines_total": 258,
+      "path": "tests/unit/test_model_training_prediction_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -16427,6 +16618,36 @@
       "lines_code": 152,
       "lines_total": 191,
       "path": "tests/unit/test_model_training_target_label_builder.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "build_training_dataset",
+        "test_prediction_metadata_file_is_valid_json",
+        "test_prediction_output_dict_contains_prediction_metadata",
+        "test_prediction_runner_metadata_can_be_disabled",
+        "test_prediction_runner_supports_custom_prediction_metadata_filename",
+        "test_prediction_runner_writes_prediction_metadata"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas"
+      ],
+      "lines_code": 209,
+      "lines_total": 256,
+      "path": "tests/unit/test_model_training_versioned_prediction_runner.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -21161,7 +21382,7 @@
       "reason": "Contains executable class/function logic."
     }
   ],
-  "generated_at": "2026-07-10T19:21:22.502514+00:00",
+  "generated_at": "2026-07-11T16:54:09.130300+00:00",
   "placeholder_code_files": [
     {
       "area": "cli",
@@ -21788,8 +22009,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 263,
-      "lines_total": 300,
+      "lines_code": 307,
+      "lines_total": 342,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -22099,6 +22320,34 @@
     },
     {
       "area": "model_training",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [],
+      "functions": [
+        "append_prediction_run_to_registry",
+        "build_prediction_registry_entry",
+        "find_prediction_registry_run",
+        "list_prediction_registry_runs",
+        "read_prediction_registry"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 85,
+      "lines_total": 110,
+      "path": "src/aqos/model_training/prediction_registry.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
       "classes": [
         "SignalPredictionRunConfig",
         "SignalPredictionRunOutput"
@@ -22108,6 +22357,9 @@
         "pandas"
       ],
       "functions": [
+        "append_prediction_metadata_to_registry",
+        "build_prediction_metadata_for_output",
+        "build_prediction_metadata_parameters",
         "load_signal_prediction_features",
         "predict_signals_from_csv",
         "to_dict",
@@ -22122,11 +22374,57 @@
         "aqos",
         "dataclasses",
         "pandas",
-        "pathlib"
+        "pathlib",
+        "typing"
       ],
-      "lines_code": 74,
-      "lines_total": 101,
+      "lines_code": 177,
+      "lines_total": 221,
       "path": "src/aqos/model_training/prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "PredictionArtifactReference",
+        "PredictionArtifactType",
+        "PredictionRunMetadata"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_prediction_artifact_reference",
+        "build_prediction_run_id",
+        "build_prediction_run_metadata",
+        "extract_model_version_reference",
+        "normalize_prediction_name",
+        "prediction_utc_now_iso",
+        "read_prediction_run_metadata",
+        "to_dict",
+        "to_dict",
+        "write_prediction_run_metadata"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 259,
+      "lines_total": 318,
+      "path": "src/aqos/model_training/prediction_versioning.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -22512,7 +22810,7 @@
       "learning": 7,
       "main.py": 1,
       "memory": 7,
-      "model_training": 14,
+      "model_training": 16,
       "models": 9,
       "news_providers": 18,
       "observability": 8,
@@ -22525,24 +22823,24 @@
       "security": 8,
       "services": 11,
       "strategy": 12,
-      "tests": 255,
+      "tests": 259,
       "training_data": 10,
       "version.py": 1
     },
     "classification_counts": {
       "cli_entrypoint": 1,
       "constants_module": 1,
-      "implemented": 492,
+      "implemented": 498,
       "tooling_script": 5,
       "valid_contract": 10
     },
     "script_python_files": 0,
-    "src_python_files": 254,
-    "test_python_files": 255,
-    "total_classes": 724,
-    "total_code_lines": 139588,
-    "total_functions": 8318,
-    "total_python_files": 509
+    "src_python_files": 256,
+    "test_python_files": 259,
+    "total_classes": 727,
+    "total_code_lines": 141053,
+    "total_functions": 8378,
+    "total_python_files": 515
   },
   "tests_root_exists": true
 }

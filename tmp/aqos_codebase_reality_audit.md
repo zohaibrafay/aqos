@@ -1,22 +1,22 @@
 # AQOS Codebase Reality Audit
 
-Generated at: `2026-07-10T19:21:22.502514+00:00`
+Generated at: `2026-07-11T16:54:09.130300+00:00`
 
 ## Summary
 
-- Total Python files: `509`
-- Source Python files: `254`
-- Test Python files: `255`
+- Total Python files: `515`
+- Source Python files: `256`
+- Test Python files: `259`
 - Script Python files: `0`
-- Total code lines: `139588`
-- Total classes: `724`
-- Total functions: `8318`
+- Total code lines: `141053`
+- Total classes: `727`
+- Total functions: `8378`
 
 ## Classification Counts
 
 - cli_entrypoint: `1`
 - constants_module: `1`
-- implemented: `492`
+- implemented: `498`
 - tooling_script: `5`
 - valid_contract: `10`
 

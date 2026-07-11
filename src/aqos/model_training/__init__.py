@@ -18,6 +18,14 @@ from aqos.model_training.model_versioning import (
     read_model_version_metadata,
     write_model_version_metadata,
 )
+from aqos.model_training.prediction_registry import (
+    PREDICTION_REGISTRY_VERSION,
+    append_prediction_run_to_registry,
+    build_prediction_registry_entry,
+    find_prediction_registry_run,
+    list_prediction_registry_runs,
+    read_prediction_registry,
+)
 from aqos.model_training.experiment_registry import (
     EXPERIMENT_REGISTRY_VERSION,
     ExperimentArtifact,
@@ -101,9 +109,7 @@ from aqos.model_training.training_runner import (
     extract_dataset_version_reference,
     build_training_model_version_metadata,
 )
-from aqos.model_training.prediction_runner import (
-    validate_prediction_features_for_run,
-)
+
 from aqos.model_training.cli import (
     build_dataset_run_config_from_args,
     build_model_training_cli_parser,
@@ -118,6 +124,10 @@ from aqos.model_training.prediction_runner import (
     SignalPredictionRunOutput,
     load_signal_prediction_features,
     predict_signals_from_csv,
+    build_prediction_metadata_for_output,
+    build_prediction_metadata_parameters,
+    validate_prediction_features_for_run,
+    append_prediction_metadata_to_registry,
 )
 from aqos.model_training.training_runner import (
     SignalTrainingRunConfig,
@@ -148,6 +158,20 @@ from aqos.model_training.dataset_builder import (
     validate_signal_ml_training_dataset,
     write_signal_ml_dataset_metadata,
     build_signal_dataset_version_parameters,
+)
+from aqos.model_training.prediction_versioning import (
+    PREDICTION_METADATA_VERSION,
+    PredictionArtifactReference,
+    PredictionArtifactType,
+    PredictionRunMetadata,
+    build_prediction_artifact_reference,
+    build_prediction_run_id,
+    build_prediction_run_metadata,
+    extract_model_version_reference,
+    normalize_prediction_name,
+    prediction_utc_now_iso,
+    read_prediction_run_metadata,
+    write_prediction_run_metadata,
 )
 
 __all__ = [
@@ -270,6 +294,27 @@ __all__ = [
     "read_model_version_metadata",
     "write_model_version_metadata",
     "build_training_model_version_metadata",
+    "PREDICTION_METADATA_VERSION",
+    "PredictionArtifactReference",
+    "PredictionArtifactType",
+    "PredictionRunMetadata",
+    "build_prediction_artifact_reference",
+    "build_prediction_run_id",
+    "build_prediction_run_metadata",
+    "extract_model_version_reference",
+    "normalize_prediction_name",
+    "prediction_utc_now_iso",
+    "read_prediction_run_metadata",
+    "write_prediction_run_metadata",
+    "build_prediction_metadata_for_output",
+    "build_prediction_metadata_parameters",
+    "PREDICTION_REGISTRY_VERSION",
+    "append_prediction_run_to_registry",
+    "build_prediction_registry_entry",
+    "find_prediction_registry_run",
+    "list_prediction_registry_runs",
+    "read_prediction_registry",
+    "append_prediction_metadata_to_registry",
 ]
 
 __all__ = sorted(__all__)

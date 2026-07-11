@@ -5,7 +5,7 @@ import json
 from collections.abc import Sequence
 
 from aqos.model_training.experiment_registry import read_experiment_registry
-
+from aqos.model_training.prediction_registry import read_prediction_registry
 from aqos.model_training.dataset_builder import (
     SignalMLDatasetBuildConfig,
     build_signal_ml_training_dataset_from_csv,
@@ -84,6 +84,15 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
         "--registry-path",
         default="tmp/model_training/experiment_registry.json",
     )
+    list_predictions_parser = subparsers.add_parser(
+        "list-predictions",
+        help="List prediction runs from an AQOS prediction registry JSON file.",
+    )
+    list_predictions_parser.add_argument(
+        "--registry-path",
+        default="tmp/model_training/prediction_registry.json",
+        help="Path to prediction_registry.json.",
+    )
     quality_parser.add_argument("--dataset-path", required=True)
     quality_parser.add_argument("--output-path", required=True)
     quality_parser.add_argument("--target-column", default="target")
@@ -156,6 +165,31 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
         "--no-schema-validation",
         action="store_true",
         help="Skip prediction feature schema validation.",
+    )
+    predict_parser.add_argument(
+        "--model-version-metadata-path",
+        default=None,
+        help="Optional model_version_metadata.json path to link predictions to a model version.",
+    )
+    predict_parser.add_argument(
+        "--prediction-metadata-filename",
+        default="prediction_run_metadata.json",
+        help="Filename for prediction run metadata written next to prediction output.",
+    )
+    predict_parser.add_argument(
+        "--no-prediction-versioning",
+        action="store_true",
+        help="Skip prediction metadata/versioning output.",
+    )
+    predict_parser.add_argument(
+        "--prediction-registry-filename",
+        default="prediction_registry.json",
+        help="Filename for prediction registry written next to prediction output.",
+    )
+    predict_parser.add_argument(
+        "--no-prediction-registry",
+        action="store_true",
+        help="Skip prediction registry output.",
     )
 
     return parser
@@ -234,6 +268,11 @@ def build_prediction_run_config_from_args(
         output_path=args.output_path,
         include_probabilities=not args.no_probabilities,
         validate_schema=not args.no_schema_validation,
+        enable_prediction_versioning=not args.no_prediction_versioning,
+        prediction_metadata_filename=args.prediction_metadata_filename,
+        enable_prediction_registry=not args.no_prediction_registry,
+        prediction_registry_filename=args.prediction_registry_filename,
+        model_version_metadata_path=args.model_version_metadata_path,
     )
 
 
@@ -280,7 +319,10 @@ def run_model_training_cli(argv: Sequence[str] | None = None) -> int:
         registry = read_experiment_registry(args.registry_path)
         print(json.dumps(registry, indent=2, sort_keys=True))
         return 0
-
+    if args.command == "list-predictions":
+        registry = read_prediction_registry(args.registry_path)
+        print(json.dumps(registry, indent=2, sort_keys=True))
+        return 0
     if args.command == "predict":
         output = predict_signals_from_csv(
             build_prediction_run_config_from_args(args)

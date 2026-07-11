@@ -225,7 +225,15 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
             "features.csv",
             "--output-path",
             "predictions.csv",
+            "--model-version-metadata-path",
+            "model_version_metadata.json",
+            "--prediction-metadata-filename",
+            "custom_prediction_metadata.json",
+            "--prediction-registry-filename",
+            "custom_prediction_registry.json",
             "--no-probabilities",
+            "--no-prediction-versioning",
+            "--no-prediction-registry",
         ]
     )
 
@@ -233,7 +241,128 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
     assert args.model_path == "model.joblib"
     assert args.features_path == "features.csv"
     assert args.output_path == "predictions.csv"
+    assert args.model_version_metadata_path == "model_version_metadata.json"
+    assert args.prediction_metadata_filename == "custom_prediction_metadata.json"
+    assert args.prediction_registry_filename == "custom_prediction_registry.json"
     assert args.no_probabilities is True
+    assert args.no_prediction_versioning is True
+    assert args.no_prediction_registry is True
+
+
+def test_model_training_cli_parser_accepts_list_predictions_command() -> None:
+    parser = build_model_training_cli_parser()
+
+    args = parser.parse_args(
+        [
+            "list-predictions",
+            "--registry-path",
+            "prediction_registry.json",
+        ]
+    )
+
+    assert args.command == "list-predictions"
+    assert args.registry_path == "prediction_registry.json"
+
+def test_run_model_training_cli_predict_writes_prediction_metadata(tmp_path, capsys) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    train_exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "181",
+        ]
+    )
+    capsys.readouterr()
+
+    predict_exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    prediction_metadata_path = predictions_path.parent / "prediction_run_metadata.json"
+
+    assert train_exit_code == 0
+    assert predict_exit_code == 0
+    assert predictions_path.exists()
+    assert prediction_metadata_path.exists()
+    assert payload["prediction_metadata_path"].endswith("prediction_run_metadata.json")
+    assert payload["prediction_metadata"]["model_name"] == (
+        "baseline_random_forest_signal_model"
+    )
+    assert payload["prediction_metadata"]["model_version"] is not None
+    assert payload["prediction_metadata"]["rows"] == 8
+
+def test_run_model_training_cli_predict_can_disable_prediction_metadata(tmp_path, capsys) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "183",
+        ]
+    )
+    capsys.readouterr()
+
+    exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--no-prediction-versioning",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert predictions_path.exists()
+    assert payload["prediction_metadata_path"] is None
+    assert payload["prediction_metadata"] is None
+    assert not (predictions_path.parent / "prediction_run_metadata.json").exists()
 
 def test_run_model_training_cli_writes_quality_report(tmp_path, capsys) -> None:
     input_path = tmp_path / "raw_ohlcv.csv"
@@ -413,3 +542,67 @@ def test_run_model_training_cli_lists_experiment_registry(tmp_path, capsys) -> N
     assert len(payload["runs"]) == 1
     assert payload["runs"][0]["experiment_name"] == "aqos_baseline_signal_model"
     assert payload["runs"][0]["model_name"] == "baseline_random_forest_signal_model"
+    
+def test_run_model_training_cli_list_predictions_prints_prediction_registry(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    train_exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "197",
+        ]
+    )
+    capsys.readouterr()
+
+    predict_exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+        ]
+    )
+    capsys.readouterr()
+
+    list_exit_code = run_model_training_cli(
+        [
+            "list-predictions",
+            "--registry-path",
+            str(predictions_path.parent / "prediction_registry.json"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert train_exit_code == 0
+    assert predict_exit_code == 0
+    assert list_exit_code == 0
+    assert payload["registry_version"] == "1.0"
+    assert len(payload["runs"]) == 1
+    assert payload["runs"][0]["model_name"] == "baseline_random_forest_signal_model"
+    assert payload["runs"][0]["rows"] == 8
+    assert payload["runs"][0]["prediction_path"].endswith("signals.csv")
+    assert payload["runs"][0]["metadata_path"].endswith("prediction_run_metadata.json")
