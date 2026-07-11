@@ -121,6 +121,7 @@
       "src/aqos/model_training/ohlcv_feature_builder.py",
       "src/aqos/model_training/prediction_registry.py",
       "src/aqos/model_training/prediction_runner.py",
+      "src/aqos/model_training/prediction_validation.py",
       "src/aqos/model_training/prediction_versioning.py",
       "src/aqos/model_training/target_label_builder.py",
       "src/aqos/model_training/training_runner.py",
@@ -373,6 +374,8 @@
       "tests/unit/test_model_training_prediction_registry.py",
       "tests/unit/test_model_training_prediction_runner.py",
       "tests/unit/test_model_training_prediction_runner_registry.py",
+      "tests/unit/test_model_training_prediction_runner_validation.py",
+      "tests/unit/test_model_training_prediction_validation.py",
       "tests/unit/test_model_training_prediction_versioning.py",
       "tests/unit/test_model_training_quality_gated_training.py",
       "tests/unit/test_model_training_runner.py",
@@ -568,6 +571,10 @@
       "HealthCheck": [
         "src/aqos/api/health.py",
         "src/aqos/core/health.py"
+      ],
+      "Model": [
+        "tests/unit/test_model_training_prediction_validation.py",
+        "tests/unit/test_model_training_prediction_validation.py"
       ]
     },
     "duplicate_file_names": {
@@ -4924,8 +4931,8 @@
       "imports": [
         "aqos"
       ],
-      "lines_code": 315,
-      "lines_total": 320,
+      "lines_code": 363,
+      "lines_total": 368,
       "path": "src/aqos/model_training/__init__.py",
       "reason": "Contains executable code."
     },
@@ -5001,8 +5008,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 307,
-      "lines_total": 342,
+      "lines_code": 382,
+      "lines_total": 417,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -5390,12 +5397,16 @@
       ],
       "functions": [
         "append_prediction_metadata_to_registry",
+        "build_prediction_feature_compatibility_report",
         "build_prediction_metadata_for_output",
         "build_prediction_metadata_parameters",
+        "build_prediction_output_validation_report",
         "load_signal_prediction_features",
         "predict_signals_from_csv",
+        "remove_invalid_prediction_artifact_if_needed",
         "to_dict",
-        "validate_prediction_features_for_run"
+        "validate_prediction_features_for_run",
+        "write_and_maybe_raise_prediction_validation_report"
       ],
       "has_ellipsis": true,
       "has_not_implemented_error": false,
@@ -5409,9 +5420,65 @@
         "pathlib",
         "typing"
       ],
-      "lines_code": 177,
-      "lines_total": 221,
+      "lines_code": 353,
+      "lines_total": 428,
       "path": "src/aqos/model_training/prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "PredictionValidationIssue",
+        "PredictionValidationReport",
+        "PredictionValidationRule",
+        "PredictionValidationSeverity",
+        "PredictionValidationStatus"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_prediction_confidence_scores",
+        "build_prediction_validation_issue",
+        "build_prediction_validation_report",
+        "build_prediction_validation_status",
+        "error_count",
+        "extract_trained_feature_columns",
+        "info_count",
+        "is_valid",
+        "prediction_validation_utc_now_iso",
+        "raise_if_invalid",
+        "read_prediction_validation_report",
+        "to_dict",
+        "to_dict",
+        "validate_prediction_confidence",
+        "validate_prediction_feature_columns_against_model",
+        "validate_prediction_input_output",
+        "validate_prediction_model_reference",
+        "validate_probability_columns",
+        "warning_count",
+        "write_prediction_validation_report"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 647,
+      "lines_total": 768,
+      "path": "src/aqos/model_training/prediction_validation.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -15962,7 +16029,10 @@
         "test_run_model_training_cli_list_predictions_prints_prediction_registry",
         "test_run_model_training_cli_lists_experiment_registry",
         "test_run_model_training_cli_predict_can_disable_prediction_metadata",
+        "test_run_model_training_cli_predict_can_disable_validation_report",
+        "test_run_model_training_cli_predict_can_keep_invalid_artifact_when_configured",
         "test_run_model_training_cli_predict_writes_prediction_metadata",
+        "test_run_model_training_cli_predict_writes_validation_report",
         "test_run_model_training_cli_predicts_from_saved_model",
         "test_run_model_training_cli_trains_model_from_csv",
         "test_run_model_training_cli_writes_quality_report"
@@ -15977,8 +16047,8 @@
         "json",
         "pandas"
       ],
-      "lines_code": 522,
-      "lines_total": 608,
+      "lines_code": 698,
+      "lines_total": 805,
       "path": "tests/unit/test_model_training_cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -16450,6 +16520,113 @@
       "lines_code": 182,
       "lines_total": 235,
       "path": "tests/unit/test_model_training_prediction_runner_registry.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_training_dataset",
+        "test_prediction_runner_can_disable_validation_report",
+        "test_prediction_runner_can_keep_invalid_prediction_artifact_when_configured",
+        "test_prediction_runner_can_write_failed_validation_without_raising",
+        "test_prediction_runner_confidence_gate_can_fail_prediction",
+        "test_prediction_runner_keeps_invalid_artifact_when_not_failing_and_removal_disabled",
+        "test_prediction_runner_output_dict_contains_validation_report",
+        "test_prediction_runner_rejects_missing_trained_feature_columns",
+        "test_prediction_runner_removes_invalid_artifact_when_not_failing_but_removal_enabled",
+        "test_prediction_runner_removes_invalid_prediction_artifact_by_default",
+        "test_prediction_runner_requires_model_version_when_enabled",
+        "test_prediction_runner_supports_custom_validation_report_filename",
+        "test_prediction_runner_writes_validation_report",
+        "test_prediction_validation_report_file_is_valid_json",
+        "train_test_model"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 306,
+      "lines_total": 402,
+      "path": "tests/unit/test_model_training_prediction_runner_validation.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "tests",
+      "classes": [
+        "Model",
+        "Model"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas",
+        "pytest"
+      ],
+      "functions": [
+        "build_input_features",
+        "build_predictions",
+        "test_build_prediction_confidence_scores_uses_explicit_confidence_column",
+        "test_build_prediction_confidence_scores_uses_probability_max",
+        "test_extract_trained_feature_columns_reads_common_model_attributes",
+        "test_extract_trained_feature_columns_reads_metadata_dict",
+        "test_prediction_validation_issue_to_dict",
+        "test_prediction_validation_report_fails_with_error_issue",
+        "test_prediction_validation_report_is_json_serializable",
+        "test_prediction_validation_report_passes_without_issues",
+        "test_read_prediction_validation_report_rejects_missing_file",
+        "test_validate_prediction_confidence_accepts_good_confidence",
+        "test_validate_prediction_confidence_errors_when_too_many_low_confidence_rows",
+        "test_validate_prediction_confidence_rejects_invalid_thresholds",
+        "test_validate_prediction_confidence_rejects_non_numeric_confidence_column",
+        "test_validate_prediction_confidence_rejects_out_of_range_confidence",
+        "test_validate_prediction_confidence_requires_confidence_when_enabled",
+        "test_validate_prediction_confidence_warns_low_confidence_rows",
+        "test_validate_prediction_feature_columns_against_model_allows_missing_trained_columns_when_not_required",
+        "test_validate_prediction_feature_columns_against_model_passes_matching_columns",
+        "test_validate_prediction_feature_columns_against_model_rejects_missing_columns",
+        "test_validate_prediction_feature_columns_against_model_rejects_missing_trained_columns",
+        "test_validate_prediction_feature_columns_against_model_warns_extra_columns",
+        "test_validate_prediction_input_output_accepts_valid_predictions",
+        "test_validate_prediction_input_output_includes_confidence_checks",
+        "test_validate_prediction_input_output_rejects_blank_prediction_values",
+        "test_validate_prediction_input_output_rejects_empty_input",
+        "test_validate_prediction_input_output_rejects_empty_predictions",
+        "test_validate_prediction_input_output_rejects_missing_prediction_column",
+        "test_validate_prediction_input_output_rejects_row_count_mismatch",
+        "test_validate_prediction_model_reference_requires_model_version",
+        "test_validate_probability_columns_rejects_missing_probability_column",
+        "test_validate_probability_columns_rejects_non_numeric_probability_column",
+        "test_validate_probability_columns_rejects_probability_out_of_range",
+        "test_validate_probability_columns_requires_columns_when_enabled",
+        "test_validate_probability_columns_warns_when_rows_do_not_sum_to_one",
+        "test_write_and_read_prediction_validation_report_roundtrip"
+      ],
+      "has_ellipsis": false,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "aqos",
+        "json",
+        "pandas",
+        "pytest"
+      ],
+      "lines_code": 448,
+      "lines_total": 576,
+      "path": "tests/unit/test_model_training_prediction_validation.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -21382,7 +21559,7 @@
       "reason": "Contains executable class/function logic."
     }
   ],
-  "generated_at": "2026-07-11T16:54:09.130300+00:00",
+  "generated_at": "2026-07-11T19:36:06.848030+00:00",
   "placeholder_code_files": [
     {
       "area": "cli",
@@ -22009,8 +22186,8 @@
         "collections",
         "json"
       ],
-      "lines_code": 307,
-      "lines_total": 342,
+      "lines_code": 382,
+      "lines_total": 417,
       "path": "src/aqos/model_training/cli.py",
       "reason": "Contains executable class/function logic."
     },
@@ -22358,12 +22535,16 @@
       ],
       "functions": [
         "append_prediction_metadata_to_registry",
+        "build_prediction_feature_compatibility_report",
         "build_prediction_metadata_for_output",
         "build_prediction_metadata_parameters",
+        "build_prediction_output_validation_report",
         "load_signal_prediction_features",
         "predict_signals_from_csv",
+        "remove_invalid_prediction_artifact_if_needed",
         "to_dict",
-        "validate_prediction_features_for_run"
+        "validate_prediction_features_for_run",
+        "write_and_maybe_raise_prediction_validation_report"
       ],
       "has_ellipsis": true,
       "has_not_implemented_error": false,
@@ -22377,9 +22558,65 @@
         "pathlib",
         "typing"
       ],
-      "lines_code": 177,
-      "lines_total": 221,
+      "lines_code": 353,
+      "lines_total": 428,
       "path": "src/aqos/model_training/prediction_runner.py",
+      "reason": "Contains executable class/function logic."
+    },
+    {
+      "area": "model_training",
+      "classes": [
+        "PredictionValidationIssue",
+        "PredictionValidationReport",
+        "PredictionValidationRule",
+        "PredictionValidationSeverity",
+        "PredictionValidationStatus"
+      ],
+      "classification": "implemented",
+      "external_imports": [
+        "pandas"
+      ],
+      "functions": [
+        "__post_init__",
+        "__post_init__",
+        "build_prediction_confidence_scores",
+        "build_prediction_validation_issue",
+        "build_prediction_validation_report",
+        "build_prediction_validation_status",
+        "error_count",
+        "extract_trained_feature_columns",
+        "info_count",
+        "is_valid",
+        "prediction_validation_utc_now_iso",
+        "raise_if_invalid",
+        "read_prediction_validation_report",
+        "to_dict",
+        "to_dict",
+        "validate_prediction_confidence",
+        "validate_prediction_feature_columns_against_model",
+        "validate_prediction_input_output",
+        "validate_prediction_model_reference",
+        "validate_probability_columns",
+        "warning_count",
+        "write_prediction_validation_report"
+      ],
+      "has_ellipsis": true,
+      "has_not_implemented_error": false,
+      "has_pass": false,
+      "has_todo": false,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "json",
+        "pandas",
+        "pathlib",
+        "typing"
+      ],
+      "lines_code": 647,
+      "lines_total": 768,
+      "path": "src/aqos/model_training/prediction_validation.py",
       "reason": "Contains executable class/function logic."
     },
     {
@@ -22810,7 +23047,7 @@
       "learning": 7,
       "main.py": 1,
       "memory": 7,
-      "model_training": 16,
+      "model_training": 17,
       "models": 9,
       "news_providers": 18,
       "observability": 8,
@@ -22823,24 +23060,24 @@
       "security": 8,
       "services": 11,
       "strategy": 12,
-      "tests": 259,
+      "tests": 261,
       "training_data": 10,
       "version.py": 1
     },
     "classification_counts": {
       "cli_entrypoint": 1,
       "constants_module": 1,
-      "implemented": 498,
+      "implemented": 501,
       "tooling_script": 5,
       "valid_contract": 10
     },
     "script_python_files": 0,
-    "src_python_files": 256,
-    "test_python_files": 259,
-    "total_classes": 727,
-    "total_code_lines": 141053,
-    "total_functions": 8378,
-    "total_python_files": 515
+    "src_python_files": 257,
+    "test_python_files": 261,
+    "total_classes": 734,
+    "total_code_lines": 142929,
+    "total_functions": 8459,
+    "total_python_files": 518
   },
   "tests_root_exists": true
 }

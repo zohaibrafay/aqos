@@ -1,22 +1,22 @@
 # AQOS Codebase Reality Audit
 
-Generated at: `2026-07-11T16:54:09.130300+00:00`
+Generated at: `2026-07-11T19:36:06.848030+00:00`
 
 ## Summary
 
-- Total Python files: `515`
-- Source Python files: `256`
-- Test Python files: `259`
+- Total Python files: `518`
+- Source Python files: `257`
+- Test Python files: `261`
 - Script Python files: `0`
-- Total code lines: `141053`
-- Total classes: `727`
-- Total functions: `8378`
+- Total code lines: `142929`
+- Total classes: `734`
+- Total functions: `8459`
 
 ## Classification Counts
 
 - cli_entrypoint: `1`
 - constants_module: `1`
-- implemented: `498`
+- implemented: `501`
 - tooling_script: `5`
 - valid_contract: `10`
 
@@ -116,6 +116,9 @@ Possible missing dependencies:
   - `tests/unit/test_pipeline.py`
   - `tests/unit/test_predictor.py`
   - `tests/unit/test_trainer.py`
+- `Model`
+  - `tests/unit/test_model_training_prediction_validation.py`
+  - `tests/unit/test_model_training_prediction_validation.py`
 
 ## Next Action
 

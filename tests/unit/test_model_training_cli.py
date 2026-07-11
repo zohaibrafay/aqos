@@ -231,9 +231,26 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
             "custom_prediction_metadata.json",
             "--prediction-registry-filename",
             "custom_prediction_registry.json",
+            "--prediction-validation-report-filename",
+            "custom_validation_report.json",
+            "--confidence-column",
+            "confidence",
+            "--min-confidence",
+            "0.7",
+            "--max-low-confidence-ratio",
+            "0.25",
+            "--probability-sum-tolerance",
+            "0.02",
             "--no-probabilities",
             "--no-prediction-versioning",
             "--no-prediction-registry",
+            "--no-prediction-validation",
+            "--no-fail-on-prediction-validation-error",
+            "--require-model-version",
+            "--require-probability-columns",
+            "--require-confidence",
+            "--no-require-trained-feature-columns",
+            "--keep-invalid-prediction-artifact",
         ]
     )
 
@@ -244,9 +261,21 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
     assert args.model_version_metadata_path == "model_version_metadata.json"
     assert args.prediction_metadata_filename == "custom_prediction_metadata.json"
     assert args.prediction_registry_filename == "custom_prediction_registry.json"
+    assert args.prediction_validation_report_filename == "custom_validation_report.json"
+    assert args.confidence_column == "confidence"
+    assert args.min_confidence == 0.7
+    assert args.max_low_confidence_ratio == 0.25
+    assert args.probability_sum_tolerance == 0.02
     assert args.no_probabilities is True
     assert args.no_prediction_versioning is True
     assert args.no_prediction_registry is True
+    assert args.no_prediction_validation is True
+    assert args.no_fail_on_prediction_validation_error is True
+    assert args.require_model_version is True
+    assert args.require_probability_columns is True
+    assert args.require_confidence is True
+    assert args.no_require_trained_feature_columns is True
+    assert args.keep_invalid_prediction_artifact is True
 
 
 def test_model_training_cli_parser_accepts_list_predictions_command() -> None:
@@ -606,3 +635,171 @@ def test_run_model_training_cli_list_predictions_prints_prediction_registry(
     assert payload["runs"][0]["rows"] == 8
     assert payload["runs"][0]["prediction_path"].endswith("signals.csv")
     assert payload["runs"][0]["metadata_path"].endswith("prediction_run_metadata.json")
+    
+def test_run_model_training_cli_predict_writes_validation_report(tmp_path, capsys) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    train_exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "223",
+        ]
+    )
+    capsys.readouterr()
+
+    predict_exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+            "--require-model-version",
+            "--require-probability-columns",
+            "--require-confidence",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    validation_report_path = predictions_path.parent / "prediction_validation_report.json"
+
+    assert train_exit_code == 0
+    assert predict_exit_code == 0
+    assert predictions_path.exists()
+    assert validation_report_path.exists()
+    assert payload["prediction_validation_report_path"].endswith(
+        "prediction_validation_report.json"
+    )
+    assert payload["prediction_validation_report"]["is_valid"] is True
+    assert payload["prediction_metadata_path"].endswith("prediction_run_metadata.json")
+    assert payload["prediction_registry_path"].endswith("prediction_registry.json")
+
+
+def test_run_model_training_cli_predict_can_disable_validation_report(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "227",
+        ]
+    )
+    capsys.readouterr()
+
+    exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--no-prediction-validation",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert predictions_path.exists()
+    assert payload["prediction_validation_report_path"] is None
+    assert payload["prediction_validation_report"] is None
+    assert not (predictions_path.parent / "prediction_validation_report.json").exists()
+
+
+def test_run_model_training_cli_predict_can_keep_invalid_artifact_when_configured(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "229",
+        ]
+    )
+    capsys.readouterr()
+
+    exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+            "--require-confidence",
+            "--min-confidence",
+            "0.99",
+            "--max-low-confidence-ratio",
+            "0.0",
+            "--no-fail-on-prediction-validation-error",
+            "--keep-invalid-prediction-artifact",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert predictions_path.exists()
+    assert payload["prediction_validation_report"]["status"] == "failed"
+    assert payload["prediction_metadata_path"].endswith("prediction_run_metadata.json")
+    assert payload["prediction_registry_path"].endswith("prediction_registry.json")

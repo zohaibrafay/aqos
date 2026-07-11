@@ -191,6 +191,69 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip prediction registry output.",
     )
+    predict_parser.add_argument(
+        "--no-prediction-validation",
+        action="store_true",
+        help="Skip prediction validation report output.",
+    )
+    predict_parser.add_argument(
+        "--prediction-validation-report-filename",
+        default="prediction_validation_report.json",
+        help="Filename for prediction validation report written next to prediction output.",
+    )
+    predict_parser.add_argument(
+        "--no-fail-on-prediction-validation-error",
+        action="store_true",
+        help="Do not raise an error when prediction validation fails.",
+    )
+    predict_parser.add_argument(
+        "--require-model-version",
+        action="store_true",
+        help="Require model version metadata during prediction validation.",
+    )
+    predict_parser.add_argument(
+        "--require-probability-columns",
+        action="store_true",
+        help="Require probability columns during prediction validation.",
+    )
+    predict_parser.add_argument(
+        "--require-confidence",
+        action="store_true",
+        help="Require confidence values during prediction validation.",
+    )
+    predict_parser.add_argument(
+        "--confidence-column",
+        default=None,
+        help="Optional confidence column to validate instead of deriving confidence from probabilities.",
+    )
+    predict_parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.55,
+        help="Minimum acceptable prediction confidence.",
+    )
+    predict_parser.add_argument(
+        "--max-low-confidence-ratio",
+        type=float,
+        default=0.5,
+        help="Maximum allowed ratio of predictions below the confidence threshold.",
+    )
+    predict_parser.add_argument(
+        "--probability-sum-tolerance",
+        type=float,
+        default=0.01,
+        help="Allowed tolerance for probability row sums.",
+    )
+    predict_parser.add_argument(
+        "--no-require-trained-feature-columns",
+        action="store_true",
+        help="Do not require trained model feature columns during validation.",
+    )
+    predict_parser.add_argument(
+        "--keep-invalid-prediction-artifact",
+        action="store_true",
+        help="Keep invalid prediction CSV artifacts when validation fails.",
+    )
 
     return parser
 
@@ -273,6 +336,18 @@ def build_prediction_run_config_from_args(
         enable_prediction_registry=not args.no_prediction_registry,
         prediction_registry_filename=args.prediction_registry_filename,
         model_version_metadata_path=args.model_version_metadata_path,
+        enable_prediction_validation=not args.no_prediction_validation,
+        prediction_validation_report_filename=args.prediction_validation_report_filename,
+        fail_on_prediction_validation_error=not args.no_fail_on_prediction_validation_error,
+        require_model_version=args.require_model_version,
+        require_probability_columns=args.require_probability_columns,
+        require_confidence=args.require_confidence,
+        confidence_column=args.confidence_column,
+        min_confidence=args.min_confidence,
+        max_low_confidence_ratio=args.max_low_confidence_ratio,
+        probability_sum_tolerance=args.probability_sum_tolerance,
+        require_trained_feature_columns=not args.no_require_trained_feature_columns,
+        remove_invalid_prediction_artifact=not args.keep_invalid_prediction_artifact,
     )
 
 
