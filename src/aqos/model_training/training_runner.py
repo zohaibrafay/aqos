@@ -7,6 +7,14 @@ from typing import Any
 
 import pandas as pd
 
+from aqos.model_training.model_evaluation import (
+    ModelEvaluationReport,
+    ModelEvaluationThresholds,
+    ModelPromotionStage,
+    build_model_evaluation_report,
+    write_model_evaluation_report,
+)
+
 from aqos.model_training.baseline_signal_model import (
     BaselineSignalModel,
     SignalModelTrainingConfig,
@@ -75,7 +83,20 @@ class SignalTrainingRunConfig:
         "aqos",
         "model-training",
         "baseline-signal-model",
+        
     )
+    enable_model_evaluation: bool = True
+    model_evaluation_report_filename: str = "model_evaluation_report.json"
+    fail_on_model_evaluation_error: bool = False
+    evaluation_min_accuracy: float = 0.45
+    evaluation_min_macro_f1: float | None = None
+    evaluation_max_log_loss: float | None = None
+    evaluation_min_test_samples: int = 20
+    evaluation_required_classes: tuple[str, ...] = ()
+    evaluation_allowed_promotion_stage: ModelPromotionStage = (
+        ModelPromotionStage.RESEARCH
+    )
+    model_evaluation_notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -90,6 +111,8 @@ class SignalTrainingRunOutput:
     quality_report: DatasetQualityReport | None = None
     experiment_run: ExperimentRunMetadata | None = None
     model_version_metadata: ModelVersionMetadata | None = None
+    model_evaluation_report_path: Path | None = None
+    model_evaluation_report: ModelEvaluationReport | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -115,6 +138,11 @@ class SignalTrainingRunOutput:
                 if self.model_version_metadata_path is not None
                 else None
             ),
+            "model_evaluation_report_path": (
+                self.model_evaluation_report_path.as_posix()
+                if self.model_evaluation_report_path is not None
+                else None
+            ),
             "training_result": self.training_result.to_dict(),
             "quality_report": (
                 self.quality_report.to_dict()
@@ -129,6 +157,11 @@ class SignalTrainingRunOutput:
             "model_version_metadata": (
                 self.model_version_metadata.to_dict()
                 if self.model_version_metadata is not None
+                else None
+            ),
+            "model_evaluation_report": (
+                self.model_evaluation_report.to_dict()
+                if self.model_evaluation_report is not None
                 else None
             ),
         }
@@ -286,6 +319,7 @@ def build_training_experiment_artifacts(
     quality_report_path: Path | None,
     dataset_version_metadata_path: Path | None,
     model_version_metadata_path: Path | None = None,
+    model_evaluation_report_path: Path | None = None,
 ) -> tuple[ExperimentArtifact, ...]:
     artifacts: list[ExperimentArtifact] = [
         build_experiment_artifact(
@@ -328,6 +362,14 @@ def build_training_experiment_artifacts(
                 model_version_metadata_path,
                 ExperimentArtifactType.MODEL_VERSION_METADATA,
                 name="model_version_metadata",
+            )
+        )
+    if model_evaluation_report_path is not None:
+        artifacts.append(
+            build_experiment_artifact(
+                model_evaluation_report_path,
+                ExperimentArtifactType.MODEL_EVALUATION_REPORT,
+                name="model_evaluation_report",
             )
         )
 
@@ -418,6 +460,69 @@ def build_training_model_version_metadata(
     )
 
 
+def build_training_model_evaluation_thresholds(
+    run_config: SignalTrainingRunConfig,
+) -> ModelEvaluationThresholds:
+    return ModelEvaluationThresholds(
+        min_accuracy=run_config.evaluation_min_accuracy,
+        min_macro_f1=run_config.evaluation_min_macro_f1,
+        max_log_loss=run_config.evaluation_max_log_loss,
+        min_test_samples=run_config.evaluation_min_test_samples,
+        required_classes=run_config.evaluation_required_classes,
+        allowed_promotion_stage=run_config.evaluation_allowed_promotion_stage,
+    )
+
+
+def build_training_model_evaluation_report(
+    run_config: SignalTrainingRunConfig,
+    training_result: SignalModelTrainingResult,
+    model_version_metadata: ModelVersionMetadata | None,
+    experiment_run: ExperimentRunMetadata | None,
+) -> ModelEvaluationReport | None:
+    if not run_config.enable_model_evaluation:
+        return None
+
+    model_id = None
+    model_version = None
+    dataset_id = None
+    dataset_version = None
+
+    if model_version_metadata is not None:
+        model_id = model_version_metadata.model_id
+        model_version = model_version_metadata.model_version
+        dataset_id = model_version_metadata.dataset_id
+        dataset_version = model_version_metadata.dataset_version
+
+    return build_model_evaluation_report(
+        model_name=training_result.model_name,
+        model_id=model_id,
+        model_version=model_version,
+        dataset_id=dataset_id,
+        dataset_version=dataset_version,
+        experiment_run_id=experiment_run.run_id if experiment_run is not None else None,
+        metrics=training_result.to_dict(),
+        thresholds=build_training_model_evaluation_thresholds(run_config),
+        notes=run_config.model_evaluation_notes,
+    )
+
+
+def write_and_maybe_raise_model_evaluation_report(
+    run_config: SignalTrainingRunConfig,
+    output_dir: Path,
+    report: ModelEvaluationReport | None,
+) -> Path | None:
+    if report is None:
+        return None
+
+    report_path = output_dir / run_config.model_evaluation_report_filename
+
+    write_model_evaluation_report(report_path, report)
+
+    if run_config.fail_on_model_evaluation_error:
+        report.raise_if_invalid()
+
+    return report_path
+
 def train_baseline_signal_model_from_csv(
     run_config: SignalTrainingRunConfig,
 ) -> SignalTrainingRunOutput:
@@ -498,10 +603,12 @@ def train_baseline_signal_model_from_csv(
         experiment_run_metadata_path=None,
         experiment_registry_path=None,
         model_version_metadata_path=model_version_metadata_path,
+        model_evaluation_report_path=None,
         training_result=result,
         quality_report=quality_report,
         experiment_run=None,
         model_version_metadata=model_version_metadata,
+        model_evaluation_report=None,
     )
 
     write_training_metrics(metrics_path, metrics_output)
@@ -509,6 +616,61 @@ def train_baseline_signal_model_from_csv(
     experiment_run_metadata_path: Path | None = None
     experiment_registry_path: Path | None = None
     experiment_run: ExperimentRunMetadata | None = None
+
+    model_evaluation_report = build_training_model_evaluation_report(
+        run_config=run_config,
+        training_result=result,
+        model_version_metadata=model_version_metadata,
+        experiment_run=preliminary_experiment_run,
+    )
+
+    model_evaluation_report_path = write_and_maybe_raise_model_evaluation_report(
+        run_config=run_config,
+        output_dir=output_dir,
+        report=model_evaluation_report,
+    )
+
+    if model_version_metadata is not None and model_evaluation_report is not None:
+        model_version_metadata = build_model_version_metadata(
+            model_name=result.model_name,
+            model_path=saved_model_path,
+            dataset_id=model_version_metadata.dataset_id,
+            dataset_version=model_version_metadata.dataset_version,
+            experiment_run_id=(
+                preliminary_experiment_run.run_id
+                if preliminary_experiment_run is not None
+                else None
+            ),
+            training_parameters=build_training_experiment_parameters(run_config),
+            training_metrics=result.to_dict(),
+            description=run_config.model_version_description,
+            tags=run_config.model_version_tags,
+            model_evaluation_report_path=model_evaluation_report_path,
+            promotion_stage=model_evaluation_report.promotion_stage.value,
+            is_promotion_ready=model_evaluation_report.is_promotion_ready,
+        )
+
+        write_model_version_metadata(
+            model_version_metadata_path,
+            model_version_metadata,
+        )
+
+    metrics_with_evaluation_output = SignalTrainingRunOutput(
+        model_path=saved_model_path,
+        metrics_path=metrics_path,
+        quality_report_path=quality_report_path,
+        experiment_run_metadata_path=None,
+        experiment_registry_path=None,
+        model_version_metadata_path=model_version_metadata_path,
+        model_evaluation_report_path=model_evaluation_report_path,
+        training_result=result,
+        quality_report=quality_report,
+        experiment_run=None,
+        model_version_metadata=model_version_metadata,
+        model_evaluation_report=model_evaluation_report,
+    )
+
+    write_training_metrics(metrics_path, metrics_with_evaluation_output)
 
     if preliminary_experiment_run is not None:
         artifacts = build_training_experiment_artifacts(
@@ -518,6 +680,7 @@ def train_baseline_signal_model_from_csv(
             quality_report_path=quality_report_path,
             dataset_version_metadata_path=dataset_version_metadata_path,
             model_version_metadata_path=model_version_metadata_path,
+            model_evaluation_report_path=model_evaluation_report_path,
         )
 
         experiment_run = build_experiment_run_metadata(
@@ -545,18 +708,23 @@ def train_baseline_signal_model_from_csv(
             experiment_run,
         )
 
-    return SignalTrainingRunOutput(
+    final_output = SignalTrainingRunOutput(
         model_path=saved_model_path,
         metrics_path=metrics_path,
         quality_report_path=quality_report_path,
         experiment_run_metadata_path=experiment_run_metadata_path,
         experiment_registry_path=experiment_registry_path,
         model_version_metadata_path=model_version_metadata_path,
+        model_evaluation_report_path=model_evaluation_report_path,
         training_result=result,
         quality_report=quality_report,
         experiment_run=experiment_run,
         model_version_metadata=model_version_metadata,
+        model_evaluation_report=model_evaluation_report,
     )
+
+    return final_output
+  
 
 
 __all__ = [
@@ -575,4 +743,7 @@ __all__ = [
     "train_baseline_signal_model_from_csv",
     "validate_training_dataset_for_run",
     "write_training_metrics",
+    "build_training_model_evaluation_report",
+    "build_training_model_evaluation_thresholds",
+    "write_and_maybe_raise_model_evaluation_report",
 ]

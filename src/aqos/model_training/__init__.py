@@ -161,6 +161,9 @@ from aqos.model_training.training_runner import (
     load_signal_training_dataset,
     train_baseline_signal_model_from_csv,
     write_training_metrics,
+    build_training_model_evaluation_report,
+    build_training_model_evaluation_thresholds,
+    write_and_maybe_raise_model_evaluation_report,
 )
 from aqos.model_training.feature_schema import (
     DatasetIssueSeverity,
@@ -197,6 +200,28 @@ from aqos.model_training.prediction_versioning import (
     prediction_utc_now_iso,
     read_prediction_run_metadata,
     write_prediction_run_metadata,
+)
+
+from aqos.model_training.model_evaluation import (
+    MODEL_EVALUATION_VERSION,
+    ModelEvaluationIssue,
+    ModelEvaluationReport,
+    ModelEvaluationRule,
+    ModelEvaluationSeverity,
+    ModelEvaluationStatus,
+    ModelEvaluationThresholds,
+    ModelPromotionStage,
+    build_model_evaluation_issue,
+    build_model_evaluation_report,
+    build_model_evaluation_status,
+    get_numeric_metric,
+    get_sequence_metric,
+    model_evaluation_utc_now_iso,
+    read_model_evaluation_report,
+    resolve_promotion_stage,
+    validate_model_evaluation_thresholds,
+    validate_required_metric_present,
+    write_model_evaluation_report,
 )
 
 __all__ = [
@@ -363,6 +388,28 @@ __all__ = [
     "build_prediction_output_validation_report",
     "write_and_maybe_raise_prediction_validation_report",
     "remove_invalid_prediction_artifact_if_needed",
+    "MODEL_EVALUATION_VERSION",
+    "ModelEvaluationIssue",
+    "ModelEvaluationReport",
+    "ModelEvaluationRule",
+    "ModelEvaluationSeverity",
+    "ModelEvaluationStatus",
+    "ModelEvaluationThresholds",
+    "ModelPromotionStage",
+    "build_model_evaluation_issue",
+    "build_model_evaluation_report",
+    "build_model_evaluation_status",
+    "get_numeric_metric",
+    "get_sequence_metric",
+    "model_evaluation_utc_now_iso",
+    "read_model_evaluation_report",
+    "resolve_promotion_stage",
+    "validate_model_evaluation_thresholds",
+    "validate_required_metric_present",
+    "write_model_evaluation_report",
+    "build_training_model_evaluation_report",
+    "build_training_model_evaluation_thresholds",
+    "write_and_maybe_raise_model_evaluation_report",
 ]
 
 __all__ = sorted(__all__)

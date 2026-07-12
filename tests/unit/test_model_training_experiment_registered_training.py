@@ -78,6 +78,7 @@ def test_training_runner_writes_experiment_metadata_and_registry(tmp_path) -> No
     assert "metrics" in artifact_types
     assert "quality_report" in artifact_types
     assert "model_version_metadata" in artifact_types
+    assert "model_evaluation_report" in artifact_types
     assert registry["runs"][0]["run_id"] == run_payload["run_id"]
 
 

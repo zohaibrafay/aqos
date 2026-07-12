@@ -27,6 +27,7 @@ class ExperimentArtifactType(str, Enum):
     DATASET_VERSION_METADATA = "dataset_version_metadata"
     MODEL = "model"
     MODEL_VERSION_METADATA = "model_version_metadata"
+    MODEL_EVALUATION_REPORT = "model_evaluation_report"
     METRICS = "metrics"
     QUALITY_REPORT = "quality_report"
     PREDICTIONS = "predictions"

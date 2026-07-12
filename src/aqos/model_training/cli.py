@@ -4,6 +4,8 @@ import argparse
 import json
 from collections.abc import Sequence
 
+
+from aqos.model_training.model_evaluation import ModelPromotionStage
 from aqos.model_training.experiment_registry import read_experiment_registry
 from aqos.model_training.prediction_registry import read_prediction_registry
 from aqos.model_training.dataset_builder import (
@@ -145,7 +147,66 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
         type=float,
         default=0.8,
     )
-
+    train_parser.add_argument(
+        "--no-model-evaluation",
+        action="store_true",
+        help="Skip model evaluation report generation.",
+    )
+    train_parser.add_argument(
+        "--model-evaluation-report-filename",
+        default="model_evaluation_report.json",
+        help="Filename for model evaluation report.",
+    )
+    train_parser.add_argument(
+        "--fail-on-model-evaluation-error",
+        action="store_true",
+        help="Fail training command when model evaluation thresholds fail.",
+    )
+    train_parser.add_argument(
+        "--evaluation-min-accuracy",
+        type=float,
+        default=0.45,
+        help="Minimum accuracy required for model evaluation.",
+    )
+    train_parser.add_argument(
+        "--evaluation-min-macro-f1",
+        type=float,
+        default=None,
+        help="Optional minimum macro F1 required for model evaluation.",
+    )
+    train_parser.add_argument(
+        "--evaluation-max-log-loss",
+        type=float,
+        default=None,
+        help="Optional maximum log loss allowed for model evaluation.",
+    )
+    train_parser.add_argument(
+        "--evaluation-min-test-samples",
+        type=int,
+        default=20,
+        help="Minimum recommended number of test samples.",
+    )
+    train_parser.add_argument(
+        "--evaluation-required-classes",
+        default="",
+        help="Comma-separated required target classes, for example: buy,sell,hold.",
+    )
+    train_parser.add_argument(
+        "--evaluation-allowed-promotion-stage",
+        default=ModelPromotionStage.RESEARCH.value,
+        choices=[stage.value for stage in ModelPromotionStage],
+        help="Allowed promotion stage when evaluation passes.",
+    )
+    train_parser.add_argument(
+        "--model-evaluation-notes",
+        default=None,
+        help="Optional notes stored in model evaluation report.",
+    )
+    train_parser.add_argument(
+        "--no-experiment-registry",
+        action="store_true",
+        help="Skip experiment registry output.",
+    )
     predict_parser = subparsers.add_parser(
         "predict",
         help="Generate signal predictions from a saved model and CSV features.",
@@ -257,6 +318,15 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
 
     return parser
 
+def parse_comma_separated_values(value: str | None) -> tuple[str, ...]:
+    if value is None:
+        return ()
+
+    return tuple(
+        item.strip()
+        for item in value.split(",")
+        if item.strip()
+    )
 
 def parse_feature_columns(raw_value: str) -> tuple[str, ...] | None:
     values = tuple(
@@ -319,6 +389,21 @@ def build_training_run_config_from_args(
         validate_quality=not args.no_quality_validation,
         quality_report_filename=args.quality_report_filename,
         max_majority_class_ratio=args.max_majority_class_ratio,
+        enable_model_evaluation=not args.no_model_evaluation,
+        model_evaluation_report_filename=args.model_evaluation_report_filename,
+        fail_on_model_evaluation_error=args.fail_on_model_evaluation_error,
+        evaluation_min_accuracy=args.evaluation_min_accuracy,
+        evaluation_min_macro_f1=args.evaluation_min_macro_f1,
+        evaluation_max_log_loss=args.evaluation_max_log_loss,
+        evaluation_min_test_samples=args.evaluation_min_test_samples,
+        evaluation_required_classes=parse_comma_separated_values(
+            args.evaluation_required_classes
+        ),
+        evaluation_allowed_promotion_stage=ModelPromotionStage(
+            args.evaluation_allowed_promotion_stage
+        ),
+        model_evaluation_notes=args.model_evaluation_notes,
+        enable_experiment_registry=not args.no_experiment_registry,
     )
 
 

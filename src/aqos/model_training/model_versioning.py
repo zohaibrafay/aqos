@@ -59,6 +59,9 @@ class ModelVersionMetadata:
     dataset_id: str | None = None
     dataset_version: str | None = None
     experiment_run_id: str | None = None
+    model_evaluation_report_path: str | None = None
+    promotion_stage: str | None = None
+    is_promotion_ready: bool | None = None
     training_parameters: dict[str, Any] = field(default_factory=dict)
     training_metrics: dict[str, Any] = field(default_factory=dict)
     description: str | None = None
@@ -89,6 +92,9 @@ class ModelVersionMetadata:
             "dataset_id": self.dataset_id,
             "dataset_version": self.dataset_version,
             "experiment_run_id": self.experiment_run_id,
+            "model_evaluation_report_path": self.model_evaluation_report_path,
+            "promotion_stage": self.promotion_stage,
+            "is_promotion_ready": self.is_promotion_ready,
             "training_parameters": self.training_parameters,
             "training_metrics": self.training_metrics,
             "description": self.description,
@@ -182,6 +188,9 @@ def build_model_version_metadata(
     dataset_id: str | None = None,
     dataset_version: str | None = None,
     experiment_run_id: str | None = None,
+    model_evaluation_report_path: str | Path | None = None,
+    promotion_stage: str | None = None,
+    is_promotion_ready: bool | None = None,
     training_parameters: dict[str, Any] | None = None,
     training_metrics: dict[str, Any] | None = None,
     description: str | None = None,
@@ -204,6 +213,13 @@ def build_model_version_metadata(
         dataset_id=dataset_id,
         dataset_version=dataset_version,
         experiment_run_id=experiment_run_id,
+        model_evaluation_report_path=(
+            Path(model_evaluation_report_path).as_posix()
+            if model_evaluation_report_path is not None
+            else None
+        ),
+        promotion_stage=promotion_stage,
+        is_promotion_ready=is_promotion_ready,
         training_parameters=training_parameters or {},
         training_metrics=training_metrics or {},
         description=description,

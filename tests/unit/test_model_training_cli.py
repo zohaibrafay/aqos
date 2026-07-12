@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 
 import pandas as pd
-
+import pytest
 from aqos.model_training.cli import (
     build_model_training_cli_parser,
+    build_training_run_config_from_args,
     parse_feature_columns,
     run_model_training_cli,
 )
@@ -142,18 +143,71 @@ def test_model_training_cli_parser_accepts_train_command() -> None:
             "--dataset-path",
             "dataset.csv",
             "--output-dir",
-            "tmp/model_training",
-            "--feature-columns",
-            "rsi_14,macd_histogram",
+            "artifacts",
+            "--target-column",
+            "target",
+            "--test-size",
+            "0.2",
+            "--random-state",
+            "123",
             "--n-estimators",
             "20",
+            "--max-depth",
+            "4",
+            "--min-samples-leaf",
+            "2",
+            "--model-filename",
+            "model.joblib",
+            "--metrics-filename",
+            "metrics.json",
+            "--no-schema-validation",
+            "--no-quality-validation",
+            "--no-experiment-registry",
+            "--no-model-evaluation",
+            "--model-evaluation-report-filename",
+            "custom_model_evaluation_report.json",
+            "--fail-on-model-evaluation-error",
+            "--evaluation-min-accuracy",
+            "0.6",
+            "--evaluation-min-macro-f1",
+            "0.5",
+            "--evaluation-max-log-loss",
+            "0.9",
+            "--evaluation-min-test-samples",
+            "50",
+            "--evaluation-required-classes",
+            "buy,sell,hold",
+            "--evaluation-allowed-promotion-stage",
+            "paper_trading",
+            "--model-evaluation-notes",
+            "CLI evaluation test",
         ]
     )
 
     assert args.command == "train"
     assert args.dataset_path == "dataset.csv"
-    assert args.feature_columns == "rsi_14,macd_histogram"
+    assert args.output_dir == "artifacts"
+    assert args.target_column == "target"
+    assert args.test_size == 0.2
+    assert args.random_state == 123
     assert args.n_estimators == 20
+    assert args.max_depth == 4
+    assert args.min_samples_leaf == 2
+    assert args.model_filename == "model.joblib"
+    assert args.metrics_filename == "metrics.json"
+    assert args.no_schema_validation is True
+    assert args.no_quality_validation is True
+    assert args.no_experiment_registry is True
+    assert args.no_model_evaluation is True
+    assert args.model_evaluation_report_filename == "custom_model_evaluation_report.json"
+    assert args.fail_on_model_evaluation_error is True
+    assert args.evaluation_min_accuracy == 0.6
+    assert args.evaluation_min_macro_f1 == 0.5
+    assert args.evaluation_max_log_loss == 0.9
+    assert args.evaluation_min_test_samples == 50
+    assert args.evaluation_required_classes == "buy,sell,hold"
+    assert args.evaluation_allowed_promotion_stage == "paper_trading"
+    assert args.model_evaluation_notes == "CLI evaluation test"
 
 def test_run_model_training_cli_builds_dataset_from_raw_ohlcv_csv(tmp_path, capsys) -> None:
     input_path = tmp_path / "raw_ohlcv.csv"
@@ -803,3 +857,158 @@ def test_run_model_training_cli_predict_can_keep_invalid_artifact_when_configure
     assert payload["prediction_validation_report"]["status"] == "failed"
     assert payload["prediction_metadata_path"].endswith("prediction_run_metadata.json")
     assert payload["prediction_registry_path"].endswith("prediction_registry.json")
+    
+def test_build_training_run_config_from_args_includes_model_evaluation_options() -> None:
+    parser = build_model_training_cli_parser()
+
+    args = parser.parse_args(
+        [
+            "train",
+            "--dataset-path",
+            "dataset.csv",
+            "--evaluation-min-accuracy",
+            "0.6",
+            "--evaluation-min-macro-f1",
+            "0.5",
+            "--evaluation-max-log-loss",
+            "0.9",
+            "--evaluation-min-test-samples",
+            "50",
+            "--evaluation-required-classes",
+            "buy, sell, hold",
+            "--evaluation-allowed-promotion-stage",
+            "paper_trading",
+            "--model-evaluation-notes",
+            "Ready for paper trading.",
+        ]
+    )
+
+    config = build_training_run_config_from_args(args)
+
+    assert config.enable_model_evaluation is True
+    assert config.model_evaluation_report_filename == "model_evaluation_report.json"
+    assert config.fail_on_model_evaluation_error is False
+    assert config.evaluation_min_accuracy == 0.6
+    assert config.evaluation_min_macro_f1 == 0.5
+    assert config.evaluation_max_log_loss == 0.9
+    assert config.evaluation_min_test_samples == 50
+    assert config.evaluation_required_classes == ("buy", "sell", "hold")
+    assert config.evaluation_allowed_promotion_stage.value == "paper_trading"
+    assert config.model_evaluation_notes == "Ready for paper trading."
+    
+def test_run_model_training_cli_train_writes_model_evaluation_report(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    output_dir = tmp_path / "artifacts"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+
+    exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "283",
+            "--evaluation-min-accuracy",
+            "0.0",
+            "--evaluation-required-classes",
+            "buy,sell,hold",
+            "--evaluation-allowed-promotion-stage",
+            "paper_trading",
+            "--model-evaluation-notes",
+            "CLI generated evaluation report.",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    evaluation_report_path = output_dir / "model_evaluation_report.json"
+
+    assert exit_code == 0
+    assert evaluation_report_path.exists()
+    assert payload["model_evaluation_report_path"].endswith(
+        "model_evaluation_report.json"
+    )
+    assert payload["model_evaluation_report"]["promotion_stage"] == "paper_trading"
+    assert payload["model_evaluation_report"]["notes"] == (
+        "CLI generated evaluation report."
+    )
+    assert payload["model_version_metadata"]["model_evaluation_report_path"].endswith(
+        "model_evaluation_report.json"
+    )
+
+
+def test_run_model_training_cli_train_can_disable_model_evaluation(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    output_dir = tmp_path / "artifacts"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+
+    exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "287",
+            "--no-model-evaluation",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["model_evaluation_report_path"] is None
+    assert payload["model_evaluation_report"] is None
+    assert not (output_dir / "model_evaluation_report.json").exists()
+
+
+def test_run_model_training_cli_train_fails_on_model_evaluation_error(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    output_dir = tmp_path / "artifacts"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+
+    with pytest.raises(ValueError, match="Model evaluation failed"):
+        run_model_training_cli(
+            [
+                "train",
+                "--dataset-path",
+                str(dataset_path),
+                "--output-dir",
+                str(output_dir),
+                "--n-estimators",
+                "20",
+                "--random-state",
+                "289",
+                "--evaluation-required-classes",
+                "buy,sell,hold,missing_class",
+                "--fail-on-model-evaluation-error",
+            ]
+        )
+
+    capsys.readouterr()
+
+    assert (output_dir / "model_evaluation_report.json").exists()
