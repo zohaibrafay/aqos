@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-
+from pathlib import Path
 
 from aqos.model_training.model_evaluation import ModelPromotionStage
 from aqos.model_training.experiment_registry import read_experiment_registry
@@ -11,6 +11,10 @@ from aqos.model_training.prediction_registry import read_prediction_registry
 from aqos.model_training.dataset_builder import (
     SignalMLDatasetBuildConfig,
     build_signal_ml_training_dataset_from_csv,
+)
+from aqos.model_training.model_promotion_runner import (
+    ModelPromotionRunConfig,
+    promote_model_from_metadata,
 )
 from aqos.model_training.dataset_quality import (
     DatasetQualityConfig,
@@ -315,8 +319,154 @@ def build_model_training_cli_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Keep invalid prediction CSV artifacts when validation fails.",
     )
+    predict_parser.add_argument(
+        "--require-model-promotion",
+        action="store_true",
+        help="Require model promotion approval before prediction.",
+    )
+    predict_parser.add_argument(
+        "--promotion-registry-path",
+        default=None,
+        help="Path to model_promotion_registry.json.",
+    )
+    predict_parser.add_argument(
+        "--required-promotion-stage",
+        default=ModelPromotionStage.RESEARCH.value,
+        choices=[
+            ModelPromotionStage.RESEARCH.value,
+            ModelPromotionStage.PAPER_TRADING.value,
+            ModelPromotionStage.DEMO.value,
+            ModelPromotionStage.LIMITED_LIVE.value,
+            ModelPromotionStage.LIVE.value,
+        ],
+        help="Required promotion stage for prediction.",
+    )
+    predict_parser.add_argument(
+        "--no-fail-on-promotion-gate-error",
+        action="store_true",
+        help="Do not raise when promotion gate rejects prediction.",
+    )
+    promote_parser = subparsers.add_parser(
+        "promote-model",
+        help="Promote an evaluated model to a controlled AQOS stage.",
+    )
+    promote_parser.add_argument(
+        "--model-version-metadata-path",
+        required=True,
+        help="Path to model_version_metadata.json.",
+    )
+    promote_parser.add_argument(
+        "--target-stage",
+        required=True,
+        choices=[
+            ModelPromotionStage.RESEARCH.value,
+            ModelPromotionStage.PAPER_TRADING.value,
+            ModelPromotionStage.DEMO.value,
+            ModelPromotionStage.LIMITED_LIVE.value,
+            ModelPromotionStage.LIVE.value,
+        ],
+        help="Target promotion stage.",
+    )
+    promote_parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Directory for promotion review and registry output.",
+    )
+    promote_parser.add_argument(
+        "--evaluation-report-path",
+        default=None,
+        help="Optional explicit model_evaluation_report.json path.",
+    )
+    promote_parser.add_argument(
+        "--current-stage",
+        default=ModelPromotionStage.RESEARCH.value,
+        choices=[
+            ModelPromotionStage.RESEARCH.value,
+            ModelPromotionStage.PAPER_TRADING.value,
+            ModelPromotionStage.DEMO.value,
+            ModelPromotionStage.LIMITED_LIVE.value,
+            ModelPromotionStage.LIVE.value,
+        ],
+        help="Current model promotion stage.",
+    )
+    promote_parser.add_argument(
+        "--no-require-evaluation-report",
+        action="store_true",
+        help="Do not require a model evaluation report.",
+    )
+    promote_parser.add_argument(
+        "--no-require-model-promotion-ready",
+        action="store_true",
+        help="Do not require model metadata is_promotion_ready=true.",
+    )
+    promote_parser.add_argument(
+        "--no-allow-warning-evaluation",
+        action="store_true",
+        help="Reject evaluations with passed_with_warnings status.",
+    )
+    promote_parser.add_argument(
+        "--no-allow-same-stage",
+        action="store_true",
+        help="Reject promotion when target stage equals current stage.",
+    )
+    promote_parser.add_argument(
+        "--no-forward-only",
+        action="store_true",
+        help="Allow backward stage movement.",
+    )
+    promote_parser.add_argument(
+        "--fail-on-rejected",
+        action="store_true",
+        help="Raise an error when promotion is rejected after writing review and registry.",
+    )
+    promote_parser.add_argument(
+        "--promotion-review-filename",
+        default="model_promotion_review.json",
+        help="Promotion review filename.",
+    )
+    promote_parser.add_argument(
+        "--promotion-registry-filename",
+        default="model_promotion_registry.json",
+        help="Promotion registry filename.",
+    )
+    promote_parser.add_argument(
+        "--promotion-notes",
+        default=None,
+        help="Optional notes stored in promotion registry entry.",
+    )
+    promote_parser.add_argument(
+        "--promotion-tags",
+        default="aqos,model-promotion",
+        help="Comma-separated promotion tags.",
+    )
 
     return parser
+
+
+def build_model_promotion_run_config_from_args(
+    args: argparse.Namespace,
+) -> ModelPromotionRunConfig:
+    return ModelPromotionRunConfig(
+        model_version_metadata_path=Path(args.model_version_metadata_path),
+        target_stage=ModelPromotionStage(args.target_stage),
+        output_dir=Path(args.output_dir) if args.output_dir is not None else None,
+        evaluation_report_path=(
+            Path(args.evaluation_report_path)
+            if args.evaluation_report_path is not None
+            else None
+        ),
+        current_stage=ModelPromotionStage(args.current_stage),
+        require_evaluation_report=not args.no_require_evaluation_report,
+        require_model_promotion_ready=not args.no_require_model_promotion_ready,
+        allow_warning_evaluation=not args.no_allow_warning_evaluation,
+        allow_same_stage=not args.no_allow_same_stage,
+        forward_only=not args.no_forward_only,
+        fail_on_rejected=args.fail_on_rejected,
+        promotion_review_filename=args.promotion_review_filename,
+        promotion_registry_filename=args.promotion_registry_filename,
+        notes=args.promotion_notes,
+        tags=parse_comma_separated_values(args.promotion_tags),
+    )
 
 def parse_comma_separated_values(value: str | None) -> tuple[str, ...]:
     if value is None:
@@ -433,6 +583,16 @@ def build_prediction_run_config_from_args(
         probability_sum_tolerance=args.probability_sum_tolerance,
         require_trained_feature_columns=not args.no_require_trained_feature_columns,
         remove_invalid_prediction_artifact=not args.keep_invalid_prediction_artifact,
+                enable_model_promotion_gate=args.require_model_promotion,
+        promotion_registry_path=(
+            Path(args.promotion_registry_path)
+            if args.promotion_registry_path is not None
+            else None
+        ),
+        required_promotion_stage=ModelPromotionStage(
+            args.required_promotion_stage
+        ),
+        fail_on_promotion_gate_error=not args.no_fail_on_promotion_gate_error,
     )
 
 
@@ -489,7 +649,14 @@ def run_model_training_cli(argv: Sequence[str] | None = None) -> int:
         )
         print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
         return 0
-
+    
+    if args.command == "promote-model":
+        output = promote_model_from_metadata(
+            build_model_promotion_run_config_from_args(args)
+        )
+        print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
+        return 0
+    
     parser.error(f"Unsupported command: {args.command}")
     return 2
 

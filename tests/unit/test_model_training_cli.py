@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import pytest
 from aqos.model_training.cli import (
+    build_model_promotion_run_config_from_args,
     build_model_training_cli_parser,
     build_training_run_config_from_args,
     parse_feature_columns,
@@ -96,7 +97,280 @@ def build_raw_ohlcv_dataset(rows: int = 48) -> pd.DataFrame:
 
     return pd.DataFrame(records)
 
+def build_model_version_metadata(
+    *,
+    promotion_stage: str = "paper_trading",
+    is_promotion_ready: bool = True,
+    model_id: str = "model_123",
+    model_version: str = "model_v1",
+    evaluation_report_path: str | None = "model_evaluation_report.json",
+) -> dict[str, object]:
+    return {
+        "model_name": "baseline_random_forest_signal_model",
+        "model_id": model_id,
+        "model_version": model_version,
+        "model_artifact": {
+            "path": "baseline_signal_model.joblib",
+            "sha256": "abc123",
+            "size_bytes": 123,
+        },
+        "model_evaluation_report_path": evaluation_report_path,
+        "promotion_stage": promotion_stage,
+        "is_promotion_ready": is_promotion_ready,
+        "dataset_id": "dataset_123",
+        "dataset_version": "dataset_v1",
+        "experiment_run_id": "run_123",
+    }
 
+
+def build_evaluation_report(
+    *,
+    status: str = "passed",
+    promotion_stage: str = "paper_trading",
+    is_promotion_ready: bool = True,
+    model_id: str = "model_123",
+    model_version: str = "model_v1",
+) -> dict[str, object]:
+    return {
+        "model_name": "baseline_random_forest_signal_model",
+        "model_id": model_id,
+        "model_version": model_version,
+        "status": status,
+        "promotion_stage": promotion_stage,
+        "is_promotion_ready": is_promotion_ready,
+    }
+
+
+def test_model_training_cli_parser_accepts_promote_model_command() -> None:
+    parser = build_model_training_cli_parser()
+
+    args = parser.parse_args(
+        [
+            "promote-model",
+            "--model-version-metadata-path",
+            "artifacts/model_version_metadata.json",
+            "--target-stage",
+            "paper_trading",
+            "--output-dir",
+            "promotion",
+            "--evaluation-report-path",
+            "artifacts/model_evaluation_report.json",
+            "--current-stage",
+            "research",
+            "--no-require-evaluation-report",
+            "--no-require-model-promotion-ready",
+            "--no-allow-warning-evaluation",
+            "--no-allow-same-stage",
+            "--no-forward-only",
+            "--fail-on-rejected",
+            "--promotion-review-filename",
+            "review.json",
+            "--promotion-registry-filename",
+            "registry.json",
+            "--promotion-notes",
+            "Approved from CLI.",
+            "--promotion-tags",
+            "aqos,paper",
+        ]
+    )
+
+    assert args.command == "promote-model"
+    assert args.model_version_metadata_path == "artifacts/model_version_metadata.json"
+    assert args.target_stage == "paper_trading"
+    assert args.output_dir == "promotion"
+    assert args.evaluation_report_path == "artifacts/model_evaluation_report.json"
+    assert args.current_stage == "research"
+    assert args.no_require_evaluation_report is True
+    assert args.no_require_model_promotion_ready is True
+    assert args.no_allow_warning_evaluation is True
+    assert args.no_allow_same_stage is True
+    assert args.no_forward_only is True
+    assert args.fail_on_rejected is True
+    assert args.promotion_review_filename == "review.json"
+    assert args.promotion_registry_filename == "registry.json"
+    assert args.promotion_notes == "Approved from CLI."
+    assert args.promotion_tags == "aqos,paper"
+    
+    
+def test_build_model_promotion_run_config_from_args() -> None:
+    parser = build_model_training_cli_parser()
+
+    args = parser.parse_args(
+        [
+            "promote-model",
+            "--model-version-metadata-path",
+            "artifacts/model_version_metadata.json",
+            "--target-stage",
+            "demo",
+            "--output-dir",
+            "promotion",
+            "--evaluation-report-path",
+            "artifacts/model_evaluation_report.json",
+            "--current-stage",
+            "paper_trading",
+            "--no-allow-warning-evaluation",
+            "--promotion-review-filename",
+            "review.json",
+            "--promotion-registry-filename",
+            "registry.json",
+            "--promotion-notes",
+            "Promote to demo.",
+            "--promotion-tags",
+            "aqos,demo",
+        ]
+    )
+
+    config = build_model_promotion_run_config_from_args(args)
+
+    assert config.model_version_metadata_path.as_posix() == (
+        "artifacts/model_version_metadata.json"
+    )
+    assert config.target_stage.value == "demo"
+    assert config.output_dir.as_posix() == "promotion"
+    assert config.evaluation_report_path.as_posix() == (
+        "artifacts/model_evaluation_report.json"
+    )
+    assert config.current_stage.value == "paper_trading"
+    assert config.require_evaluation_report is True
+    assert config.require_model_promotion_ready is True
+    assert config.allow_warning_evaluation is False
+    assert config.allow_same_stage is True
+    assert config.forward_only is True
+    assert config.fail_on_rejected is False
+    assert config.promotion_review_filename == "review.json"
+    assert config.promotion_registry_filename == "registry.json"
+    assert config.notes == "Promote to demo."
+    assert config.tags == ("aqos", "demo")
+
+
+def test_run_model_training_cli_promote_model_approves_and_writes_registry(
+    tmp_path,
+    capsys,
+) -> None:
+    artifacts_dir = tmp_path / "artifacts"
+    metadata_path = artifacts_dir / "model_version_metadata.json"
+    evaluation_path = artifacts_dir / "model_evaluation_report.json"
+
+    write_json(metadata_path, build_model_version_metadata())
+    write_json(evaluation_path, build_evaluation_report())
+
+    exit_code = run_model_training_cli(
+        [
+            "promote-model",
+            "--model-version-metadata-path",
+            str(metadata_path),
+            "--target-stage",
+            "paper_trading",
+            "--promotion-notes",
+            "Approved from CLI.",
+            "--promotion-tags",
+            "aqos,paper",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["review"]["approved"] is True
+    assert payload["review"]["target_stage"] == "paper_trading"
+    assert payload["registry_entry"]["approved"] is True
+    assert payload["registry_entry"]["notes"] == "Approved from CLI."
+    assert payload["registry_entry"]["tags"] == ["aqos", "paper"]
+    assert (artifacts_dir / "model_promotion_review.json").exists()
+    assert (artifacts_dir / "model_promotion_registry.json").exists()
+
+
+def test_run_model_training_cli_promote_model_records_rejection_without_raising(
+    tmp_path,
+    capsys,
+) -> None:
+    artifacts_dir = tmp_path / "artifacts"
+    metadata_path = artifacts_dir / "model_version_metadata.json"
+    evaluation_path = artifacts_dir / "model_evaluation_report.json"
+
+    write_json(
+        metadata_path,
+        build_model_version_metadata(
+            promotion_stage="blocked",
+            is_promotion_ready=False,
+        ),
+    )
+    write_json(
+        evaluation_path,
+        build_evaluation_report(
+            status="failed",
+            promotion_stage="blocked",
+            is_promotion_ready=False,
+        ),
+    )
+
+    exit_code = run_model_training_cli(
+        [
+            "promote-model",
+            "--model-version-metadata-path",
+            str(metadata_path),
+            "--target-stage",
+            "paper_trading",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["review"]["approved"] is False
+    assert payload["registry_entry"]["approved"] is False
+    assert payload["registry"]["promotions"][0]["status"] == "rejected"
+    assert (artifacts_dir / "model_promotion_review.json").exists()
+    assert (artifacts_dir / "model_promotion_registry.json").exists()
+
+
+def test_run_model_training_cli_promote_model_can_fail_on_rejection(
+    tmp_path,
+    capsys,
+) -> None:
+    artifacts_dir = tmp_path / "artifacts"
+    metadata_path = artifacts_dir / "model_version_metadata.json"
+    evaluation_path = artifacts_dir / "model_evaluation_report.json"
+
+    write_json(
+        metadata_path,
+        build_model_version_metadata(
+            promotion_stage="blocked",
+            is_promotion_ready=False,
+        ),
+    )
+    write_json(
+        evaluation_path,
+        build_evaluation_report(
+            status="failed",
+            promotion_stage="blocked",
+            is_promotion_ready=False,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Model promotion rejected"):
+        run_model_training_cli(
+            [
+                "promote-model",
+                "--model-version-metadata-path",
+                str(metadata_path),
+                "--target-stage",
+                "paper_trading",
+                "--fail-on-rejected",
+            ]
+        )
+
+    capsys.readouterr()
+
+    assert (artifacts_dir / "model_promotion_review.json").exists()
+    assert (artifacts_dir / "model_promotion_registry.json").exists()
+
+
+def write_json(path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 def test_parse_feature_columns_returns_none_for_empty_value() -> None:
     assert parse_feature_columns("") is None
@@ -305,6 +579,12 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
             "--require-confidence",
             "--no-require-trained-feature-columns",
             "--keep-invalid-prediction-artifact",
+            "--require-model-promotion",
+            "--promotion-registry-path",
+            "model_promotion_registry.json",
+            "--required-promotion-stage",
+            "paper_trading",
+            "--no-fail-on-promotion-gate-error",
         ]
     )
 
@@ -330,6 +610,10 @@ def test_model_training_cli_parser_accepts_predict_command() -> None:
     assert args.require_confidence is True
     assert args.no_require_trained_feature_columns is True
     assert args.keep_invalid_prediction_artifact is True
+    assert args.require_model_promotion is True
+    assert args.promotion_registry_path == "model_promotion_registry.json"
+    assert args.required_promotion_stage == "paper_trading"
+    assert args.no_fail_on_promotion_gate_error is True
 
 
 def test_model_training_cli_parser_accepts_list_predictions_command() -> None:
@@ -345,6 +629,82 @@ def test_model_training_cli_parser_accepts_list_predictions_command() -> None:
 
     assert args.command == "list-predictions"
     assert args.registry_path == "prediction_registry.json"
+
+
+def test_run_model_training_cli_predict_requires_model_promotion(
+    tmp_path,
+    capsys,
+) -> None:
+    dataset_path = tmp_path / "training.csv"
+    features_path = tmp_path / "features.csv"
+    output_dir = tmp_path / "artifacts"
+    predictions_path = tmp_path / "predictions" / "signals.csv"
+
+    dataset = build_training_dataset()
+    dataset.to_csv(dataset_path, index=False)
+    dataset.drop(columns=["target"]).head(8).to_csv(features_path, index=False)
+
+    train_exit_code = run_model_training_cli(
+        [
+            "train",
+            "--dataset-path",
+            str(dataset_path),
+            "--output-dir",
+            str(output_dir),
+            "--n-estimators",
+            "20",
+            "--random-state",
+            "349",
+            "--evaluation-min-accuracy",
+            "0.0",
+            "--evaluation-allowed-promotion-stage",
+            "paper_trading",
+        ]
+    )
+    capsys.readouterr()
+
+    promote_exit_code = run_model_training_cli(
+        [
+            "promote-model",
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+            "--target-stage",
+            "paper_trading",
+        ]
+    )
+    capsys.readouterr()
+
+    predict_exit_code = run_model_training_cli(
+        [
+            "predict",
+            "--model-path",
+            str(output_dir / "baseline_signal_model.joblib"),
+            "--features-path",
+            str(features_path),
+            "--output-path",
+            str(predictions_path),
+            "--model-version-metadata-path",
+            str(output_dir / "model_version_metadata.json"),
+            "--require-model-promotion",
+            "--promotion-registry-path",
+            str(output_dir / "model_promotion_registry.json"),
+            "--required-promotion-stage",
+            "paper_trading",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert train_exit_code == 0
+    assert promote_exit_code == 0
+    assert predict_exit_code == 0
+    assert predictions_path.exists()
+    assert payload["model_promotion_gate_decision"]["approved"] is True
+    assert payload["model_promotion_gate_decision"]["required_stage"] == (
+        "paper_trading"
+    )
+
 
 def test_run_model_training_cli_predict_writes_prediction_metadata(tmp_path, capsys) -> None:
     dataset_path = tmp_path / "training.csv"

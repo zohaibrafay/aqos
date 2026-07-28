@@ -26,6 +26,7 @@ class ModelEvaluationStatus(str, Enum):
 class ModelPromotionStage(str, Enum):
     RESEARCH = "research"
     PAPER_TRADING = "paper_trading"
+    DEMO = "demo"
     LIMITED_LIVE = "limited_live"
     LIVE = "live"
     BLOCKED = "blocked"

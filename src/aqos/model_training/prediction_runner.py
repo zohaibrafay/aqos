@@ -5,7 +5,11 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
+from aqos.model_training.model_evaluation import ModelPromotionStage
+from aqos.model_training.model_promotion_gate import (
+    ModelPromotionGateDecision,
+    validate_model_files_against_promotion_registry,
+)
 from aqos.model_training.baseline_signal_model import BaselineSignalModel
 from aqos.model_training.feature_schema import validate_signal_prediction_dataset
 from aqos.model_training.prediction_registry import append_prediction_run_to_registry
@@ -50,7 +54,11 @@ class SignalPredictionRunConfig:
     probability_sum_tolerance: float = 0.01
     require_trained_feature_columns: bool = True
     remove_invalid_prediction_artifact: bool = True
-
+    enable_model_promotion_gate: bool = False
+    promotion_registry_path: Path | None = None
+    required_promotion_stage: ModelPromotionStage = ModelPromotionStage.RESEARCH
+    fail_on_promotion_gate_error: bool = True
+    
 
 @dataclass(frozen=True)
 class SignalPredictionRunOutput:
@@ -63,7 +71,7 @@ class SignalPredictionRunOutput:
     prediction_validation_report_path: Path | None = None
     prediction_metadata: PredictionRunMetadata | None = None
     prediction_validation_report: PredictionValidationReport | None = None
-
+    model_promotion_gate_decision: ModelPromotionGateDecision | None = None
     def to_dict(self) -> dict[str, object]:
         return {
             "output_path": self.output_path.as_posix(),
@@ -93,6 +101,11 @@ class SignalPredictionRunOutput:
             "prediction_validation_report": (
                 self.prediction_validation_report.to_dict()
                 if self.prediction_validation_report is not None
+                else None
+            ),
+            "model_promotion_gate_decision": (
+                self.model_promotion_gate_decision.to_dict()
+                if self.model_promotion_gate_decision is not None
                 else None
             ),
         }
@@ -322,6 +335,41 @@ def write_and_maybe_raise_prediction_validation_report(
 
     return validation_report_path
 
+def build_prediction_model_promotion_gate_decision(
+    run_config: SignalPredictionRunConfig,
+) -> ModelPromotionGateDecision | None:
+    if not run_config.enable_model_promotion_gate:
+        return None
+
+    if run_config.model_version_metadata_path is None:
+        raise ValueError(
+            "model_version_metadata_path is required when model promotion gate is enabled."
+        )
+
+    if run_config.promotion_registry_path is None:
+        raise ValueError(
+            "promotion_registry_path is required when model promotion gate is enabled."
+        )
+
+    return validate_model_files_against_promotion_registry(
+        model_version_metadata_path=run_config.model_version_metadata_path,
+        promotion_registry_path=run_config.promotion_registry_path,
+        required_stage=run_config.required_promotion_stage,
+    )
+
+
+def validate_prediction_model_promotion_gate(
+    run_config: SignalPredictionRunConfig,
+) -> ModelPromotionGateDecision | None:
+    decision = build_prediction_model_promotion_gate_decision(run_config)
+
+    if decision is None:
+        return None
+
+    if run_config.fail_on_promotion_gate_error:
+        decision.raise_if_rejected()
+
+    return decision
 
 def predict_signals_from_csv(
     run_config: SignalPredictionRunConfig,
@@ -329,7 +377,9 @@ def predict_signals_from_csv(
     model = BaselineSignalModel.load(run_config.model_path)
     features = load_signal_prediction_features(run_config.features_path)
     validate_prediction_features_for_run(features, run_config)
-
+    model_promotion_gate_decision = validate_prediction_model_promotion_gate(
+        run_config
+    )
     feature_compatibility_report = build_prediction_feature_compatibility_report(
         model=model,
         features=features,
@@ -409,6 +459,7 @@ def predict_signals_from_csv(
         prediction_validation_report_path=prediction_validation_report_path,
         prediction_metadata=prediction_metadata,
         prediction_validation_report=validation_report,
+        model_promotion_gate_decision=model_promotion_gate_decision,
     )
 
 
@@ -425,4 +476,6 @@ __all__ = [
     "validate_prediction_features_for_run",
     "write_and_maybe_raise_prediction_validation_report",
     "remove_invalid_prediction_artifact_if_needed",
+    "build_prediction_model_promotion_gate_decision",
+    "validate_prediction_model_promotion_gate",
 ]
