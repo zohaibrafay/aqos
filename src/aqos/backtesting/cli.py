@@ -23,6 +23,7 @@ from aqos.backtesting.model_runner import (
     run_model_backtest,
 )
 from aqos.backtesting.model_signal_adapter import ModelSignalAdapterConfig
+from aqos.backtesting.registry import register_backtest_report
 from aqos.backtesting.rule_based_adapter import (
     RuleBasedBacktestSignalAdapter,
     RuleBasedSignalAdapterConfig,
@@ -81,6 +82,11 @@ def add_common_backtest_arguments(
         "--use-risk-quantity",
         action="store_true",
         help="Use risk_fraction sizing instead of fixed quantity.",
+    )
+    parser.add_argument(
+        "--result-registry-path",
+        default=None,
+        help="Append the finished run to this backtest result registry file.",
     )
 
 
@@ -341,6 +347,7 @@ def build_backtest_runner_config_from_args(
 def build_adapter_backtest_runner_config_from_args(
     args: argparse.Namespace,
     metadata: dict[str, object] | None = None,
+    result_registry_path: str | None = None,
 ) -> StrategyBacktestRunnerConfig:
     return StrategyBacktestRunnerConfig(
         data_path=Path(args.data_path),
@@ -369,6 +376,7 @@ def build_adapter_backtest_runner_config_from_args(
         orders_filename=args.orders_filename,
         signals_filename=args.signals_filename,
         adapter_results_filename=args.adapter_results_filename,
+        result_registry_path=result_registry_path,
         metadata=dict(metadata or {}),
     )
 
@@ -379,6 +387,7 @@ def build_strategy_backtest_runner_config_from_args(
     return build_adapter_backtest_runner_config_from_args(
         args,
         metadata={"rule_strategy": args.rule_strategy},
+        result_registry_path=args.result_registry_path,
     )
 
 
@@ -422,6 +431,7 @@ def build_model_backtest_runner_config_from_args(
         adapter_config=build_model_adapter_config_from_args(args),
         model_report_filename=args.model_report_filename,
         predictions_filename=args.predictions_filename,
+        result_registry_path=args.result_registry_path,
     )
 
 
@@ -488,6 +498,13 @@ def run_backtesting_cli(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "backtest":
         output = run_backtest_from_csv(build_backtest_runner_config_from_args(args))
+
+        if args.result_registry_path is not None:
+            register_backtest_report(
+                registry_path=args.result_registry_path,
+                report_path=output.report_path,
+            )
+
         print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
         return 0
 

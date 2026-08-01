@@ -23,6 +23,7 @@ from aqos.backtesting.model_signal_adapter import (
     ModelSignalAdapterConfig,
     load_model_backtest_signal_adapter,
 )
+from aqos.backtesting.registry import register_backtest_report
 from aqos.backtesting.signal_adapter import BacktestSignalAdapterResult
 from aqos.backtesting.strategy_runner import (
     StrategyBacktestRunnerConfig,
@@ -50,6 +51,7 @@ class ModelBacktestRunnerConfig:
     model_report_filename: str = "model_backtest_report.json"
     predictions_filename: str = "model_backtest_predictions.csv"
     manifest_filename: str = "model_backtest_manifest.json"
+    result_registry_path: str | Path | None = None
     enable_artifact_manifest: bool = True
 
     def __post_init__(self) -> None:
@@ -76,6 +78,11 @@ class ModelBacktestRunnerConfig:
             "predictions_filename": self.predictions_filename,
             "manifest_filename": self.manifest_filename,
             "enable_artifact_manifest": self.enable_artifact_manifest,
+            "result_registry_path": (
+                Path(self.result_registry_path).as_posix()
+                if self.result_registry_path is not None
+                else None
+            ),
         }
 
 
@@ -240,13 +247,18 @@ def run_model_backtest(
     )
     write_model_backtest_report(output)
 
-    if output.manifest_path is None:
-        return output
+    if output.manifest_path is not None:
+        manifest = build_model_backtest_manifest(output)
+        write_backtest_artifact_manifest(output.manifest_path, manifest)
+        output = replace(output, manifest=manifest)
 
-    manifest = build_model_backtest_manifest(output)
-    write_backtest_artifact_manifest(output.manifest_path, manifest)
+    if config.result_registry_path is not None:
+        register_backtest_report(
+            registry_path=config.result_registry_path,
+            report_path=output.model_report_path,
+        )
 
-    return replace(output, manifest=manifest)
+    return output
 
 
 def build_model_backtest_manifest(

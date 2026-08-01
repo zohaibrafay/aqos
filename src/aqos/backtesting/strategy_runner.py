@@ -26,6 +26,7 @@ from aqos.backtesting.contracts import (
     BacktestExitReason,
     BacktestRunConfig,
 )
+from aqos.backtesting.registry import register_backtest_report
 from aqos.backtesting.data_loader import (
     BacktestDataLoadConfig,
     BacktestDataLoadResult,
@@ -91,6 +92,7 @@ class StrategyBacktestRunnerConfig:
     adapter_results_filename: str = "strategy_backtest_adapter_results.json"
     analytics_filename: str = "strategy_backtest_analytics.json"
     manifest_filename: str = "strategy_backtest_manifest.json"
+    result_registry_path: str | Path | None = None
     enable_analytics_report: bool = True
     enable_artifact_manifest: bool = True
     period_granularity: BacktestPeriodGranularity = BacktestPeriodGranularity.MONTHLY
@@ -174,6 +176,11 @@ class StrategyBacktestRunnerConfig:
             "adapter_results_filename": self.adapter_results_filename,
             "analytics_filename": self.analytics_filename,
             "manifest_filename": self.manifest_filename,
+            "result_registry_path": (
+                Path(self.result_registry_path).as_posix()
+                if self.result_registry_path is not None
+                else None
+            ),
             "enable_analytics_report": self.enable_analytics_report,
             "enable_artifact_manifest": self.enable_artifact_manifest,
             "period_granularity": self.period_granularity.value,
@@ -464,13 +471,18 @@ def run_backtest_with_signal_adapter(
 
     write_strategy_backtest_report(output)
 
-    if output.manifest_path is None:
-        return output
+    if output.manifest_path is not None:
+        manifest = build_strategy_backtest_manifest(output)
+        write_backtest_artifact_manifest(output.manifest_path, manifest)
+        output = replace(output, manifest=manifest)
 
-    manifest = build_strategy_backtest_manifest(output)
-    write_backtest_artifact_manifest(output.manifest_path, manifest)
+    if config.result_registry_path is not None:
+        register_backtest_report(
+            registry_path=config.result_registry_path,
+            report_path=output.report_path,
+        )
 
-    return replace(output, manifest=manifest)
+    return output
 
 
 def build_strategy_backtest_manifest(

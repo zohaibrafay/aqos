@@ -207,6 +207,25 @@ from aqos.backtesting.comparison import (
     write_backtest_comparison_report,
 )
 
+from aqos.backtesting.registry import (
+    BACKTEST_REGISTRY_VERSION,
+    BacktestKind,
+    BacktestResultEntry,
+    BacktestResultRegistry,
+    REGISTERED_METRIC_KEYS,
+    append_backtest_result_to_registry,
+    build_backtest_result_entry_from_report,
+    find_best_backtest_result,
+    find_latest_backtest_result,
+    list_backtest_results,
+    parse_backtest_result_entry,
+    read_backtest_result_registry,
+    register_backtest_report,
+    resolve_backtest_kind,
+    select_registered_metrics,
+    write_backtest_result_registry,
+)
+
 from aqos.backtesting.model_promotion_guard import (
     BACKTEST_MODEL_PROMOTION_GUARD_VERSION,
     BacktestModelGateConfig,
@@ -472,4 +491,20 @@ __all__ = [
     "resolve_backtest_report_label",
     "write_backtest_comparison_csv",
     "write_backtest_comparison_report",
+    "BACKTEST_REGISTRY_VERSION",
+    "BacktestKind",
+    "BacktestResultEntry",
+    "BacktestResultRegistry",
+    "REGISTERED_METRIC_KEYS",
+    "append_backtest_result_to_registry",
+    "build_backtest_result_entry_from_report",
+    "find_best_backtest_result",
+    "find_latest_backtest_result",
+    "list_backtest_results",
+    "parse_backtest_result_entry",
+    "read_backtest_result_registry",
+    "register_backtest_report",
+    "resolve_backtest_kind",
+    "select_registered_metrics",
+    "write_backtest_result_registry",
 ]
