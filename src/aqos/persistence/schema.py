@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 3
+AQOS_SCHEMA_VERSION = 4
 
 
 USER_PROFILES_TABLE = """
@@ -128,6 +128,38 @@ ON symbol_preferences (user_id, kind);
 """
 
 
+TRADING_ACCOUNTS_TABLE = """
+CREATE TABLE IF NOT EXISTS trading_accounts (
+    account_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    account_type TEXT NOT NULL,
+    broker TEXT NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'USD',
+    initial_balance REAL NOT NULL,
+    current_balance REAL NOT NULL,
+    equity REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    execution_mode TEXT NOT NULL DEFAULT 'signal_only',
+    auto_trade_enabled INTEGER NOT NULL DEFAULT 0,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    leverage INTEGER NOT NULL DEFAULT 1,
+    broker_account_ref TEXT,
+    broker_credential_ref TEXT,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    UNIQUE (user_id, name)
+);
+"""
+
+TRADING_ACCOUNTS_USER_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_trading_accounts_user
+ON trading_accounts (user_id, status);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
@@ -139,6 +171,8 @@ AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     TRADING_SETTINGS_TABLE,
     SYMBOL_PREFERENCES_TABLE,
     SYMBOL_PREFERENCES_USER_KIND_INDEX,
+    TRADING_ACCOUNTS_TABLE,
+    TRADING_ACCOUNTS_USER_INDEX,
 )
 
 AQOS_SCHEMA_TABLES: tuple[str, ...] = (
@@ -148,6 +182,7 @@ AQOS_SCHEMA_TABLES: tuple[str, ...] = (
     "user_preferences",
     "trading_settings",
     "symbol_preferences",
+    "trading_accounts",
 )
 
 
@@ -213,6 +248,8 @@ __all__ = [
     "AQOS_SCHEMA_VERSION",
     "SYMBOL_PREFERENCES_TABLE",
     "SYMBOL_PREFERENCES_USER_KIND_INDEX",
+    "TRADING_ACCOUNTS_TABLE",
+    "TRADING_ACCOUNTS_USER_INDEX",
     "TRADING_SETTINGS_TABLE",
     "USER_CREDENTIALS_TABLE",
     "USER_PREFERENCES_TABLE",

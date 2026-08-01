@@ -110,6 +110,23 @@ from aqos.persistence.trading_settings import (
     resolve_effective_execution_mode,
 )
 
+from aqos.persistence.accounts import (
+    AQOS_ACCOUNTS_VERSION,
+    AUTO_TRADE_GUARDED_ACCOUNT_TYPES,
+    AccountStatus,
+    AccountType,
+    BrokerKind,
+    REAL_MONEY_ACCOUNT_TYPES,
+    TRADEABLE_ACCOUNT_STATUSES,
+    TradingAccount,
+    TradingAccountRepository,
+    account_allows_execution,
+    build_trading_account_from_row,
+    default_execution_mode_for_account,
+    is_real_money_account,
+    resolve_account_execution_mode,
+)
+
 from aqos.persistence.symbol_preferences import (
     AQOS_SYMBOL_PREFERENCES_VERSION,
     KINDS_CLEARED_ON_BLOCK,
@@ -238,4 +255,18 @@ __all__ = [
     "SymbolPreferenceSummary",
     "build_symbol_preference_from_row",
     "normalize_symbol_list",
+    "AQOS_ACCOUNTS_VERSION",
+    "AUTO_TRADE_GUARDED_ACCOUNT_TYPES",
+    "AccountStatus",
+    "AccountType",
+    "BrokerKind",
+    "REAL_MONEY_ACCOUNT_TYPES",
+    "TRADEABLE_ACCOUNT_STATUSES",
+    "TradingAccount",
+    "TradingAccountRepository",
+    "account_allows_execution",
+    "build_trading_account_from_row",
+    "default_execution_mode_for_account",
+    "is_real_money_account",
+    "resolve_account_execution_mode",
 ]
