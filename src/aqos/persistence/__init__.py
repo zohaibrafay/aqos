@@ -92,6 +92,35 @@ from aqos.persistence.user_preferences import (
     normalize_notification_channels,
 )
 
+from aqos.persistence.trading_settings import (
+    AQOS_TRADING_SETTINGS_VERSION,
+    DEFAULT_MAX_DAILY_LOSS_FRACTION,
+    DEFAULT_MAX_DAILY_TRADES,
+    DEFAULT_MAX_OPEN_POSITIONS,
+    DEFAULT_RISK_PER_TRADE_FRACTION,
+    DEFAULT_TIMEFRAME,
+    EXECUTION_MODE_RANK,
+    ExecutionMode,
+    TradingSettings,
+    TradingSettingsRepository,
+    build_default_trading_settings,
+    build_trading_settings_from_row,
+    execution_mode_allows_orders,
+    execution_mode_rank,
+    resolve_effective_execution_mode,
+)
+
+from aqos.persistence.symbol_preferences import (
+    AQOS_SYMBOL_PREFERENCES_VERSION,
+    KINDS_CLEARED_ON_BLOCK,
+    SymbolPreference,
+    SymbolPreferenceKind,
+    SymbolPreferenceRepository,
+    SymbolPreferenceSummary,
+    build_symbol_preference_from_row,
+    normalize_symbol_list,
+)
+
 from aqos.persistence.users import (
     AQOS_USER_PROFILE_VERSION,
     READ_ONLY_USER_ROLES,
@@ -186,4 +215,27 @@ __all__ = [
     "normalize_currency",
     "normalize_landing_page",
     "normalize_notification_channels",
+    "AQOS_TRADING_SETTINGS_VERSION",
+    "DEFAULT_MAX_DAILY_LOSS_FRACTION",
+    "DEFAULT_MAX_DAILY_TRADES",
+    "DEFAULT_MAX_OPEN_POSITIONS",
+    "DEFAULT_RISK_PER_TRADE_FRACTION",
+    "DEFAULT_TIMEFRAME",
+    "EXECUTION_MODE_RANK",
+    "ExecutionMode",
+    "TradingSettings",
+    "TradingSettingsRepository",
+    "build_default_trading_settings",
+    "build_trading_settings_from_row",
+    "execution_mode_allows_orders",
+    "execution_mode_rank",
+    "resolve_effective_execution_mode",
+    "AQOS_SYMBOL_PREFERENCES_VERSION",
+    "KINDS_CLEARED_ON_BLOCK",
+    "SymbolPreference",
+    "SymbolPreferenceKind",
+    "SymbolPreferenceRepository",
+    "SymbolPreferenceSummary",
+    "build_symbol_preference_from_row",
+    "normalize_symbol_list",
 ]

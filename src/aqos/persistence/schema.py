@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 2
+AQOS_SCHEMA_VERSION = 3
 
 
 USER_PROFILES_TABLE = """
@@ -88,6 +88,46 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 """
 
 
+TRADING_SETTINGS_TABLE = """
+CREATE TABLE IF NOT EXISTS trading_settings (
+    settings_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    execution_mode TEXT NOT NULL DEFAULT 'signal_only',
+    risk_per_trade_fraction REAL NOT NULL,
+    max_daily_loss_fraction REAL NOT NULL,
+    max_open_positions INTEGER NOT NULL,
+    max_daily_trades INTEGER NOT NULL,
+    default_timeframe TEXT NOT NULL,
+    allow_short INTEGER NOT NULL DEFAULT 1,
+    allow_hedging INTEGER NOT NULL DEFAULT 0,
+    notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+SYMBOL_PREFERENCES_TABLE = """
+CREATE TABLE IF NOT EXISTS symbol_preferences (
+    preference_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    UNIQUE (user_id, symbol, kind)
+);
+"""
+
+SYMBOL_PREFERENCES_USER_KIND_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_symbol_preferences_user_kind
+ON symbol_preferences (user_id, kind);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
@@ -96,6 +136,9 @@ AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_SESSIONS_TABLE,
     USER_SESSIONS_USER_INDEX,
     USER_PREFERENCES_TABLE,
+    TRADING_SETTINGS_TABLE,
+    SYMBOL_PREFERENCES_TABLE,
+    SYMBOL_PREFERENCES_USER_KIND_INDEX,
 )
 
 AQOS_SCHEMA_TABLES: tuple[str, ...] = (
@@ -103,6 +146,8 @@ AQOS_SCHEMA_TABLES: tuple[str, ...] = (
     "user_credentials",
     "user_sessions",
     "user_preferences",
+    "trading_settings",
+    "symbol_preferences",
 )
 
 
@@ -166,6 +211,9 @@ __all__ = [
     "AQOS_SCHEMA_STATEMENTS",
     "AQOS_SCHEMA_TABLES",
     "AQOS_SCHEMA_VERSION",
+    "SYMBOL_PREFERENCES_TABLE",
+    "SYMBOL_PREFERENCES_USER_KIND_INDEX",
+    "TRADING_SETTINGS_TABLE",
     "USER_CREDENTIALS_TABLE",
     "USER_PREFERENCES_TABLE",
     "USER_PROFILES_EMAIL_INDEX",
