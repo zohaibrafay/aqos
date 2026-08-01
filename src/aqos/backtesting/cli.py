@@ -9,6 +9,14 @@ from aqos.backtesting.builtin_strategies import (
     build_builtin_rule_strategy,
     list_builtin_rule_strategy_names,
 )
+from aqos.backtesting.comparison import (
+    BacktestComparisonMetric,
+    BacktestComparisonResult,
+    compare_backtest_runs,
+    load_backtest_comparison_entries,
+    write_backtest_comparison_csv,
+    write_backtest_comparison_report,
+)
 from aqos.backtesting.model_promotion_guard import BacktestModelGateConfig
 from aqos.backtesting.model_runner import (
     ModelBacktestRunnerConfig,
@@ -254,6 +262,44 @@ def build_backtesting_cli_parser() -> argparse.ArgumentParser:
         default="model_backtest_predictions.csv",
     )
 
+    compare_parser = subparsers.add_parser(
+        "compare-backtests",
+        help="Compare and rank finished backtest runs from their report files.",
+    )
+    compare_parser.add_argument(
+        "--report",
+        dest="reports",
+        action="append",
+        required=True,
+        help="Path to a backtest report JSON file. Repeat for each run.",
+    )
+    compare_parser.add_argument(
+        "--label",
+        dest="labels",
+        action="append",
+        default=None,
+        help="Optional label per report, in the same order as --report.",
+    )
+    compare_parser.add_argument(
+        "--metric",
+        default=BacktestComparisonMetric.NET_PROFIT.value,
+        choices=[metric.value for metric in BacktestComparisonMetric],
+    )
+    compare_parser.add_argument(
+        "--lower-is-better",
+        action="store_true",
+        help="Rank ascending instead of the metric default direction.",
+    )
+    compare_parser.add_argument("--output-dir", default="tmp/backtesting")
+    compare_parser.add_argument(
+        "--comparison-filename",
+        default="backtest_comparison.json",
+    )
+    compare_parser.add_argument(
+        "--comparison-csv-filename",
+        default="backtest_comparison.csv",
+    )
+
     return parser
 
 
@@ -379,6 +425,41 @@ def build_model_backtest_runner_config_from_args(
     )
 
 
+def build_backtest_comparison_from_args(
+    args: argparse.Namespace,
+) -> BacktestComparisonResult:
+    labels = tuple(args.labels) if args.labels else None
+
+    entries = load_backtest_comparison_entries(
+        report_paths=tuple(Path(report) for report in args.reports),
+        labels=labels,
+    )
+
+    return compare_backtest_runs(
+        entries=entries,
+        metric=BacktestComparisonMetric(args.metric),
+        higher_is_better=False if args.lower_is_better else None,
+    )
+
+
+def run_backtest_comparison_command(
+    args: argparse.Namespace,
+) -> BacktestComparisonResult:
+    result = build_backtest_comparison_from_args(args)
+    output_dir = Path(args.output_dir)
+
+    write_backtest_comparison_report(
+        output_dir / args.comparison_filename,
+        result,
+    )
+    write_backtest_comparison_csv(
+        output_dir / args.comparison_csv_filename,
+        result,
+    )
+
+    return result
+
+
 def build_rule_based_adapter_from_args(
     args: argparse.Namespace,
 ) -> RuleBasedBacktestSignalAdapter:
@@ -425,6 +506,11 @@ def run_backtesting_cli(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
         return 0
 
+    if args.command == "compare-backtests":
+        result = run_backtest_comparison_command(args)
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
     parser.error(f"Unsupported command: {args.command}")
     return 2
 
@@ -441,6 +527,7 @@ __all__ = [
     "BACKTEST_CLI_PROMOTION_STAGE_CHOICES",
     "add_common_backtest_arguments",
     "build_adapter_backtest_runner_config_from_args",
+    "build_backtest_comparison_from_args",
     "build_backtest_runner_config_from_args",
     "build_backtesting_cli_parser",
     "build_model_adapter_config_from_args",
@@ -449,5 +536,6 @@ __all__ = [
     "build_rule_based_adapter_from_args",
     "build_strategy_backtest_runner_config_from_args",
     "main",
+    "run_backtest_comparison_command",
     "run_backtesting_cli",
 ]

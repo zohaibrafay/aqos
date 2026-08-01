@@ -7,6 +7,12 @@ from typing import Any
 
 import pandas as pd
 
+from aqos.backtesting.artifacts import (
+    BacktestArtifactKind,
+    BacktestArtifactManifest,
+    build_backtest_artifact_manifest,
+    write_backtest_artifact_manifest,
+)
 from aqos.backtesting.model_promotion_guard import (
     BacktestModelGateConfig,
     BacktestModelGateDecision,
@@ -43,6 +49,8 @@ class ModelBacktestRunnerConfig:
     )
     model_report_filename: str = "model_backtest_report.json"
     predictions_filename: str = "model_backtest_predictions.csv"
+    manifest_filename: str = "model_backtest_manifest.json"
+    enable_artifact_manifest: bool = True
 
     def __post_init__(self) -> None:
         if not str(self.model_path).strip():
@@ -66,6 +74,8 @@ class ModelBacktestRunnerConfig:
             "adapter_config": self.adapter_config.to_dict(),
             "model_report_filename": self.model_report_filename,
             "predictions_filename": self.predictions_filename,
+            "manifest_filename": self.manifest_filename,
+            "enable_artifact_manifest": self.enable_artifact_manifest,
         }
 
 
@@ -76,15 +86,27 @@ class ModelBacktestRunOutput:
     config: ModelBacktestRunnerConfig
     gate_decision: BacktestModelGateDecision
     strategy_output: StrategyBacktestRunOutput
+    manifest_path: Path | None = None
+    manifest: BacktestArtifactManifest | None = None
 
     @property
     def prediction_rows(self) -> int:
         return len(self.strategy_output.adapter_results)
 
+    @property
+    def run_id(self) -> str:
+        return self.strategy_output.run_id
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "model_report_path": self.model_report_path.as_posix(),
             "predictions_path": self.predictions_path.as_posix(),
+            "manifest_path": (
+                self.manifest_path.as_posix()
+                if self.manifest_path is not None
+                else None
+            ),
+            "run_id": self.run_id,
             "prediction_rows": self.prediction_rows,
             "config": self.config.to_dict(),
             "gate_decision": self.gate_decision.to_dict(),
@@ -205,6 +227,11 @@ def run_model_backtest(
         config=config,
         gate_decision=gate_decision,
         strategy_output=strategy_output,
+        manifest_path=(
+            output_dir / config.manifest_filename
+            if config.enable_artifact_manifest
+            else None
+        ),
     )
 
     write_model_backtest_predictions_csv(
@@ -213,7 +240,44 @@ def run_model_backtest(
     )
     write_model_backtest_report(output)
 
-    return output
+    if output.manifest_path is None:
+        return output
+
+    manifest = build_model_backtest_manifest(output)
+    write_backtest_artifact_manifest(output.manifest_path, manifest)
+
+    return replace(output, manifest=manifest)
+
+
+def build_model_backtest_manifest(
+    output: ModelBacktestRunOutput,
+) -> BacktestArtifactManifest:
+    strategy_output = output.strategy_output
+
+    artifact_paths: dict[BacktestArtifactKind, Path] = {
+        BacktestArtifactKind.REPORT: output.model_report_path,
+        BacktestArtifactKind.PREDICTIONS: output.predictions_path,
+        BacktestArtifactKind.TRADES: strategy_output.trades_path,
+        BacktestArtifactKind.ORDERS: strategy_output.orders_path,
+        BacktestArtifactKind.EQUITY_CURVE: strategy_output.equity_curve_path,
+        BacktestArtifactKind.SIGNALS: strategy_output.signals_path,
+        BacktestArtifactKind.ADAPTER_RESULTS: strategy_output.adapter_results_path,
+    }
+
+    if strategy_output.analytics_path is not None:
+        artifact_paths[BacktestArtifactKind.ANALYTICS] = (
+            strategy_output.analytics_path
+        )
+
+    return build_backtest_artifact_manifest(
+        run_id=output.run_id,
+        artifact_paths=artifact_paths,
+        metadata={
+            **output.gate_decision.model_identity(),
+            "strategy_name": strategy_output.config.strategy_name,
+            "prediction_rows": output.prediction_rows,
+        },
+    )
 
 
 __all__ = [
@@ -221,6 +285,7 @@ __all__ = [
     "ModelBacktestRunOutput",
     "ModelBacktestRunnerConfig",
     "build_model_backtest_adapter",
+    "build_model_backtest_manifest",
     "build_model_prediction_rows",
     "build_traced_model_adapter_config",
     "run_model_backtest",

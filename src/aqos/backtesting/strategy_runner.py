@@ -1,12 +1,25 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field as dataclass_field
+from dataclasses import dataclass, field as dataclass_field, replace
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
+from aqos.backtesting.analytics import (
+    BacktestAdvancedReport,
+    BacktestPeriodGranularity,
+    build_backtest_advanced_report,
+    write_backtest_advanced_report,
+)
+from aqos.backtesting.artifacts import (
+    BacktestArtifactKind,
+    BacktestArtifactManifest,
+    build_backtest_artifact_manifest,
+    build_backtest_run_id,
+    write_backtest_artifact_manifest,
+)
 from aqos.backtesting.contracts import (
     BacktestBar,
     BacktestExecutionConfig,
@@ -76,6 +89,11 @@ class StrategyBacktestRunnerConfig:
     orders_filename: str = "strategy_backtest_orders.csv"
     signals_filename: str = "strategy_backtest_signals.csv"
     adapter_results_filename: str = "strategy_backtest_adapter_results.json"
+    analytics_filename: str = "strategy_backtest_analytics.json"
+    manifest_filename: str = "strategy_backtest_manifest.json"
+    enable_analytics_report: bool = True
+    enable_artifact_manifest: bool = True
+    period_granularity: BacktestPeriodGranularity = BacktestPeriodGranularity.MONTHLY
     metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -154,6 +172,11 @@ class StrategyBacktestRunnerConfig:
             "orders_filename": self.orders_filename,
             "signals_filename": self.signals_filename,
             "adapter_results_filename": self.adapter_results_filename,
+            "analytics_filename": self.analytics_filename,
+            "manifest_filename": self.manifest_filename,
+            "enable_analytics_report": self.enable_analytics_report,
+            "enable_artifact_manifest": self.enable_artifact_manifest,
+            "period_granularity": self.period_granularity.value,
             "metadata": self.metadata,
         }
 
@@ -173,9 +196,28 @@ class StrategyBacktestRunOutput:
     equity_curve: BacktestEquityCurve
     metrics: BacktestPerformanceMetrics
     adapter_results: tuple[BacktestSignalAdapterResult, ...]
+    run_id: str = "strategy_backtest"
+    analytics_path: Path | None = None
+    manifest_path: Path | None = None
+    analytics: BacktestAdvancedReport | None = None
+    manifest: BacktestArtifactManifest | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "run_id": self.run_id,
+            "analytics_path": (
+                self.analytics_path.as_posix()
+                if self.analytics_path is not None
+                else None
+            ),
+            "manifest_path": (
+                self.manifest_path.as_posix()
+                if self.manifest_path is not None
+                else None
+            ),
+            "analytics": (
+                self.analytics.to_dict() if self.analytics is not None else None
+            ),
             "report_path": self.report_path.as_posix(),
             "trades_path": self.trades_path.as_posix(),
             "equity_curve_path": self.equity_curve_path.as_posix(),
@@ -362,6 +404,22 @@ def run_backtest_with_signal_adapter(
         },
     )
 
+    analytics = (
+        build_backtest_advanced_report(
+            metrics=metrics,
+            trades=state.trades,
+            equity_curve=equity_curve,
+            period_granularity=config.period_granularity,
+            metadata={
+                "strategy_name": config.strategy_name,
+                "adapter_name": adapter.adapter_name,
+                "adapter_type": adapter.adapter_type.value,
+            },
+        )
+        if config.enable_analytics_report
+        else None
+    )
+
     output = StrategyBacktestRunOutput(
         report_path=output_dir / config.report_filename,
         trades_path=output_dir / config.trades_filename,
@@ -376,6 +434,20 @@ def run_backtest_with_signal_adapter(
         equity_curve=equity_curve,
         metrics=metrics,
         adapter_results=tuple(adapter_results),
+        run_id=build_backtest_run_id(
+            strategy_name=config.strategy_name,
+            symbol=config.symbol,
+            timeframe=config.timeframe,
+        ),
+        analytics_path=(
+            output_dir / config.analytics_filename if analytics is not None else None
+        ),
+        manifest_path=(
+            output_dir / config.manifest_filename
+            if config.enable_artifact_manifest
+            else None
+        ),
+        analytics=analytics,
     )
 
     write_backtest_trades_csv(output.trades_path, state)
@@ -386,9 +458,46 @@ def run_backtest_with_signal_adapter(
         output.adapter_results_path,
         output.adapter_results,
     )
+
+    if analytics is not None and output.analytics_path is not None:
+        write_backtest_advanced_report(output.analytics_path, analytics)
+
     write_strategy_backtest_report(output)
 
-    return output
+    if output.manifest_path is None:
+        return output
+
+    manifest = build_strategy_backtest_manifest(output)
+    write_backtest_artifact_manifest(output.manifest_path, manifest)
+
+    return replace(output, manifest=manifest)
+
+
+def build_strategy_backtest_manifest(
+    output: StrategyBacktestRunOutput,
+) -> BacktestArtifactManifest:
+    artifact_paths: dict[BacktestArtifactKind, Path] = {
+        BacktestArtifactKind.REPORT: output.report_path,
+        BacktestArtifactKind.TRADES: output.trades_path,
+        BacktestArtifactKind.ORDERS: output.orders_path,
+        BacktestArtifactKind.EQUITY_CURVE: output.equity_curve_path,
+        BacktestArtifactKind.SIGNALS: output.signals_path,
+        BacktestArtifactKind.ADAPTER_RESULTS: output.adapter_results_path,
+    }
+
+    if output.analytics_path is not None:
+        artifact_paths[BacktestArtifactKind.ANALYTICS] = output.analytics_path
+
+    return build_backtest_artifact_manifest(
+        run_id=output.run_id,
+        artifact_paths=artifact_paths,
+        metadata={
+            "strategy_name": output.config.strategy_name,
+            "symbol": output.run_config.symbol,
+            "timeframe": output.run_config.timeframe,
+            "total_trades": output.metrics.total_trades,
+        },
+    )
 
 
 __all__ = [
@@ -396,6 +505,7 @@ __all__ = [
     "StrategyBacktestRunnerConfig",
     "StrategyBacktestRunOutput",
     "build_strategy_adapter_context",
+    "build_strategy_backtest_manifest",
     "run_backtest_with_signal_adapter",
     "write_strategy_backtest_adapter_results_json",
     "write_strategy_backtest_report",
