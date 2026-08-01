@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 1
+AQOS_SCHEMA_VERSION = 2
 
 
 USER_PROFILES_TABLE = """
@@ -34,13 +34,76 @@ ON user_profiles (status);
 """
 
 
+USER_CREDENTIALS_TABLE = """
+CREATE TABLE IF NOT EXISTS user_credentials (
+    user_id TEXT PRIMARY KEY
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    password_hash TEXT NOT NULL,
+    failed_attempt_count INTEGER NOT NULL DEFAULT 0,
+    locked_until_utc TEXT,
+    last_login_at_utc TEXT,
+    password_updated_at_utc TEXT NOT NULL,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+USER_SESSIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS user_sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at_utc TEXT NOT NULL,
+    expires_at_utc TEXT NOT NULL,
+    revoked_at_utc TEXT,
+    last_seen_at_utc TEXT,
+    client_label TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+USER_SESSIONS_USER_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user
+ON user_sessions (user_id);
+"""
+
+USER_PREFERENCES_TABLE = """
+CREATE TABLE IF NOT EXISTS user_preferences (
+    preferences_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    theme TEXT NOT NULL DEFAULT 'system',
+    default_currency TEXT NOT NULL DEFAULT 'USD',
+    date_format TEXT NOT NULL DEFAULT 'YYYY-MM-DD',
+    landing_page TEXT NOT NULL DEFAULT 'dashboard',
+    notification_channels TEXT NOT NULL DEFAULT '[]',
+    email_notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    push_notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
     USER_PROFILES_STATUS_INDEX,
+    USER_CREDENTIALS_TABLE,
+    USER_SESSIONS_TABLE,
+    USER_SESSIONS_USER_INDEX,
+    USER_PREFERENCES_TABLE,
 )
 
-AQOS_SCHEMA_TABLES: tuple[str, ...] = ("user_profiles",)
+AQOS_SCHEMA_TABLES: tuple[str, ...] = (
+    "user_profiles",
+    "user_credentials",
+    "user_sessions",
+    "user_preferences",
+)
 
 
 def apply_aqos_schema(
@@ -103,9 +166,13 @@ __all__ = [
     "AQOS_SCHEMA_STATEMENTS",
     "AQOS_SCHEMA_TABLES",
     "AQOS_SCHEMA_VERSION",
+    "USER_CREDENTIALS_TABLE",
+    "USER_PREFERENCES_TABLE",
     "USER_PROFILES_EMAIL_INDEX",
     "USER_PROFILES_STATUS_INDEX",
     "USER_PROFILES_TABLE",
+    "USER_SESSIONS_TABLE",
+    "USER_SESSIONS_USER_INDEX",
     "apply_aqos_schema",
     "describe_aqos_schema",
     "ensure_aqos_schema",
