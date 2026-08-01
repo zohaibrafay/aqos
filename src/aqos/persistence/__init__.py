@@ -179,6 +179,26 @@ from aqos.persistence.signals import (
     validate_signal_transition,
 )
 
+from aqos.persistence.signal_reasons import (
+    AQOS_SIGNAL_REASONS_VERSION,
+    DEFAULT_REASON_MESSAGES,
+    REASON_OUTCOME_STATUSES,
+    SIGNAL_REASON_CATEGORIES,
+    SignalOutcome,
+    SignalOutcomeRepository,
+    SignalReasonCategory,
+    SignalReasonCode,
+    SignalReasonCount,
+    SignalReasonSummary,
+    build_signal_outcome_from_row,
+    default_reason_message,
+    fail_signal_with_reason,
+    miss_signal_with_reason,
+    reject_signal_with_reason,
+    resolve_reason_category,
+    validate_reason_outcome_status,
+)
+
 from aqos.persistence.symbol_preferences import (
     AQOS_SYMBOL_PREFERENCES_VERSION,
     KINDS_CLEARED_ON_BLOCK,
@@ -367,4 +387,21 @@ __all__ = [
     "can_transition_signal",
     "is_terminal_signal_status",
     "validate_signal_transition",
+    "AQOS_SIGNAL_REASONS_VERSION",
+    "DEFAULT_REASON_MESSAGES",
+    "REASON_OUTCOME_STATUSES",
+    "SIGNAL_REASON_CATEGORIES",
+    "SignalOutcome",
+    "SignalOutcomeRepository",
+    "SignalReasonCategory",
+    "SignalReasonCode",
+    "SignalReasonCount",
+    "SignalReasonSummary",
+    "build_signal_outcome_from_row",
+    "default_reason_message",
+    "fail_signal_with_reason",
+    "miss_signal_with_reason",
+    "reject_signal_with_reason",
+    "resolve_reason_category",
+    "validate_reason_outcome_status",
 ]

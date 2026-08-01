@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 6
+AQOS_SCHEMA_VERSION = 7
 
 
 USER_PROFILES_TABLE = """
@@ -245,6 +245,29 @@ ON signal_events (signal_id, occurred_at_utc);
 """
 
 
+SIGNAL_OUTCOMES_TABLE = """
+CREATE TABLE IF NOT EXISTS signal_outcomes (
+    outcome_id TEXT PRIMARY KEY,
+    signal_id TEXT NOT NULL
+        REFERENCES trading_signals (signal_id) ON DELETE CASCADE,
+    account_id TEXT
+        REFERENCES trading_accounts (account_id) ON DELETE SET NULL,
+    status TEXT NOT NULL,
+    reason_code TEXT NOT NULL,
+    category TEXT NOT NULL,
+    occurred_at_utc TEXT NOT NULL,
+    detail TEXT,
+    actor TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+SIGNAL_OUTCOMES_LOOKUP_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_signal_outcomes_lookup
+ON signal_outcomes (account_id, reason_code, occurred_at_utc);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
@@ -264,6 +287,8 @@ AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     TRADING_SIGNALS_ACCOUNT_INDEX,
     SIGNAL_EVENTS_TABLE,
     SIGNAL_EVENTS_SIGNAL_INDEX,
+    SIGNAL_OUTCOMES_TABLE,
+    SIGNAL_OUTCOMES_LOOKUP_INDEX,
 )
 
 AQOS_SCHEMA_TABLES: tuple[str, ...] = (
@@ -277,6 +302,7 @@ AQOS_SCHEMA_TABLES: tuple[str, ...] = (
     "funded_account_rules",
     "trading_signals",
     "signal_events",
+    "signal_outcomes",
 )
 
 
@@ -343,6 +369,8 @@ __all__ = [
     "FUNDED_ACCOUNT_RULES_TABLE",
     "SIGNAL_EVENTS_SIGNAL_INDEX",
     "SIGNAL_EVENTS_TABLE",
+    "SIGNAL_OUTCOMES_LOOKUP_INDEX",
+    "SIGNAL_OUTCOMES_TABLE",
     "SYMBOL_PREFERENCES_TABLE",
     "SYMBOL_PREFERENCES_USER_KIND_INDEX",
     "TRADING_ACCOUNTS_TABLE",
