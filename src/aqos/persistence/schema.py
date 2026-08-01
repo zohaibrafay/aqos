@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 5
+AQOS_SCHEMA_VERSION = 6
 
 
 USER_PROFILES_TABLE = """
@@ -188,6 +188,63 @@ CREATE TABLE IF NOT EXISTS funded_account_rules (
 """
 
 
+TRADING_SIGNALS_TABLE = """
+CREATE TABLE IF NOT EXISTS trading_signals (
+    signal_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL
+        REFERENCES user_profiles (user_id) ON DELETE CASCADE,
+    account_id TEXT
+        REFERENCES trading_accounts (account_id) ON DELETE SET NULL,
+    symbol TEXT NOT NULL,
+    timeframe TEXT NOT NULL,
+    action TEXT NOT NULL,
+    source TEXT NOT NULL,
+    status TEXT NOT NULL,
+    confidence REAL,
+    entry_price REAL,
+    stop_loss REAL,
+    take_profit REAL,
+    generated_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    expires_at_utc TEXT,
+    source_ref TEXT,
+    model_id TEXT,
+    model_version TEXT,
+    status_reason TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+TRADING_SIGNALS_LOOKUP_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_trading_signals_lookup
+ON trading_signals (user_id, status, generated_at_utc);
+"""
+
+TRADING_SIGNALS_ACCOUNT_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_trading_signals_account
+ON trading_signals (account_id, generated_at_utc);
+"""
+
+SIGNAL_EVENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS signal_events (
+    event_id TEXT PRIMARY KEY,
+    signal_id TEXT NOT NULL
+        REFERENCES trading_signals (signal_id) ON DELETE CASCADE,
+    from_status TEXT,
+    to_status TEXT NOT NULL,
+    occurred_at_utc TEXT NOT NULL,
+    reason TEXT,
+    actor TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+SIGNAL_EVENTS_SIGNAL_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_signal_events_signal
+ON signal_events (signal_id, occurred_at_utc);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
@@ -202,6 +259,11 @@ AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     TRADING_ACCOUNTS_TABLE,
     TRADING_ACCOUNTS_USER_INDEX,
     FUNDED_ACCOUNT_RULES_TABLE,
+    TRADING_SIGNALS_TABLE,
+    TRADING_SIGNALS_LOOKUP_INDEX,
+    TRADING_SIGNALS_ACCOUNT_INDEX,
+    SIGNAL_EVENTS_TABLE,
+    SIGNAL_EVENTS_SIGNAL_INDEX,
 )
 
 AQOS_SCHEMA_TABLES: tuple[str, ...] = (
@@ -213,6 +275,8 @@ AQOS_SCHEMA_TABLES: tuple[str, ...] = (
     "symbol_preferences",
     "trading_accounts",
     "funded_account_rules",
+    "trading_signals",
+    "signal_events",
 )
 
 
@@ -277,11 +341,16 @@ __all__ = [
     "AQOS_SCHEMA_TABLES",
     "AQOS_SCHEMA_VERSION",
     "FUNDED_ACCOUNT_RULES_TABLE",
+    "SIGNAL_EVENTS_SIGNAL_INDEX",
+    "SIGNAL_EVENTS_TABLE",
     "SYMBOL_PREFERENCES_TABLE",
     "SYMBOL_PREFERENCES_USER_KIND_INDEX",
     "TRADING_ACCOUNTS_TABLE",
     "TRADING_ACCOUNTS_USER_INDEX",
     "TRADING_SETTINGS_TABLE",
+    "TRADING_SIGNALS_ACCOUNT_INDEX",
+    "TRADING_SIGNALS_LOOKUP_INDEX",
+    "TRADING_SIGNALS_TABLE",
     "USER_CREDENTIALS_TABLE",
     "USER_PREFERENCES_TABLE",
     "USER_PROFILES_EMAIL_INDEX",

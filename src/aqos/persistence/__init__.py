@@ -161,6 +161,24 @@ from aqos.persistence.funded_rules import (
     resolve_drawdown_reference,
 )
 
+from aqos.persistence.signals import (
+    AQOS_SIGNALS_VERSION,
+    SIGNAL_TRANSITIONS,
+    SignalAction,
+    SignalEvent,
+    SignalSource,
+    SignalStatus,
+    TERMINAL_SIGNAL_STATUSES,
+    TradingSignal,
+    TradingSignalRepository,
+    UNFILLED_SIGNAL_STATUSES,
+    build_signal_event_from_row,
+    build_trading_signal_from_row,
+    can_transition_signal,
+    is_terminal_signal_status,
+    validate_signal_transition,
+)
+
 from aqos.persistence.symbol_preferences import (
     AQOS_SYMBOL_PREFERENCES_VERSION,
     KINDS_CLEARED_ON_BLOCK,
@@ -334,4 +352,19 @@ __all__ = [
     "evaluate_funded_rules",
     "evaluate_funded_trade_request",
     "resolve_drawdown_reference",
+    "AQOS_SIGNALS_VERSION",
+    "SIGNAL_TRANSITIONS",
+    "SignalAction",
+    "SignalEvent",
+    "SignalSource",
+    "SignalStatus",
+    "TERMINAL_SIGNAL_STATUSES",
+    "TradingSignal",
+    "TradingSignalRepository",
+    "UNFILLED_SIGNAL_STATUSES",
+    "build_signal_event_from_row",
+    "build_trading_signal_from_row",
+    "can_transition_signal",
+    "is_terminal_signal_status",
+    "validate_signal_transition",
 ]
