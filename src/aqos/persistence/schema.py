@@ -5,7 +5,7 @@ from typing import Any
 from aqos.persistence.database import AqosDatabase
 
 
-AQOS_SCHEMA_VERSION = 4
+AQOS_SCHEMA_VERSION = 5
 
 
 USER_PROFILES_TABLE = """
@@ -160,6 +160,34 @@ ON trading_accounts (user_id, status);
 """
 
 
+FUNDED_ACCOUNT_RULES_TABLE = """
+CREATE TABLE IF NOT EXISTS funded_account_rules (
+    rules_id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL UNIQUE
+        REFERENCES trading_accounts (account_id) ON DELETE CASCADE,
+    max_total_drawdown_fraction REAL NOT NULL,
+    max_daily_loss_fraction REAL NOT NULL,
+    max_risk_per_trade_fraction REAL NOT NULL,
+    profit_target_fraction REAL NOT NULL,
+    drawdown_basis TEXT NOT NULL DEFAULT 'static_initial',
+    min_trading_days INTEGER NOT NULL DEFAULT 0,
+    max_lot_size REAL NOT NULL,
+    min_lot_size REAL NOT NULL,
+    max_open_positions INTEGER NOT NULL,
+    news_restriction_enabled INTEGER NOT NULL DEFAULT 1,
+    news_blackout_minutes_before INTEGER NOT NULL DEFAULT 2,
+    news_blackout_minutes_after INTEGER NOT NULL DEFAULT 2,
+    weekend_holding_allowed INTEGER NOT NULL DEFAULT 0,
+    consistency_fraction REAL,
+    allowed_symbols TEXT NOT NULL DEFAULT '[]',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT NOT NULL,
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+"""
+
+
 AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     USER_PROFILES_TABLE,
     USER_PROFILES_EMAIL_INDEX,
@@ -173,6 +201,7 @@ AQOS_SCHEMA_STATEMENTS: tuple[str, ...] = (
     SYMBOL_PREFERENCES_USER_KIND_INDEX,
     TRADING_ACCOUNTS_TABLE,
     TRADING_ACCOUNTS_USER_INDEX,
+    FUNDED_ACCOUNT_RULES_TABLE,
 )
 
 AQOS_SCHEMA_TABLES: tuple[str, ...] = (
@@ -183,6 +212,7 @@ AQOS_SCHEMA_TABLES: tuple[str, ...] = (
     "trading_settings",
     "symbol_preferences",
     "trading_accounts",
+    "funded_account_rules",
 )
 
 
@@ -246,6 +276,7 @@ __all__ = [
     "AQOS_SCHEMA_STATEMENTS",
     "AQOS_SCHEMA_TABLES",
     "AQOS_SCHEMA_VERSION",
+    "FUNDED_ACCOUNT_RULES_TABLE",
     "SYMBOL_PREFERENCES_TABLE",
     "SYMBOL_PREFERENCES_USER_KIND_INDEX",
     "TRADING_ACCOUNTS_TABLE",
