@@ -9,6 +9,12 @@ from aqos.backtesting.builtin_strategies import (
     build_builtin_rule_strategy,
     list_builtin_rule_strategy_names,
 )
+from aqos.backtesting.model_promotion_guard import BacktestModelGateConfig
+from aqos.backtesting.model_runner import (
+    ModelBacktestRunnerConfig,
+    run_model_backtest,
+)
+from aqos.backtesting.model_signal_adapter import ModelSignalAdapterConfig
 from aqos.backtesting.rule_based_adapter import (
     RuleBasedBacktestSignalAdapter,
     RuleBasedSignalAdapterConfig,
@@ -18,6 +24,16 @@ from aqos.backtesting.simulator import BacktestIntrabarExitPolicy
 from aqos.backtesting.strategy_runner import (
     StrategyBacktestRunnerConfig,
     run_backtest_with_signal_adapter,
+)
+from aqos.model_training.model_evaluation import ModelPromotionStage
+
+
+BACKTEST_CLI_PROMOTION_STAGE_CHOICES = (
+    ModelPromotionStage.RESEARCH.value,
+    ModelPromotionStage.PAPER_TRADING.value,
+    ModelPromotionStage.DEMO.value,
+    ModelPromotionStage.LIMITED_LIVE.value,
+    ModelPromotionStage.LIVE.value,
 )
 
 
@@ -157,6 +173,87 @@ def build_backtesting_cli_parser() -> argparse.ArgumentParser:
         default="strategy_backtest_adapter_results.json",
     )
 
+    model_backtest_parser = subparsers.add_parser(
+        "model-backtest",
+        help="Run a backtest driven by a trained AQOS signal model.",
+    )
+    add_common_backtest_arguments(model_backtest_parser)
+    model_backtest_parser.set_defaults(strategy_name="model_strategy")
+    model_backtest_parser.add_argument("--model-path", required=True)
+    model_backtest_parser.add_argument("--model-metadata-path", default=None)
+    model_backtest_parser.add_argument("--promotion-registry-path", default=None)
+    model_backtest_parser.add_argument(
+        "--required-stage",
+        default=ModelPromotionStage.PAPER_TRADING.value,
+        choices=list(BACKTEST_CLI_PROMOTION_STAGE_CHOICES),
+        help="Promotion stage the model must already have been approved for.",
+    )
+    model_backtest_parser.add_argument(
+        "--allow-unpromoted-model",
+        action="store_true",
+        help="Explicitly allow running a model that fails the promotion gate.",
+    )
+    model_backtest_parser.add_argument(
+        "--disable-promotion-gate",
+        action="store_true",
+        help=(
+            "Skip the promotion gate entirely. Requires --allow-unpromoted-model."
+        ),
+    )
+    model_backtest_parser.add_argument("--min-confidence", type=float, default=0.0)
+    model_backtest_parser.add_argument("--warmup-bars", type=int, default=1)
+    model_backtest_parser.add_argument(
+        "--model-stop-loss-points",
+        type=float,
+        default=None,
+    )
+    model_backtest_parser.add_argument(
+        "--model-take-profit-points",
+        type=float,
+        default=None,
+    )
+    model_backtest_parser.add_argument(
+        "--adapter-name",
+        default="model_backtest_signal_adapter",
+    )
+    model_backtest_parser.add_argument(
+        "--adapter-fail-open",
+        action="store_true",
+        help="Raise model errors instead of converting them into failed hold signals.",
+    )
+    model_backtest_parser.add_argument(
+        "--report-filename",
+        default="model_strategy_backtest_report.json",
+    )
+    model_backtest_parser.add_argument(
+        "--trades-filename",
+        default="model_backtest_trades.csv",
+    )
+    model_backtest_parser.add_argument(
+        "--equity-curve-filename",
+        default="model_backtest_equity_curve.csv",
+    )
+    model_backtest_parser.add_argument(
+        "--orders-filename",
+        default="model_backtest_orders.csv",
+    )
+    model_backtest_parser.add_argument(
+        "--signals-filename",
+        default="model_backtest_signals.csv",
+    )
+    model_backtest_parser.add_argument(
+        "--adapter-results-filename",
+        default="model_backtest_adapter_results.json",
+    )
+    model_backtest_parser.add_argument(
+        "--model-report-filename",
+        default="model_backtest_report.json",
+    )
+    model_backtest_parser.add_argument(
+        "--predictions-filename",
+        default="model_backtest_predictions.csv",
+    )
+
     return parser
 
 
@@ -195,8 +292,9 @@ def build_backtest_runner_config_from_args(
     )
 
 
-def build_strategy_backtest_runner_config_from_args(
+def build_adapter_backtest_runner_config_from_args(
     args: argparse.Namespace,
+    metadata: dict[str, object] | None = None,
 ) -> StrategyBacktestRunnerConfig:
     return StrategyBacktestRunnerConfig(
         data_path=Path(args.data_path),
@@ -225,7 +323,59 @@ def build_strategy_backtest_runner_config_from_args(
         orders_filename=args.orders_filename,
         signals_filename=args.signals_filename,
         adapter_results_filename=args.adapter_results_filename,
+        metadata=dict(metadata or {}),
+    )
+
+
+def build_strategy_backtest_runner_config_from_args(
+    args: argparse.Namespace,
+) -> StrategyBacktestRunnerConfig:
+    return build_adapter_backtest_runner_config_from_args(
+        args,
         metadata={"rule_strategy": args.rule_strategy},
+    )
+
+
+def build_model_gate_config_from_args(
+    args: argparse.Namespace,
+) -> BacktestModelGateConfig:
+    return BacktestModelGateConfig(
+        model_version_metadata_path=args.model_metadata_path,
+        promotion_registry_path=args.promotion_registry_path,
+        required_stage=ModelPromotionStage(args.required_stage),
+        enabled=not args.disable_promotion_gate,
+        allow_unpromoted_model=args.allow_unpromoted_model,
+    )
+
+
+def build_model_adapter_config_from_args(
+    args: argparse.Namespace,
+) -> ModelSignalAdapterConfig:
+    return ModelSignalAdapterConfig(
+        adapter_name=args.adapter_name,
+        min_confidence=args.min_confidence,
+        warmup_bars=args.warmup_bars,
+        stop_loss_points=args.model_stop_loss_points,
+        take_profit_points=args.model_take_profit_points,
+        allow_short=not args.no_short,
+        fail_closed=not args.adapter_fail_open,
+        timestamp_column=args.timestamp_column,
+    )
+
+
+def build_model_backtest_runner_config_from_args(
+    args: argparse.Namespace,
+) -> ModelBacktestRunnerConfig:
+    return ModelBacktestRunnerConfig(
+        model_path=Path(args.model_path),
+        strategy_config=build_adapter_backtest_runner_config_from_args(
+            args,
+            metadata={"model_path": Path(args.model_path).as_posix()},
+        ),
+        gate_config=build_model_gate_config_from_args(args),
+        adapter_config=build_model_adapter_config_from_args(args),
+        model_report_filename=args.model_report_filename,
+        predictions_filename=args.predictions_filename,
     )
 
 
@@ -268,6 +418,13 @@ def run_backtesting_cli(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
         return 0
 
+    if args.command == "model-backtest":
+        output = run_model_backtest(
+            build_model_backtest_runner_config_from_args(args)
+        )
+        print(json.dumps(output.to_dict(), indent=2, sort_keys=True))
+        return 0
+
     parser.error(f"Unsupported command: {args.command}")
     return 2
 
@@ -281,9 +438,14 @@ if __name__ == "__main__":
 
 
 __all__ = [
+    "BACKTEST_CLI_PROMOTION_STAGE_CHOICES",
     "add_common_backtest_arguments",
+    "build_adapter_backtest_runner_config_from_args",
     "build_backtest_runner_config_from_args",
     "build_backtesting_cli_parser",
+    "build_model_adapter_config_from_args",
+    "build_model_backtest_runner_config_from_args",
+    "build_model_gate_config_from_args",
     "build_rule_based_adapter_from_args",
     "build_strategy_backtest_runner_config_from_args",
     "main",
