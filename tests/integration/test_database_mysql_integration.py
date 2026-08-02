@@ -31,13 +31,20 @@ ENV_TEST_DB_URL = "AQOS_TEST_DB_URL"
 pytestmark = pytest.mark.mysql
 
 
+SKIP_INSTRUCTIONS = (
+    f"{ENV_TEST_DB_URL} is not set, so the MySQL DDL, migrations, stored "
+    "procedures and repository round-trip are NOT verified by this run. "
+    "Run them with:\n"
+    "  AQOS_TEST_DB_URL=mysql+pymysql://user:password@localhost:3306/aqos_test "
+    "pytest -m mysql"
+)
+
+
 def requires_mysql() -> str:
     url = os.environ.get(ENV_TEST_DB_URL, "").strip()
 
     if not url:
-        pytest.skip(
-            f"{ENV_TEST_DB_URL} is not set; skipping MySQL integration tests."
-        )
+        pytest.skip(SKIP_INSTRUCTIONS)
 
     return url
 
@@ -63,8 +70,12 @@ def mysql_database() -> AqosDatabase:
     database = AqosDatabase(config=parse_database_url(url))
 
     if not database.ping():
+        safe_url = database.config.safe_url() if database.config else "<unset>"
         database.dispose()
-        pytest.skip("MySQL server is not reachable; skipping integration tests.")
+        pytest.skip(
+            f"MySQL server at {safe_url} is not reachable, so the MySQL "
+            "integration tests are NOT verified by this run."
+        )
 
     drop_aqos_objects(database)
 

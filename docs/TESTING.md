@@ -62,6 +62,51 @@ pytest --cov=src/aqos
 
 ---
 
+# MySQL Integration Tests (required)
+
+AQOS is MySQL-first. The database foundation ships with integration tests that
+exercise real MySQL DDL, migrations, stored procedure creation, stored procedure
+calls (including `OUT` parameters), repository round-trips, and migration tamper
+detection.
+
+**These tests are skipped unless `AQOS_TEST_DB_URL` is set.** A default `pytest`
+run therefore does *not* verify the database layer.
+
+Run them with:
+
+```bash
+AQOS_TEST_DB_URL=mysql+pymysql://user:password@localhost:3306/aqos_test pytest -m mysql
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:AQOS_TEST_DB_URL = "mysql+pymysql://user:password@localhost:3306/aqos_test"
+pytest -m mysql
+```
+
+A disposable MySQL 8 server can be started with Docker:
+
+```bash
+docker run -d --name aqos-mysql-test \
+  -e MYSQL_ROOT_PASSWORD=aqos_root \
+  -e MYSQL_DATABASE=aqos_test \
+  -e MYSQL_USER=aqos \
+  -e MYSQL_PASSWORD=aqos_pw \
+  -p 33306:3306 mysql:8.0
+```
+
+```bash
+AQOS_TEST_DB_URL=mysql+pymysql://aqos:aqos_pw@127.0.0.1:33306/aqos_test pytest -m mysql
+```
+
+> The test database is dropped and recreated between tests. Never point
+> `AQOS_TEST_DB_URL` at a database you care about.
+
+Last verified against **MySQL 8.0.46** — 10 passed.
+
+---
+
 # Current Test Coverage
 
 ## Sprint 001 — Core Infrastructure
