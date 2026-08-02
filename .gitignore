@@ -20,3 +20,5 @@ dist/
 
 # Local temp/output
 tmp/
+# Local Claude Code settings
+.claude/
