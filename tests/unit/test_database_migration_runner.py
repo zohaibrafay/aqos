@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -183,6 +184,81 @@ def test_shipped_migrations_have_unique_names() -> None:
     names = [script.name for script in discover_migration_scripts()]
 
     assert len(names) == len(set(names))
+
+
+CREATE_PROCEDURE_PATTERN = re.compile(
+    r"^CREATE\s+PROCEDURE\s+(?P<name>\w+)\s*\(",
+    re.IGNORECASE,
+)
+
+STRING_PARAMETER_PATTERN = re.compile(
+    r"(?:IN|OUT|INOUT)\s+\w+\s+(?:VARCHAR|CHAR)\s*\(\d+\)",
+    re.IGNORECASE,
+)
+
+
+def build_effective_procedure_definitions() -> dict[str, tuple[str, str]]:
+    """
+    Return ``{procedure_name: (migration_filename, parameter_list)}``.
+
+    Migrations are applied in version order and a later ``CREATE PROCEDURE``
+    replaces an earlier one, so only the last definition of each procedure
+    describes the database that actually results.
+    """
+
+    definitions: dict[str, tuple[str, str]] = {}
+
+    for script in discover_migration_scripts():
+        for statement in script.statements():
+            match = CREATE_PROCEDURE_PATTERN.match(statement.strip())
+
+            if match is None:
+                continue
+
+            header = statement.split("BEGIN", 1)[0]
+            parameters = header[header.index("(") + 1 : header.rindex(")")]
+
+            definitions[match.group("name")] = (script.filename, parameters)
+
+    return definitions
+
+
+def test_effective_procedure_definitions_are_discovered() -> None:
+    definitions = build_effective_procedure_definitions()
+
+    assert "sp_aqos_schema_version" in definitions
+    assert "sp_aqos_set_metadata" in definitions
+
+    # V0005 supersedes the V0002 definition.
+    assert definitions["sp_aqos_set_metadata"][0].startswith("V0005")
+
+
+def test_stored_procedure_string_parameters_pin_a_collation() -> None:
+    """
+    A VARCHAR procedure parameter without an explicit collation inherits the
+    database default, which differs from the utf8mb4_unicode_ci that AQOS
+    tables pin. Every comparison against a table column then fails at runtime
+    with "Illegal mix of collations", so the declaration must be explicit.
+
+    Only the effective definition of each procedure is checked: applied
+    migrations are never edited, so an early mistake is corrected by a later
+    migration rather than by rewriting history.
+    """
+
+    offenders: list[str] = []
+
+    for name, (filename, parameters) in sorted(
+        build_effective_procedure_definitions().items()
+    ):
+        for declaration in STRING_PARAMETER_PATTERN.findall(parameters):
+            remainder = parameters[
+                parameters.index(declaration) + len(declaration) :
+            ].split(",", 1)[0]
+
+            if "COLLATE" not in remainder.upper():
+                offenders.append(f"{filename}:{name}: {declaration.strip()}")
+
+    assert offenders == []
 
 
 def test_shipped_baseline_creates_the_expected_tables() -> None:
