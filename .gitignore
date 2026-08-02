@@ -20,5 +20,10 @@ dist/
 
 # Local temp/output
 tmp/
+
+# Runtime logs. The logger recreates logs/ on start, so nothing here belongs
+# in git. A log kept deliberately as a test fixture goes under tests/fixtures.
+logs/
+*.log
 # Local Claude Code settings
 .claude/
