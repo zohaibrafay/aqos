@@ -70,6 +70,8 @@ class PaperRejectionReason(str, Enum):
     INSUFFICIENT_BALANCE = "insufficient_balance"
     NO_OPEN_POSITION = "no_open_position"
     ORDER_NOT_FOUND = "order_not_found"
+    DUPLICATE_EXECUTION = "duplicate_execution"
+    EXECUTION_NOT_ALLOWED = "execution_not_allowed"
 
 
 TERMINAL_PAPER_ORDER_STATUSES = (
