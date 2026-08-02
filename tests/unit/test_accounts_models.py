@@ -36,7 +36,7 @@ def build_account(**overrides) -> TradingAccount:
         "user_id": "user_1",
         "name": "Paper One",
         "account_type": AccountType.PAPER,
-        "broker": BrokerKind.PAPER,
+        "broker": BrokerKind.INTERNAL_PAPER,
         "status": AccountStatus.ACTIVE,
         "execution_mode": ExecutionMode.MANUAL_APPROVAL,
         "currency": "USD",
@@ -68,7 +68,7 @@ def test_accounts_version_is_exposed() -> None:
 
 
 def test_account_type_and_broker_are_independent() -> None:
-    """A live account can sit on MT5 or Binance; a paper account has no venue."""
+    """A venue is not a capital class, so the two enums stay separate."""
 
     assert {item.value for item in AccountType} == {
         "paper",
@@ -77,11 +77,42 @@ def test_account_type_and_broker_are_independent() -> None:
         "funded",
     }
     assert {item.value for item in BrokerKind} == {
-        "paper",
         "mt5",
         "binance",
-        "manual",
+        "exness",
+        "icmarkets",
+        "bybit",
+        "internal_paper",
+        "none",
     }
+
+
+@pytest.mark.parametrize(
+    ("account_type", "broker"),
+    [
+        (AccountType.LIVE, BrokerKind.MT5),
+        (AccountType.FUNDED, BrokerKind.MT5),
+        (AccountType.DEMO, BrokerKind.MT5),
+        (AccountType.LIVE, BrokerKind.BINANCE),
+        (AccountType.LIVE, BrokerKind.EXNESS),
+        (AccountType.FUNDED, BrokerKind.ICMARKETS),
+        (AccountType.LIVE, BrokerKind.BYBIT),
+        (AccountType.PAPER, BrokerKind.INTERNAL_PAPER),
+        (AccountType.DEMO, BrokerKind.NONE),
+    ],
+)
+def test_every_account_type_and_venue_combination_is_representable(
+    account_type: AccountType,
+    broker: BrokerKind,
+) -> None:
+    account = build_account(
+        account_type=account_type,
+        broker=broker,
+        execution_mode=ExecutionMode.SIGNAL_ONLY,
+    )
+
+    assert account.account_type == account_type
+    assert account.broker == broker
 
 
 def test_account_statuses_cover_the_required_set() -> None:
@@ -332,7 +363,7 @@ def test_account_dict_payload() -> None:
     ).to_dict()
 
     assert payload["account_type"] == "paper"
-    assert payload["broker"] == "paper"
+    assert payload["broker"] == "internal_paper"
     assert payload["status"] == "active"
     assert payload["execution_mode"] == "manual_approval"
     assert payload["execution_ceiling"] == "manual_approval"

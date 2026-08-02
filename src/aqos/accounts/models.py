@@ -43,12 +43,21 @@ class AccountType(str, Enum):
 
 
 class BrokerKind(str, Enum):
-    """Where the account is executed. Independent of the account type."""
+    """
+    Where the account is executed.
 
-    PAPER = "paper"
+    A venue is not a capital class, so this is independent of ``AccountType``.
+    That keeps combinations like live+mt5, funded+mt5, demo+mt5, live+binance
+    and paper+internal_paper all representable.
+    """
+
     MT5 = "mt5"
     BINANCE = "binance"
-    MANUAL = "manual"
+    EXNESS = "exness"
+    ICMARKETS = "icmarkets"
+    BYBIT = "bybit"
+    INTERNAL_PAPER = "internal_paper"
+    NONE = "none"
 
 
 class AccountStatus(str, Enum):

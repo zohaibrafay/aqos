@@ -105,7 +105,7 @@ def create_paper_account(session, user_id: str, name: str = "Paper One", **overr
         "user_id": user_id,
         "name": name,
         "account_type": AccountType.PAPER,
-        "broker": BrokerKind.PAPER,
+        "broker": BrokerKind.INTERNAL_PAPER,
         "initial_balance": 10_000.0,
         "created_at_utc": FIXED_NOW,
     }
