@@ -35,6 +35,14 @@ from aqos.database.base import (
     list_aqos_model_tables,
 )
 
+from aqos.database.types import (
+    AQOS_DATABASE_TYPES_VERSION,
+    DEFAULT_ENUM_LENGTH,
+    EnumString,
+    database_utc_now,
+    to_naive_utc,
+)
+
 from aqos.database.engine import (
     AQOS_DATABASE_ENGINE_VERSION,
     AqosDatabase,
@@ -115,6 +123,11 @@ __all__ = [
     "SchemaMigration",
     "TimestampMixin",
     "list_aqos_model_tables",
+    "AQOS_DATABASE_TYPES_VERSION",
+    "DEFAULT_ENUM_LENGTH",
+    "EnumString",
+    "database_utc_now",
+    "to_naive_utc",
     "AQOS_DATABASE_ENGINE_VERSION",
     "AqosDatabase",
     "build_aqos_database_from_env",

@@ -20,6 +20,7 @@ from aqos.database.config import parse_database_url
 from aqos.database.engine import AqosDatabase
 from aqos.database.migration_runner import (
     apply_migrations,
+    discover_migration_scripts,
     plan_migrations,
     read_schema_version,
 )
@@ -49,19 +50,43 @@ def requires_mysql() -> str:
     return url
 
 
+def shipped_versions() -> tuple[int, ...]:
+    return tuple(script.version for script in discover_migration_scripts())
+
+
+def latest_version() -> int:
+    return max(shipped_versions())
+
+
 def drop_aqos_objects(database: AqosDatabase) -> None:
+    """Drop every object AQOS migrations create, so each test starts clean."""
+
     from sqlalchemy import text
 
     with database.session() as session:
-        for procedure in (
-            "sp_aqos_schema_version",
-            "sp_aqos_set_metadata",
-            "sp_aqos_metadata_count",
-        ):
-            session.execute(text(f"DROP PROCEDURE IF EXISTS {procedure}"))
+        rows = session.execute(
+            text(
+                "SELECT ROUTINE_NAME FROM information_schema.ROUTINES "
+                "WHERE ROUTINE_TYPE = 'PROCEDURE' AND ROUTINE_SCHEMA = DATABASE()"
+            )
+        ).all()
 
-        session.execute(text("DROP TABLE IF EXISTS aqos_metadata"))
-        session.execute(text("DROP TABLE IF EXISTS schema_migrations"))
+        for row in rows:
+            session.execute(text(f"DROP PROCEDURE IF EXISTS {row[0]}"))
+
+        table_rows = session.execute(
+            text(
+                "SELECT TABLE_NAME FROM information_schema.TABLES "
+                "WHERE TABLE_SCHEMA = DATABASE()"
+            )
+        ).all()
+
+        session.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+
+        for row in table_rows:
+            session.execute(text(f"DROP TABLE IF EXISTS {row[0]}"))
+
+        session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
 
 
 @pytest.fixture
@@ -95,10 +120,10 @@ def test_server_is_mysql_8(mysql_database) -> None:
 def test_migrations_apply_cleanly(mysql_database) -> None:
     result = apply_migrations(mysql_database)
 
-    assert result.applied_versions == (1, 2)
-    assert result.current_version == 2
+    assert result.applied_versions == shipped_versions()
+    assert result.current_version == latest_version()
     assert result.statements_executed > 0
-    assert read_schema_version(mysql_database) == 2
+    assert read_schema_version(mysql_database) == latest_version()
 
 
 def test_migrations_are_idempotent(mysql_database) -> None:
@@ -107,7 +132,7 @@ def test_migrations_are_idempotent(mysql_database) -> None:
     second_run = apply_migrations(mysql_database)
 
     assert second_run.applied_versions == ()
-    assert second_run.current_version == 2
+    assert second_run.current_version == latest_version()
 
     plan = plan_migrations(mysql_database)
 
@@ -152,8 +177,8 @@ def test_call_stored_procedure_returning_rows(mysql_database) -> None:
     result = StoredProcedureService(mysql_database).call("sp_aqos_schema_version")
 
     assert result.first_row is not None
-    assert result.first_row["schema_version"] == 2
-    assert result.first_row["applied_count"] == 2
+    assert result.first_row["schema_version"] == latest_version()
+    assert result.first_row["applied_count"] == len(shipped_versions())
 
 
 def test_call_stored_procedure_with_in_parameters(mysql_database) -> None:

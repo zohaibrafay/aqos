@@ -166,9 +166,23 @@ def test_shipped_migrations_are_discoverable() -> None:
     scripts = discover_migration_scripts()
 
     assert MIGRATIONS_DIRECTORY.exists()
-    assert [script.version for script in scripts] == [1, 2]
+    assert scripts
     assert scripts[0].name == "aqos_baseline"
     assert scripts[1].name == "aqos_schema_procedures"
+
+
+def test_shipped_migration_versions_are_contiguous_from_one() -> None:
+    """A gap or duplicate would silently skip a migration on a fresh database."""
+
+    versions = [script.version for script in discover_migration_scripts()]
+
+    assert versions == list(range(1, len(versions) + 1))
+
+
+def test_shipped_migrations_have_unique_names() -> None:
+    names = [script.name for script in discover_migration_scripts()]
+
+    assert len(names) == len(set(names))
 
 
 def test_shipped_baseline_creates_the_expected_tables() -> None:
