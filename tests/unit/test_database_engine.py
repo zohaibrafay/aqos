@@ -247,6 +247,22 @@ def test_models_expose_to_dict() -> None:
     assert "SchemaMigration(version=1" in repr(migration)
 
 
+def test_models_reject_the_reserved_metadata_keyword() -> None:
+    """
+    ``metadata`` is SQLAlchemy's MetaData on every declarative class.
+
+    Passing it as a column value would shadow the mapper registry instead of
+    raising, silently losing the value, so it is refused outright.
+    """
+
+    with pytest.raises(TypeError, match="reserved by SQLAlchemy"):
+        AqosMetadataEntry(
+            metadata_key="k",
+            metadata_value="v",
+            metadata={"oops": True},
+        )
+
+
 def test_metadata_entry_repr() -> None:
     entry = AqosMetadataEntry(metadata_key="schema_owner", metadata_value="aqos")
 

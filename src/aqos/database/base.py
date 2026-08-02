@@ -33,6 +33,33 @@ class AqosBase(DeclarativeBase):
 
     metadata = AQOS_METADATA
 
+    def __init__(self, **kwargs: Any) -> None:
+        """
+        Reject the one keyword that would fail silently.
+
+        ``metadata`` is SQLAlchemy's ``MetaData`` on every declarative class, so
+        passing it as a column value shadows the mapper's registry instead of
+        raising. AQOS names its JSON column attribute ``extra_metadata``, and a
+        caller reaching for ``metadata`` is told so rather than losing the value.
+        """
+
+        if "metadata" in kwargs:
+            raise TypeError(
+                "'metadata' is reserved by SQLAlchemy. AQOS models take "
+                "'extra_metadata' for their JSON metadata column."
+            )
+
+        # SQLAlchemy installs its declarative constructor on the mapped class
+        # rather than leaving it reachable through super(), so the same
+        # attribute assignment is performed here.
+        for key, value in kwargs.items():
+            if not hasattr(type(self), key):
+                raise TypeError(
+                    f"{type(self).__name__} has no attribute named {key!r}."
+                )
+
+            setattr(self, key, value)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             column.name: getattr(self, column.name)
