@@ -1,17 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Sequence
 
 from sqlalchemy.orm import Session
 
 from aqos.accounts.models import TradingAccount
-from aqos.execution_policy.modes import (
-    ExecutionConstraint,
-    ExecutionMode,
-    ExecutionModeDecision,
-    resolve_execution_mode,
+from aqos.execution_policy.modes import ExecutionConstraint, ExecutionMode
+from aqos.paper_trading.eligibility import (
+    PaperEligibilityContext,
+    PaperExecutionEligibilityDecision,
+    REQUIRED_PAPER_EXECUTION_MODES,
+    evaluate_paper_execution_eligibility,
+)
+from aqos.signal_reasons.taxonomy import SignalReasonCode
+from aqos.signals.repositories import TradingSignalRepository
+from aqos.trading_settings.models import SymbolPreferenceKind
+from aqos.trading_settings.repositories import (
+    SymbolPreferenceRepository,
+    TradingSettingsRepository,
 )
 from aqos.paper_trading.contracts import (
     PaperAccountState,
@@ -37,6 +45,7 @@ from aqos.paper_trading.models import (
 )
 from aqos.paper_trading.repositories import (
     PaperAccountSnapshotRepository,
+    PaperExecutionDecisionRepository,
     PaperFillRepository,
     PaperOrderRepository,
     PaperPositionRepository,
@@ -53,23 +62,49 @@ from aqos.paper_trading.simulator import (
     resolve_position_exit,
     resolve_reference_price,
 )
-from aqos.paper_trading.validation import (
-    PaperValidationResult,
-    validate_paper_account,
-    validate_paper_execution_request,
-)
+from aqos.paper_trading.validation import validate_paper_account
 from aqos.users.repositories import build_entity_id
 
 
-AQOS_PAPER_EXECUTION_SERVICE_VERSION = "1.0"
+AQOS_PAPER_EXECUTION_SERVICE_VERSION = "1.1"
 
-#: The execution mode a paper order needs before it may be booked at all.
-#: Paper trading is still an execution path, so it obeys the same ceiling logic
-#: as every other venue.
-REQUIRED_PAPER_EXECUTION_MODES = (
-    ExecutionMode.MANUAL_APPROVAL,
-    ExecutionMode.AUTO_TRADE,
-)
+#: How a structured taxonomy code lands on the order row.
+#:
+#: The taxonomy code stays the authoritative reason; this only picks the coarser
+#: order-level enum so ``paper_orders.rejection_reason`` stays meaningful.
+REJECTION_REASON_BY_CODE: dict[SignalReasonCode, PaperRejectionReason] = {
+    SignalReasonCode.ACCOUNT_NOT_PAPER: PaperRejectionReason.ACCOUNT_NOT_PAPER,
+    SignalReasonCode.ACCOUNT_DISABLED: PaperRejectionReason.ACCOUNT_NOT_ACTIVE,
+    SignalReasonCode.ACCOUNT_SUSPENDED: PaperRejectionReason.ACCOUNT_NOT_ACTIVE,
+    SignalReasonCode.SYMBOL_BLOCKED: PaperRejectionReason.INVALID_SYMBOL,
+    SignalReasonCode.INVALID_SYMBOL: PaperRejectionReason.INVALID_SYMBOL,
+    SignalReasonCode.DUPLICATE_SIGNAL: PaperRejectionReason.DUPLICATE_EXECUTION,
+    SignalReasonCode.AUTO_TRADE_NOT_ALLOWED: (
+        PaperRejectionReason.EXECUTION_NOT_ALLOWED
+    ),
+    SignalReasonCode.UNPROMOTED_MODEL: PaperRejectionReason.EXECUTION_NOT_ALLOWED,
+    SignalReasonCode.FUNDED_RULE_BREACHED: (
+        PaperRejectionReason.EXECUTION_NOT_ALLOWED
+    ),
+    SignalReasonCode.RISK_LIMIT_EXCEEDED: (
+        PaperRejectionReason.EXECUTION_NOT_ALLOWED
+    ),
+    SignalReasonCode.VALIDATION_FAILED: PaperRejectionReason.UNSAFE_ACTION,
+}
+
+
+def rejection_reason_for_code(
+    code: SignalReasonCode,
+) -> PaperRejectionReason:
+    """
+    Map a taxonomy code onto the order-level rejection enum.
+
+    An unmapped code falls back to ``UNSAFE_ACTION`` rather than to something
+    permissive, so a new code can never widen what gets executed.
+    """
+
+    return REJECTION_REASON_BY_CODE.get(code, PaperRejectionReason.UNSAFE_ACTION)
+
 
 #: Rejections that cannot be written to ``paper_orders``.
 #:
@@ -125,6 +160,7 @@ class PaperExecutionService:
         self.fills = PaperFillRepository(session)
         self.trades = PaperTradeRepository(session)
         self.snapshots = PaperAccountSnapshotRepository(session)
+        self.decisions = PaperExecutionDecisionRepository(session)
 
     # -- state ------------------------------------------------------------
 
@@ -173,48 +209,81 @@ class PaperExecutionService:
 
     # -- safety -----------------------------------------------------------
 
-    def check_execution_allowed(
-        self,
-        requested_mode: ExecutionMode,
-        constraints: Sequence[ExecutionConstraint],
-    ) -> tuple[ExecutionModeDecision, PaperValidationResult]:
-        """
-        Resolve the effective mode and refuse anything below order capability.
-
-        ``resolve_execution_mode`` raises when no constraints are supplied, so a
-        caller cannot execute by simply omitting the ceilings.
-        """
-
-        decision = resolve_execution_mode(requested_mode, constraints)
-
-        if decision.effective not in REQUIRED_PAPER_EXECUTION_MODES:
-            return decision, PaperValidationResult.reject(
-                PaperRejectionReason.EXECUTION_NOT_ALLOWED,
-                decision.explain(),
-            )
-
-        return decision, PaperValidationResult.accept()
-
-    def check_not_duplicate(
+    def build_eligibility_context(
         self,
         request: PaperExecutionRequest,
-    ) -> PaperValidationResult:
-        """A signal may only be executed once per paper account."""
+        overrides: PaperEligibilityContext | None = None,
+    ) -> PaperEligibilityContext:
+        """
+        Resolve everything the rule gate can look up for itself.
 
-        if request.signal_id is None:
-            return PaperValidationResult.accept()
+        Duplicate execution, the signal's lifecycle status, the user's settings
+        and their blocked symbols all come from the database rather than from
+        the caller, so a caller cannot weaken the gate by passing a bare
+        context. Inputs AQOS cannot derive here — funded state, risk and model
+        promotion — are taken from ``overrides`` unchanged.
+        """
 
-        if self.orders.has_execution_for_signal(
-            account_id=request.account_id,
-            signal_id=request.signal_id,
-        ):
-            return PaperValidationResult.reject(
-                PaperRejectionReason.DUPLICATE_EXECUTION,
-                f"Signal {request.signal_id} already has an order on account "
-                f"{request.account_id}.",
+        supplied = overrides or PaperEligibilityContext()
+
+        settings = supplied.settings
+
+        if settings is None:
+            settings = TradingSettingsRepository(self.session).get_for_user(
+                request.user_id
             )
 
-        return PaperValidationResult.accept()
+        blocked_symbols = supplied.blocked_symbols
+
+        if not blocked_symbols:
+            blocked_symbols = SymbolPreferenceRepository(
+                self.session
+            ).list_symbols(request.user_id, SymbolPreferenceKind.BLOCKED)
+
+        signal = supplied.signal
+
+        if signal is None and request.signal_id is not None:
+            signal = TradingSignalRepository(self.session).get(request.signal_id)
+
+        has_existing_execution = (
+            supplied.has_existing_execution
+            or (
+                request.signal_id is not None
+                and self.orders.has_execution_for_signal(
+                    account_id=request.account_id,
+                    signal_id=request.signal_id,
+                )
+            )
+        )
+
+        return replace(
+            supplied,
+            settings=settings,
+            blocked_symbols=tuple(blocked_symbols),
+            signal=signal,
+            has_existing_execution=has_existing_execution,
+            evaluated_at_utc=(
+                supplied.evaluated_at_utc or request.submitted_at_utc
+            ),
+        )
+
+    def evaluate_eligibility(
+        self,
+        request: PaperExecutionRequest,
+        account: TradingAccount,
+        constraints: Sequence[ExecutionConstraint] = (),
+        requested_mode: ExecutionMode = ExecutionMode.AUTO_TRADE,
+        context: PaperEligibilityContext | None = None,
+    ) -> PaperExecutionEligibilityDecision:
+        """Run the full rule gate without executing anything."""
+
+        return evaluate_paper_execution_eligibility(
+            request=request,
+            account=account,
+            context=self.build_eligibility_context(request, context),
+            requested_mode=requested_mode,
+            extra_constraints=constraints,
+        )
 
     # -- execution --------------------------------------------------------
 
@@ -223,59 +292,92 @@ class PaperExecutionService:
         request: PaperExecutionRequest,
         account: TradingAccount,
         bar: PaperMarketBar,
-        constraints: Sequence[ExecutionConstraint],
+        constraints: Sequence[ExecutionConstraint] = (),
         requested_mode: ExecutionMode = ExecutionMode.AUTO_TRADE,
+        context: PaperEligibilityContext | None = None,
     ) -> PaperExecutionResult:
         """
         Run one paper execution end to end and persist every artefact.
 
-        A rejection is a normal outcome, not an exception: it is returned with
-        its reason and, where the schema permits, recorded as a rejected order.
+        The rule gate runs first and its decision is always recorded, so a
+        refused execution is as auditable as a successful one. A rejection is a
+        normal outcome, not an exception.
         """
 
-        if bar.symbol != request.symbol:
-            return self._reject(
+        eligibility = self.evaluate_eligibility(
+            request=request,
+            account=account,
+            constraints=constraints,
+            requested_mode=requested_mode,
+            context=replace(
+                context or PaperEligibilityContext(),
+                market_data_symbol=bar.symbol,
+            ),
+        )
+        decision_record = self.decisions.record_decision(
+            eligibility,
+            decided_at_utc=request.submitted_at_utc,
+        )
+
+        if not eligibility.is_allowed:
+            primary = eligibility.primary_reason
+            result = self._reject(
                 request,
                 account,
-                PaperRejectionReason.INVALID_SYMBOL,
-                f"Bar symbol {bar.symbol} does not match request symbol "
-                f"{request.symbol}.",
+                # A rule that knows a narrower order-level reason keeps it; the
+                # taxonomy code stays authoritative on the decision record.
+                primary.order_rejection_reason
+                or rejection_reason_for_code(primary.code),
+                eligibility.rejection_message(),
+                eligibility=eligibility,
             )
 
-        validation = validate_paper_execution_request(request, account)
+            if result.order is not None:
+                self.decisions.attach_order(
+                    decision_record.decision_id,
+                    result.order.order_id,
+                )
 
-        if not validation.accepted:
-            return self._reject(
-                request,
-                account,
-                validation.rejection_reason,
-                validation.rejection_message or "Request validation failed.",
-            )
-
-        _, mode_result = self.check_execution_allowed(requested_mode, constraints)
-
-        if not mode_result.accepted:
-            return self._reject(
-                request,
-                account,
-                mode_result.rejection_reason,
-                mode_result.rejection_message or "Execution mode too strict.",
-            )
-
-        duplicate_result = self.check_not_duplicate(request)
-
-        if not duplicate_result.accepted:
-            return self._reject(
-                request,
-                account,
-                duplicate_result.rejection_reason,
-                duplicate_result.rejection_message or "Duplicate execution.",
-            )
+            return result
 
         if request.action == PaperAction.CLOSE:
-            return self._execute_close(request, account, bar)
+            result = self._execute_close(request, account, bar)
+        else:
+            result = self._execute_open(request, account, bar)
 
-        return self._execute_open(request, account, bar)
+        if result.order is not None:
+            self.decisions.attach_order(
+                decision_record.decision_id,
+                result.order.order_id,
+            )
+
+        if result.accepted:
+            self._mark_signal_executed(request, eligibility)
+
+        return result
+
+    def _mark_signal_executed(
+        self,
+        request: PaperExecutionRequest,
+        eligibility: PaperExecutionEligibilityDecision,
+    ) -> None:
+        """
+        Move the signal to ``executed`` through the Sprint 044 lifecycle.
+
+        The gate already refused anything that was not ``approved``, so this
+        transition is always legal; it goes through the repository so the audit
+        event is written with it rather than around it.
+        """
+
+        if request.signal_id is None:
+            return
+
+        TradingSignalRepository(self.session).mark_executed(
+            signal_id=request.signal_id,
+            reason="Executed on a paper account.",
+            actor="paper_execution_service",
+            occurred_at_utc=request.submitted_at_utc,
+        )
 
     def _execute_open(
         self,
@@ -659,6 +761,7 @@ class PaperExecutionService:
         account: TradingAccount,
         reason: PaperRejectionReason | None,
         message: str,
+        eligibility: PaperExecutionEligibilityDecision | None = None,
     ) -> PaperExecutionResult:
         if reason is None:
             raise PaperTradingError("A rejection must carry a reason.")
@@ -683,6 +786,11 @@ class PaperExecutionService:
             order=order_contract,
             rejection_reason=reason,
             rejection_message=message,
+            extra_metadata=(
+                {"eligibility": eligibility.to_dict()}
+                if eligibility is not None
+                else {}
+            ),
         )
 
     def _can_persist_rejection(
@@ -791,7 +899,9 @@ __all__ = [
     "AQOS_PAPER_EXECUTION_SERVICE_VERSION",
     "PaperCloseOutcome",
     "PaperExecutionService",
+    "REJECTION_REASON_BY_CODE",
     "REQUIRED_PAPER_EXECUTION_MODES",
     "UNPERSISTABLE_REJECTION_REASONS",
     "build_paper_simulator_config",
+    "rejection_reason_for_code",
 ]

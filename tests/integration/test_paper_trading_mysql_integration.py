@@ -93,6 +93,7 @@ def reset_tables(database: AqosDatabase) -> None:
         session.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
 
         for table in (
+            "paper_execution_decisions",
             "paper_account_snapshots",
             "paper_trades",
             "paper_fills",
@@ -205,8 +206,23 @@ def build_request(
     )
 
 
-def create_signal(session, user_id: str, account_id: str, symbol: str = "XAUUSD"):
-    return TradingSignalRepository(session).create_signal(
+def create_signal(
+    session,
+    user_id: str,
+    account_id: str,
+    symbol: str = "XAUUSD",
+    approve: bool = True,
+    **overrides,
+):
+    """
+    Create a signal, approved by default.
+
+    Sprint 050 makes ``approved`` the only status paper execution accepts, so a
+    test that wants an executable signal has to say so.
+    """
+
+    signals = TradingSignalRepository(session)
+    signal = signals.create_signal(
         user_id=user_id,
         account_id=account_id,
         symbol=symbol,
@@ -214,7 +230,13 @@ def create_signal(session, user_id: str, account_id: str, symbol: str = "XAUUSD"
         action=SignalAction.BUY,
         source=SignalSource.MANUAL,
         generated_at_utc=FIXED_NOW,
+        **overrides,
     )
+
+    if approve:
+        signals.approve_signal(signal.signal_id)
+
+    return signal
 
 
 class TestSchema:
@@ -234,6 +256,7 @@ class TestSchema:
             "paper_positions",
             "paper_fills",
             "paper_trades",
+            "paper_execution_decisions",
             "paper_account_snapshots",
         } <= tables
 
@@ -753,24 +776,42 @@ class TestSafetyRails:
 
             assert result.accepted is True
 
-    def test_executing_with_no_constraints_is_refused_outright(
+    def test_omitting_constraints_still_applies_the_account_ceiling(
         self,
         paper_database,
         user_id,
-        paper_account_id,
     ) -> None:
-        """An unchecked execution path must not be reachable by omission."""
+        """
+        An unchecked execution path must not be reachable by omission.
+
+        Sprint 050 makes the gate collect the account and settings ceilings
+        itself, so passing no extra constraints is safe rather than unchecked:
+        a signal_only account is still refused.
+        """
 
         with paper_database.session() as session:
-            account = TradingAccountRepository(session).require(paper_account_id)
+            restricted = TradingAccountRepository(session).create_account(
+                user_id=user_id,
+                name="Signal Only Paper",
+                account_type=AccountType.PAPER,
+                broker=BrokerKind.INTERNAL_PAPER,
+                initial_balance=10_000.0,
+                execution_mode=ExecutionMode.SIGNAL_ONLY,
+                created_at_utc=FIXED_NOW,
+            )
 
-            with pytest.raises(ValueError, match="At least one execution constraint"):
-                PaperExecutionService(session).execute(
-                    request=build_request(user_id, paper_account_id),
-                    account=account,
-                    bar=build_bar(),
-                    constraints=(),
-                )
+            result = PaperExecutionService(session).execute(
+                request=build_request(user_id, restricted.account_id),
+                account=restricted,
+                bar=build_bar(),
+                constraints=(),
+            )
+
+            assert result.accepted is False
+            assert result.rejection_reason == (
+                PaperRejectionReason.EXECUTION_NOT_ALLOWED
+            )
+            assert "account=signal_only" in result.rejection_message
 
     def test_a_wrong_side_stop_loss_is_rejected(
         self,

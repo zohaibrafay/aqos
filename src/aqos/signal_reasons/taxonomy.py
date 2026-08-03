@@ -43,6 +43,7 @@ class SignalReasonCode(str, Enum):
     RISK_LIMIT_EXCEEDED = "risk_limit_exceeded"
     ACCOUNT_DISABLED = "account_disabled"
     ACCOUNT_SUSPENDED = "account_suspended"
+    ACCOUNT_NOT_PAPER = "account_not_paper"
     FUNDED_RULE_BREACHED = "funded_rule_breached"
     AUTO_TRADE_NOT_ALLOWED = "auto_trade_not_allowed"
     UNPROMOTED_MODEL = "unpromoted_model"
@@ -135,6 +136,12 @@ REASON_DEFINITIONS: dict[SignalReasonCode, ReasonDefinition] = {
         SignalReasonSeverity.BLOCKING,
         _REJECTED,
         "Account is suspended.",
+    ),
+    SignalReasonCode.ACCOUNT_NOT_PAPER: ReasonDefinition(
+        SignalReasonCategory.ACCOUNT_RULE,
+        SignalReasonSeverity.CRITICAL,
+        _REJECTED,
+        "Simulated execution was routed at a non-paper account.",
     ),
     SignalReasonCode.FUNDED_RULE_BREACHED: ReasonDefinition(
         SignalReasonCategory.FUNDED_RULE,

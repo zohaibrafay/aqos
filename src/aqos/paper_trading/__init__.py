@@ -62,9 +62,25 @@ from aqos.paper_trading.simulator import (
     resolve_reference_price,
 )
 
+from aqos.paper_trading.eligibility import (
+    AQOS_PAPER_ELIGIBILITY_VERSION,
+    EXECUTABLE_SIGNAL_STATUS,
+    PAPER_TRADING_PROMOTION_STAGE,
+    PaperEligibilityContext,
+    PaperEligibilityReason,
+    PaperEligibilitySource,
+    PaperExecutionEligibilityDecision,
+    REQUIRED_PAPER_EXECUTION_MODES,
+    build_account_execution_constraint,
+    build_settings_execution_constraint,
+    collect_execution_constraints,
+    evaluate_paper_execution_eligibility,
+)
+
 from aqos.paper_trading.models import (
     AQOS_PAPER_MODELS_VERSION,
     PaperAccountSnapshotRecord,
+    PaperExecutionDecisionRecord,
     PaperFillRecord,
     PaperOrderRecord,
     PaperPositionRecord,
@@ -74,6 +90,7 @@ from aqos.paper_trading.models import (
 from aqos.paper_trading.repositories import (
     AQOS_PAPER_REPOSITORIES_VERSION,
     PaperAccountSnapshotRepository,
+    PaperExecutionDecisionRepository,
     PaperFillRepository,
     PaperOrderRepository,
     PaperPositionRepository,
@@ -84,12 +101,14 @@ from aqos.paper_trading.execution_service import (
     AQOS_PAPER_EXECUTION_SERVICE_VERSION,
     PaperCloseOutcome,
     PaperExecutionService,
-    REQUIRED_PAPER_EXECUTION_MODES,
+    REJECTION_REASON_BY_CODE,
     UNPERSISTABLE_REJECTION_REASONS,
     build_paper_simulator_config,
+    rejection_reason_for_code,
 )
 
 __all__ = [
+    "AQOS_PAPER_ELIGIBILITY_VERSION",
     "AQOS_PAPER_EXECUTION_SERVICE_VERSION",
     "AQOS_PAPER_MEMORY_BROKER_VERSION",
     "AQOS_PAPER_MODELS_VERSION",
@@ -97,8 +116,22 @@ __all__ = [
     "AQOS_PAPER_SIMULATOR_VERSION",
     "AQOS_PAPER_TRADING_VERSION",
     "AQOS_PAPER_VALIDATION_VERSION",
+    "EXECUTABLE_SIGNAL_STATUS",
     "InMemoryPaperBroker",
     "IntrabarExitPolicy",
+    "PAPER_TRADING_PROMOTION_STAGE",
+    "PaperEligibilityContext",
+    "PaperEligibilityReason",
+    "PaperEligibilitySource",
+    "PaperExecutionDecisionRecord",
+    "PaperExecutionDecisionRepository",
+    "PaperExecutionEligibilityDecision",
+    "REJECTION_REASON_BY_CODE",
+    "build_account_execution_constraint",
+    "build_settings_execution_constraint",
+    "collect_execution_constraints",
+    "evaluate_paper_execution_eligibility",
+    "rejection_reason_for_code",
     "InvalidPaperOrderTransitionError",
     "InvalidPaperPositionTransitionError",
     "OPENING_PAPER_ACTIONS",

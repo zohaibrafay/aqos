@@ -4,11 +4,12 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, JSON, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from aqos.database.base import AQOS_TABLE_ARGS, AqosBase
 from aqos.database.types import EnumString
+from aqos.execution_policy.modes import ExecutionMode
 from aqos.paper_trading.contracts import (
     PaperAction,
     PaperFill,
@@ -678,10 +679,135 @@ class PaperAccountSnapshotRecord(AqosBase):
         return f"PaperAccountSnapshotRecord(snapshot_id={self.snapshot_id!r})"
 
 
+class PaperExecutionDecisionRecord(AqosBase):
+    """
+    One recorded paper execution rule decision.
+
+    Refusals are persisted alongside approvals: an execution that never happened
+    is exactly the thing a user needs explained, and a structured reason code
+    survives where a log line does not.
+    """
+
+    __tablename__ = "paper_execution_decisions"
+    __table_args__ = AQOS_TABLE_ARGS
+
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("user_profiles.user_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    account_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    signal_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("trading_signals.signal_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    order_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_orders.order_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    symbol: Mapped[str] = mapped_column(String(32), nullable=False)
+    is_allowed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    requested_execution_mode: Mapped[ExecutionMode] = mapped_column(
+        EnumString(ExecutionMode),
+        nullable=False,
+    )
+    effective_execution_mode: Mapped[ExecutionMode] = mapped_column(
+        EnumString(ExecutionMode),
+        nullable=False,
+    )
+    primary_reason_code: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+    blocking_reason_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    blocking_sources_json: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    reasons_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    decided_at_utc: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    extra_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata_json",
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("blocking_reason_count", 0)
+        kwargs.setdefault("blocking_sources_json", [])
+        kwargs.setdefault("reasons_json", [])
+        kwargs.setdefault("extra_metadata", {})
+
+        super().__init__(**kwargs)
+
+    def assert_decision_is_explained(self) -> None:
+        """
+        A refusal must name a reason, and an approval must not claim one.
+
+        MySQL enforces the same pair of rules, so bypassing Python still fails
+        at the database.
+        """
+
+        if not self.is_allowed:
+            if not self.primary_reason_code or self.blocking_reason_count <= 0:
+                raise PaperTradingError(
+                    "A refused paper execution decision must carry a blocking "
+                    "reason code."
+                )
+
+            return
+
+        if self.primary_reason_code or self.blocking_reason_count:
+            raise PaperTradingError(
+                "An allowed paper execution decision cannot carry blocking "
+                "reasons."
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "decision_id": self.decision_id,
+            "user_id": self.user_id,
+            "account_id": self.account_id,
+            "signal_id": self.signal_id,
+            "order_id": self.order_id,
+            "symbol": self.symbol,
+            "is_allowed": bool(self.is_allowed),
+            "requested_execution_mode": self.requested_execution_mode.value,
+            "effective_execution_mode": self.effective_execution_mode.value,
+            "primary_reason_code": self.primary_reason_code,
+            "blocking_reason_count": self.blocking_reason_count,
+            "blocking_sources": list(self.blocking_sources_json or ()),
+            "reasons": list(self.reasons_json or ()),
+            "decided_at_utc": self.decided_at_utc.isoformat(),
+            "metadata": self.extra_metadata or {},
+        }
+
+    def __repr__(self) -> str:
+        return f"PaperExecutionDecisionRecord(decision_id={self.decision_id!r})"
+
+
 __all__ = [
     "AQOS_PAPER_MODELS_VERSION",
     "MONEY_PRECISION",
     "PaperAccountSnapshotRecord",
+    "PaperExecutionDecisionRecord",
     "PaperFillRecord",
     "PaperOrderRecord",
     "PaperPositionRecord",

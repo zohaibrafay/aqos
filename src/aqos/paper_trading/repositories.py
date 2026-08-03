@@ -20,8 +20,10 @@ from aqos.paper_trading.contracts import (
     validate_order_transition,
     validate_position_transition,
 )
+from aqos.paper_trading.eligibility import PaperExecutionEligibilityDecision
 from aqos.paper_trading.models import (
     PaperAccountSnapshotRecord,
+    PaperExecutionDecisionRecord,
     PaperFillRecord,
     PaperOrderRecord,
     PaperPositionRecord,
@@ -624,9 +626,139 @@ class PaperAccountSnapshotRepository(AqosRepository[PaperAccountSnapshotRecord])
         return snapshots[-1] if snapshots else None
 
 
+class PaperExecutionDecisionRepository(AqosRepository[PaperExecutionDecisionRecord]):
+    """
+    Audit trail for paper execution rule decisions.
+
+    Refusals are stored too, so "why did nothing happen?" is answerable from
+    structured reason codes rather than from logs.
+    """
+
+    model = PaperExecutionDecisionRecord
+
+    def record_decision(
+        self,
+        decision: PaperExecutionEligibilityDecision,
+        decided_at_utc: datetime | None = None,
+        order_id: str | None = None,
+        decision_id: str | None = None,
+    ) -> PaperExecutionDecisionRecord:
+        primary = decision.primary_reason
+
+        record = PaperExecutionDecisionRecord(
+            decision_id=decision_id or build_entity_id("paperdecision"),
+            user_id=decision.user_id,
+            account_id=decision.account_id,
+            signal_id=decision.signal_id,
+            order_id=order_id,
+            symbol=decision.symbol,
+            is_allowed=decision.is_allowed,
+            requested_execution_mode=decision.requested_execution_mode,
+            effective_execution_mode=decision.effective_execution_mode,
+            primary_reason_code=primary.code.value if primary else None,
+            blocking_reason_count=len(decision.blocking_reasons),
+            blocking_sources_json=list(decision.blocking_sources),
+            reasons_json=[reason.to_dict() for reason in decision.reasons],
+            decided_at_utc=decided_at_utc or database_utc_now(),
+            extra_metadata=dict(decision.decision_metadata),
+        )
+        record.assert_decision_is_explained()
+
+        self.add(record)
+        self.flush()
+
+        return record
+
+    def attach_order(
+        self,
+        decision_id: str,
+        order_id: str,
+    ) -> PaperExecutionDecisionRecord:
+        record = self.require(decision_id)
+        record.order_id = order_id
+
+        self.flush()
+
+        return record
+
+    def list_decisions(
+        self,
+        account_id: str | None = None,
+        user_id: str | None = None,
+        signal_id: str | None = None,
+        is_allowed: bool | None = None,
+        primary_reason_code: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[PaperExecutionDecisionRecord, ...]:
+        statement = select(PaperExecutionDecisionRecord)
+
+        if account_id is not None:
+            statement = statement.where(
+                PaperExecutionDecisionRecord.account_id == account_id
+            )
+
+        if user_id is not None:
+            statement = statement.where(
+                PaperExecutionDecisionRecord.user_id == user_id
+            )
+
+        if signal_id is not None:
+            statement = statement.where(
+                PaperExecutionDecisionRecord.signal_id == signal_id
+            )
+
+        if is_allowed is not None:
+            statement = statement.where(
+                PaperExecutionDecisionRecord.is_allowed == is_allowed
+            )
+
+        if primary_reason_code is not None:
+            statement = statement.where(
+                PaperExecutionDecisionRecord.primary_reason_code
+                == primary_reason_code
+            )
+
+        statement = statement.order_by(
+            PaperExecutionDecisionRecord.decided_at_utc,
+            PaperExecutionDecisionRecord.decision_id,
+        )
+
+        if limit is not None:
+            statement = statement.limit(limit)
+
+        return tuple(self.session.execute(statement).scalars().all())
+
+    def latest_decision(
+        self,
+        account_id: str,
+    ) -> PaperExecutionDecisionRecord | None:
+        decisions = self.list_decisions(account_id=account_id)
+
+        return decisions[-1] if decisions else None
+
+    def count_by_reason_code(self, account_id: str) -> dict[str, int]:
+        statement = (
+            select(
+                PaperExecutionDecisionRecord.primary_reason_code,
+                func.count(),
+            )
+            .where(PaperExecutionDecisionRecord.account_id == account_id)
+            .where(PaperExecutionDecisionRecord.primary_reason_code.is_not(None))
+            .group_by(PaperExecutionDecisionRecord.primary_reason_code)
+        )
+
+        rows = self.session.execute(statement).all()
+
+        return {str(row[0]): int(row[1]) for row in sorted(rows, key=lambda r: str(r[0]))}
+
+    def count_refusals(self, account_id: str) -> int:
+        return len(self.list_decisions(account_id=account_id, is_allowed=False))
+
+
 __all__ = [
     "AQOS_PAPER_REPOSITORIES_VERSION",
     "PaperAccountSnapshotRepository",
+    "PaperExecutionDecisionRepository",
     "PaperFillRepository",
     "PaperOrderRepository",
     "PaperPositionRepository",
