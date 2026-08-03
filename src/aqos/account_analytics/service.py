@@ -20,6 +20,7 @@ from aqos.account_analytics.models import (
     AccountAnalyticsSnapshot,
     AnalyticsScope,
 )
+from aqos.account_analytics.trade_source import AccountTradeSource, resolve_trades
 from aqos.database.repository import AqosRepository
 from aqos.database.types import database_utc_now
 from aqos.signals.models import SignalStatus, TradingSignal
@@ -30,7 +31,8 @@ from aqos.users.repositories import build_entity_id
 AQOS_ACCOUNT_ANALYTICS_SERVICE_VERSION = "1.0"
 
 NO_TRADE_SOURCE_REASON = (
-    "No trade source is connected yet; paper trading lands in a later sprint."
+    "No trade source is connected, so trade results are unknown rather than "
+    "zero. Connect a source such as the persisted paper trade repository."
 )
 
 
@@ -137,7 +139,7 @@ class AccountAnalyticsService:
     def __init__(
         self,
         session: Session,
-        trade_source: Sequence[AccountTradeRecord] | None = None,
+        trade_source: Sequence[AccountTradeRecord] | AccountTradeSource | None = None,
     ) -> None:
         if session is None:
             raise ValueError("A SQLAlchemy session is required.")
@@ -241,19 +243,30 @@ class AccountAnalyticsService:
     def resolve_trade_metrics(
         self,
         starting_balance: float | None = None,
+        user_id: str | None = None,
+        account_id: str | None = None,
+        period_start_utc: datetime | None = None,
+        period_end_utc: datetime | None = None,
     ) -> TradeMetrics:
         """
         Trade metrics from the configured trade source.
 
         With no source, the result is explicitly unavailable rather than a set
-        of zeros that would read as a measured result.
+        of zeros that would read as a measured result. A connected source that
+        returns nothing is the opposite case: zero trades, honestly measured.
         """
 
         if self.trade_source is None:
             return TradeMetrics.unavailable(NO_TRADE_SOURCE_REASON)
 
         return calculate_trade_metrics(
-            self.trade_source,
+            resolve_trades(
+                self.trade_source,
+                user_id=user_id,
+                account_id=account_id,
+                period_start_utc=period_start_utc,
+                period_end_utc=period_end_utc,
+            ),
             starting_balance=starting_balance,
         )
 
@@ -286,7 +299,13 @@ class AccountAnalyticsService:
                 period_start_utc=period_start_utc,
                 period_end_utc=period_end_utc,
             ),
-            trade_metrics=self.resolve_trade_metrics(starting_balance),
+            trade_metrics=self.resolve_trade_metrics(
+                starting_balance=starting_balance,
+                user_id=user_id,
+                account_id=account_id,
+                period_start_utc=period_start_utc,
+                period_end_utc=period_end_utc,
+            ),
             extra_metadata=metadata or {},
         )
 
@@ -315,7 +334,12 @@ class AccountAnalyticsService:
                 period_start_utc=period_start_utc,
                 period_end_utc=period_end_utc,
             ),
-            trade_metrics=self.resolve_trade_metrics(starting_balance),
+            trade_metrics=self.resolve_trade_metrics(
+                starting_balance=starting_balance,
+                user_id=user_id,
+                period_start_utc=period_start_utc,
+                period_end_utc=period_end_utc,
+            ),
             extra_metadata=metadata or {},
         )
 

@@ -141,6 +141,8 @@ class PaperOrderRepository(AqosRepository[PaperOrderRecord]):
         signal_id: str | None = None,
         status: PaperOrderStatus | None = None,
         symbol: str | None = None,
+        created_since_utc: datetime | None = None,
+        created_until_utc: datetime | None = None,
         limit: int | None = None,
     ) -> tuple[PaperOrderRecord, ...]:
         statement = select(PaperOrderRecord)
@@ -160,6 +162,16 @@ class PaperOrderRepository(AqosRepository[PaperOrderRecord]):
         if symbol is not None:
             statement = statement.where(
                 PaperOrderRecord.symbol == "".join(str(symbol).split()).upper()
+            )
+
+        if created_since_utc is not None:
+            statement = statement.where(
+                PaperOrderRecord.created_at_utc >= created_since_utc
+            )
+
+        if created_until_utc is not None:
+            statement = statement.where(
+                PaperOrderRecord.created_at_utc <= created_until_utc
             )
 
         statement = statement.order_by(
@@ -314,6 +326,8 @@ class PaperPositionRepository(AqosRepository[PaperPositionRecord]):
         symbol: str | None = None,
         side: PaperSide | None = None,
         status: PaperPositionStatus | None = None,
+        opened_since_utc: datetime | None = None,
+        opened_until_utc: datetime | None = None,
         limit: int | None = None,
     ) -> tuple[PaperPositionRecord, ...]:
         statement = select(PaperPositionRecord)
@@ -331,6 +345,16 @@ class PaperPositionRepository(AqosRepository[PaperPositionRecord]):
 
         if status is not None:
             statement = statement.where(PaperPositionRecord.status == status)
+
+        if opened_since_utc is not None:
+            statement = statement.where(
+                PaperPositionRecord.opened_at_utc >= opened_since_utc
+            )
+
+        if opened_until_utc is not None:
+            statement = statement.where(
+                PaperPositionRecord.opened_at_utc <= opened_until_utc
+            )
 
         statement = statement.order_by(
             PaperPositionRecord.opened_at_utc,
@@ -400,6 +424,8 @@ class PaperFillRepository(AqosRepository[PaperFillRecord]):
         account_id: str | None = None,
         order_id: str | None = None,
         position_id: str | None = None,
+        filled_since_utc: datetime | None = None,
+        filled_until_utc: datetime | None = None,
         limit: int | None = None,
     ) -> tuple[PaperFillRecord, ...]:
         statement = select(PaperFillRecord)
@@ -412,6 +438,16 @@ class PaperFillRepository(AqosRepository[PaperFillRecord]):
 
         if position_id is not None:
             statement = statement.where(PaperFillRecord.position_id == position_id)
+
+        if filled_since_utc is not None:
+            statement = statement.where(
+                PaperFillRecord.filled_at_utc >= filled_since_utc
+            )
+
+        if filled_until_utc is not None:
+            statement = statement.where(
+                PaperFillRecord.filled_at_utc <= filled_until_utc
+            )
 
         statement = statement.order_by(
             PaperFillRecord.filled_at_utc,
@@ -464,7 +500,9 @@ class PaperTradeRepository(AqosRepository[PaperTradeRecord]):
         symbol: str | None = None,
         signal_id: str | None = None,
         exit_reason: PaperExitReason | None = None,
+        side: PaperSide | None = None,
         closed_since_utc: datetime | None = None,
+        closed_until_utc: datetime | None = None,
         limit: int | None = None,
     ) -> tuple[PaperTradeRecord, ...]:
         statement = select(PaperTradeRecord)
@@ -483,9 +521,17 @@ class PaperTradeRepository(AqosRepository[PaperTradeRecord]):
         if exit_reason is not None:
             statement = statement.where(PaperTradeRecord.exit_reason == exit_reason)
 
+        if side is not None:
+            statement = statement.where(PaperTradeRecord.side == side)
+
         if closed_since_utc is not None:
             statement = statement.where(
                 PaperTradeRecord.closed_at_utc >= closed_since_utc
+            )
+
+        if closed_until_utc is not None:
+            statement = statement.where(
+                PaperTradeRecord.closed_at_utc <= closed_until_utc
             )
 
         statement = statement.order_by(

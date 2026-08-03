@@ -29,7 +29,18 @@ from aqos.account_analytics.service import (
     NO_TRADE_SOURCE_REASON,
 )
 
+from aqos.account_analytics.trade_source import (
+    AQOS_ACCOUNT_TRADE_SOURCE_VERSION,
+    AccountTradeSource,
+    is_trade_source,
+    resolve_trades,
+)
+
 __all__ = [
+    "AQOS_ACCOUNT_TRADE_SOURCE_VERSION",
+    "AccountTradeSource",
+    "is_trade_source",
+    "resolve_trades",
     "AQOS_ACCOUNT_ANALYTICS_METRICS_VERSION",
     "AQOS_ACCOUNT_ANALYTICS_MODELS_VERSION",
     "AQOS_ACCOUNT_ANALYTICS_SERVICE_VERSION",
