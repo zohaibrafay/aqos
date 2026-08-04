@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import datetime
 
 import pytest
@@ -15,14 +16,17 @@ from aqos.paper_trading.sessions import (
     InvalidPaperSessionTransitionError,
     MODEL_DRIVEN_SESSION_TYPES,
     PAPER_SESSION_TRANSITIONS,
+    PaperProfitFactorState,
     PaperSessionResult,
     PaperSessionStatus,
     PaperSessionType,
     STRATEGY_DRIVEN_SESSION_TYPES,
     TERMINAL_PAPER_SESSION_STATUSES,
     can_transition_session,
+    finite_profit_factor,
     is_terminal_session_status,
     normalize_session_name,
+    resolve_profit_factor_state,
     validate_session_identity,
     validate_session_transition,
 )
@@ -256,6 +260,57 @@ class TestSessionRecord:
         assert payload["ended_at_utc"] is None
         assert payload["total_trades"] is None
 
+    def test_the_profit_factor_state_defaults_to_unavailable(self) -> None:
+        record = build_session_record()
+
+        assert record.profit_factor is None
+        assert record.profit_factor_state == PaperProfitFactorState.UNAVAILABLE
+        assert record.has_infinite_profit_factor is False
+
+        record.assert_profit_factor_is_explained()
+
+    def test_a_finite_state_must_carry_its_value(self) -> None:
+        record = build_session_record(
+            profit_factor_state=PaperProfitFactorState.FINITE,
+        )
+
+        with pytest.raises(PaperTradingError, match="must carry its value"):
+            record.assert_profit_factor_is_explained()
+
+    def test_an_infinite_state_must_not_carry_a_number(self) -> None:
+        record = build_session_record(
+            profit_factor=2.5,
+            profit_factor_state=PaperProfitFactorState.INFINITE_NO_LOSSES,
+        )
+
+        with pytest.raises(PaperTradingError, match="cannot carry a numeric"):
+            record.assert_profit_factor_is_explained()
+
+    def test_an_unavailable_state_must_not_carry_a_number(self) -> None:
+        record = build_session_record(
+            profit_factor=2.5,
+            profit_factor_state=PaperProfitFactorState.UNAVAILABLE,
+        )
+
+        with pytest.raises(PaperTradingError, match="cannot carry a numeric"):
+            record.assert_profit_factor_is_explained()
+
+    def test_a_wins_only_session_row_stays_distinguishable(self) -> None:
+        """NULL plus a state is what keeps it from reading as unmeasured."""
+
+        record = build_session_record(
+            total_trades=2,
+            profit_factor=None,
+            profit_factor_state=PaperProfitFactorState.INFINITE_NO_LOSSES,
+        )
+        record.assert_profit_factor_is_explained()
+
+        payload = record.to_dict()
+
+        assert payload["profit_factor"] is None
+        assert payload["profit_factor_state"] == "infinite_no_losses"
+        assert payload["has_infinite_profit_factor"] is True
+
     def test_repr_names_the_session(self) -> None:
         assert "session_1" in repr(build_session_record())
 
@@ -277,6 +332,7 @@ class TestSessionResult:
         assert result.win_rate is None
         assert result.net_pnl is None
         assert result.profit_factor is None
+        assert result.profit_factor_state == PaperProfitFactorState.UNAVAILABLE
         assert result.max_drawdown is None
         assert result.ending_balance is None
 
@@ -351,6 +407,9 @@ class TestSessionResult:
 
         assert payload["win_rate"] is None
         assert payload["net_pnl"] is None
+        assert payload["profit_factor"] is None
+        assert payload["profit_factor_state"] == "unavailable"
+        assert payload["has_infinite_profit_factor"] is False
         assert payload["rejection_rate"] is None
         assert payload["symbols_traded"] == []
         assert payload["top_rejection_reasons"] == []
@@ -366,3 +425,148 @@ class TestSessionResult:
             {"reason_code": "symbol_blocked", "total": 2},
             {"reason_code": "duplicate_signal", "total": 1},
         ]
+
+
+class TestProfitFactorSemantics:
+    """
+    Sprint 046 owns this definition and Sprint 052 must not diverge from it.
+
+    Infinity means "won and never lost", which is a real result. None means
+    there was nothing to divide. Collapsing the first into the second would
+    make a perfect run look unmeasured.
+    """
+
+    def build(self, **overrides) -> PaperSessionResult:
+        payload = {"session_id": "session_1", "account_id": "account_1"}
+        payload.update(overrides)
+
+        return PaperSessionResult(**payload)
+
+    def test_no_trades_is_unavailable(self) -> None:
+        result = self.build()
+
+        assert result.profit_factor is None
+        assert result.profit_factor_state == PaperProfitFactorState.UNAVAILABLE
+        assert result.has_infinite_profit_factor is False
+
+    def test_wins_and_no_losses_is_infinite(self) -> None:
+        result = self.build(
+            total_trades=2,
+            winning_trades=2,
+            win_rate=1.0,
+            gross_profit=30.0,
+            gross_loss=0.0,
+            profit_factor=math.inf,
+        )
+
+        assert math.isinf(result.profit_factor)
+        assert result.profit_factor_state == (
+            PaperProfitFactorState.INFINITE_NO_LOSSES
+        )
+        assert result.has_infinite_profit_factor is True
+
+    def test_losses_give_a_finite_ratio(self) -> None:
+        result = self.build(
+            total_trades=2,
+            winning_trades=1,
+            losing_trades=1,
+            win_rate=0.5,
+            gross_profit=30.0,
+            gross_loss=10.0,
+            profit_factor=3.0,
+        )
+
+        assert result.profit_factor == pytest.approx(3.0)
+        assert result.profit_factor_state == PaperProfitFactorState.FINITE
+
+    def test_breakeven_only_trades_stay_unavailable(self) -> None:
+        """No profit and no loss leaves nothing to divide."""
+
+        result = self.build(
+            total_trades=2,
+            win_rate=0.0,
+            gross_profit=0.0,
+            gross_loss=0.0,
+            profit_factor=None,
+        )
+
+        assert result.profit_factor is None
+        assert result.profit_factor_state == PaperProfitFactorState.UNAVAILABLE
+
+    def test_infinity_is_not_stored_as_a_number(self) -> None:
+        result = self.build(
+            total_trades=1,
+            winning_trades=1,
+            win_rate=1.0,
+            gross_profit=10.0,
+            gross_loss=0.0,
+            profit_factor=math.inf,
+        )
+
+        assert result.persisted_profit_factor is None
+
+    def test_a_finite_factor_persists_its_value(self) -> None:
+        result = self.build(
+            total_trades=2,
+            winning_trades=1,
+            losing_trades=1,
+            win_rate=0.5,
+            profit_factor=2.5,
+        )
+
+        assert result.persisted_profit_factor == pytest.approx(2.5)
+
+    def test_the_payload_keeps_infinity_meaningful(self) -> None:
+        """JSON cannot hold infinity, so the state must carry it."""
+
+        payload = self.build(
+            total_trades=1,
+            winning_trades=1,
+            win_rate=1.0,
+            gross_profit=10.0,
+            gross_loss=0.0,
+            profit_factor=math.inf,
+        ).to_dict()
+
+        assert payload["profit_factor"] is None
+        assert payload["profit_factor_state"] == "infinite_no_losses"
+        assert payload["has_infinite_profit_factor"] is True
+
+    def test_a_wins_only_session_is_never_reported_as_unmeasured(self) -> None:
+        wins_only = self.build(
+            total_trades=1,
+            winning_trades=1,
+            win_rate=1.0,
+            gross_profit=10.0,
+            gross_loss=0.0,
+            profit_factor=math.inf,
+        ).to_dict()
+        nothing_traded = self.build().to_dict()
+
+        assert wins_only["profit_factor"] == nothing_traded["profit_factor"]
+        # The numbers match, so only the state tells them apart.
+        assert (
+            wins_only["profit_factor_state"]
+            != nothing_traded["profit_factor_state"]
+        )
+
+
+class TestProfitFactorHelpers:
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            (None, PaperProfitFactorState.UNAVAILABLE),
+            (0.0, PaperProfitFactorState.FINITE),
+            (2.5, PaperProfitFactorState.FINITE),
+            (math.inf, PaperProfitFactorState.INFINITE_NO_LOSSES),
+        ],
+    )
+    def test_resolve_profit_factor_state(self, value, expected) -> None:
+        assert resolve_profit_factor_state(value) == expected
+
+    @pytest.mark.parametrize(
+        "value, expected",
+        [(None, None), (math.inf, None), (2.5, 2.5), (0.0, 0.0)],
+    )
+    def test_finite_profit_factor(self, value, expected) -> None:
+        assert finite_profit_factor(value) == expected

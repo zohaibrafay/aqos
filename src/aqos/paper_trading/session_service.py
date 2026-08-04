@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from aqos.account_analytics.metrics import calculate_profit_factor
 from aqos.accounts.models import AccountType, TradingAccount
 from aqos.database.repository import AqosRepository, RepositoryError
 from aqos.database.types import database_utc_now
@@ -257,6 +258,10 @@ class PaperSessionRepository(AqosRepository[PaperSessionRecord]):
         record.total_trades = result.total_trades
         record.net_pnl = result.net_pnl
         record.max_drawdown = result.max_drawdown
+        # The numeric column cannot hold infinity; the state carries it.
+        record.profit_factor = result.persisted_profit_factor
+        record.profit_factor_state = result.profit_factor_state
+        record.assert_profit_factor_is_explained()
         record.updated_at_utc = updated_at_utc or database_utc_now()
 
         if final_balance is not None:
@@ -554,11 +559,9 @@ class PaperSessionResultService:
             "net_pnl": sum(net_pnls),
             "gross_profit": gross_profit,
             "gross_loss": gross_loss,
-            # A run with no losing trade has no meaningful ratio, so it stays
-            # unset rather than becoming infinity.
-            "profit_factor": (
-                gross_profit / gross_loss if gross_loss > 0 else None
-            ),
+            # Sprint 046 owns this definition: infinity for wins-and-no-losses,
+            # None only when there is nothing to divide at all.
+            "profit_factor": calculate_profit_factor(gross_profit, gross_loss),
             "max_drawdown": max_drawdown,
             "ending_balance": equity,
         }

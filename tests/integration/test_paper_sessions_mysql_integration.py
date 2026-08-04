@@ -9,6 +9,7 @@ Run with::
 
 from __future__ import annotations
 
+import math
 import os
 from datetime import datetime, timedelta
 
@@ -45,6 +46,7 @@ from aqos.paper_trading.session_service import (
 )
 from aqos.paper_trading.sessions import (
     InvalidPaperSessionTransitionError,
+    PaperProfitFactorState,
     PaperSessionStatus,
     PaperSessionType,
 )
@@ -691,6 +693,7 @@ class TestSessionResults:
         assert result.gross_profit == pytest.approx(10.0)
         assert result.gross_loss == pytest.approx(4.0)
         assert result.profit_factor == pytest.approx(2.5)
+        assert result.profit_factor_state == PaperProfitFactorState.FINITE
         assert result.ending_balance == pytest.approx(10_006.0)
         assert result.symbols_traded == ("EURUSD", "XAUUSD")
         assert result.decisions_allowed == 2
@@ -715,6 +718,7 @@ class TestSessionResults:
         assert result.win_rate is None
         assert result.net_pnl is None
         assert result.profit_factor is None
+        assert result.profit_factor_state == PaperProfitFactorState.UNAVAILABLE
         assert result.max_drawdown is None
         assert result.ending_balance is None
         assert result.rejection_rate is None
@@ -749,14 +753,19 @@ class TestSessionResults:
         assert result.max_drawdown == pytest.approx(10.0)
         assert result.net_pnl == pytest.approx(-5.0)
 
-    def test_a_run_without_losses_has_no_profit_factor(
+    def test_a_run_without_losses_has_an_infinite_profit_factor(
         self,
         sessions_database,
         user_id,
         account_id,
         session_id,
     ) -> None:
-        """A ratio with no denominator stays unset rather than becoming infinity."""
+        """
+        Wins and no losses is unbounded, not unmeasured.
+
+        Sprint 046 settled this definition; the session result follows it rather
+        than inventing its own.
+        """
 
         with sessions_database.session() as session:
             run_trade(session, user_id, account_id, session_id)
@@ -767,8 +776,95 @@ class TestSessionResults:
             )
 
         assert result.gross_loss == pytest.approx(0.0)
-        assert result.profit_factor is None
+        assert math.isinf(result.profit_factor)
+        assert result.profit_factor_state == (
+            PaperProfitFactorState.INFINITE_NO_LOSSES
+        )
+        assert result.has_infinite_profit_factor is True
         assert result.win_rate == pytest.approx(1.0)
+
+    def test_a_wins_only_result_persists_as_null_plus_state(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+        session_id,
+    ) -> None:
+        """A DECIMAL column cannot hold infinity, so the state carries it."""
+
+        with sessions_database.session() as session:
+            run_trade(session, user_id, account_id, session_id)
+
+        with sessions_database.session() as session:
+            PaperSessionResultService(session).build_and_store_result(
+                session_id=session_id
+            )
+
+        with sessions_database.read_session() as session:
+            record = PaperSessionRepository(session).require_session(session_id)
+
+            assert record.profit_factor is None
+            assert record.profit_factor_state == (
+                PaperProfitFactorState.INFINITE_NO_LOSSES
+            )
+            assert record.has_infinite_profit_factor is True
+            assert record.to_dict()["profit_factor_state"] == (
+                "infinite_no_losses"
+            )
+
+    def test_a_mixed_run_persists_a_finite_profit_factor(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+        session_id,
+    ) -> None:
+        with sessions_database.session() as session:
+            run_trade(session, user_id, account_id, session_id)
+
+        with sessions_database.session() as session:
+            run_trade(
+                session,
+                user_id,
+                account_id,
+                session_id,
+                symbol="EURUSD",
+                open_minutes=200,
+                close_minutes=260,
+                exit_price=96.0,
+            )
+
+        with sessions_database.session() as session:
+            PaperSessionResultService(session).build_and_store_result(
+                session_id=session_id
+            )
+
+        with sessions_database.read_session() as session:
+            record = PaperSessionRepository(session).require_session(session_id)
+
+            assert float(record.profit_factor) == pytest.approx(2.5)
+            assert record.profit_factor_state == PaperProfitFactorState.FINITE
+
+    def test_an_empty_session_persists_an_unavailable_profit_factor(
+        self,
+        sessions_database,
+        session_id,
+    ) -> None:
+        """Nothing traded is still unknown, and stays distinguishable."""
+
+        with sessions_database.session() as session:
+            PaperSessionResultService(session).build_and_store_result(
+                session_id=session_id
+            )
+
+        with sessions_database.read_session() as session:
+            record = PaperSessionRepository(session).require_session(session_id)
+
+            assert record.profit_factor is None
+            assert record.profit_factor_state == (
+                PaperProfitFactorState.UNAVAILABLE
+            )
+            assert record.has_infinite_profit_factor is False
 
     def test_rejected_decisions_are_counted_and_ranked(
         self,
@@ -956,6 +1052,32 @@ class TestStoredProcedures:
         assert result.out_values["total_trades"] == 0
         assert result.out_values["net_pnl"] is None
 
+    def test_profit_factor_procedure_reports_the_state(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+        session_id,
+    ) -> None:
+        """The procedure must not hand back a bare NULL for a wins-only run."""
+
+        with sessions_database.session() as session:
+            run_trade(session, user_id, account_id, session_id)
+
+        with sessions_database.session() as session:
+            PaperSessionResultService(session).build_and_store_result(
+                session_id=session_id
+            )
+
+        result = StoredProcedureService(sessions_database).call_read_only(
+            "sp_aqos_paper_session_profit_factors",
+            parameters=(account_id,),
+        )
+
+        assert len(result.rows) == 1
+        assert result.rows[0]["profit_factor"] is None
+        assert result.rows[0]["profit_factor_state"] == "infinite_no_losses"
+
     def test_decision_breakdown_procedure(
         self,
         sessions_database,
@@ -1135,6 +1257,95 @@ class TestDatabaseConstraints:
                         "metadata_json) VALUES ('o_ghost', :user_id, "
                         ":account_id, 'session_missing', 'XAUUSD', 'buy', "
                         "'market', 'accepted', 1, :now, :now, '{}')"
+                    ),
+                    {
+                        "user_id": user_id,
+                        "account_id": account_id,
+                        "now": FIXED_NOW,
+                    },
+                )
+
+    def test_a_finite_state_without_a_value_is_refused(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+    ) -> None:
+        with pytest.raises(
+            DatabaseError,
+            match="ck_paper_sessions_finite_profit_factor_has_value",
+        ):
+            with sessions_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO paper_sessions (session_id, user_id, "
+                        "account_id, session_name, session_type, status, "
+                        "initial_balance, profit_factor, profit_factor_state, "
+                        "started_at_utc, created_at_utc, updated_at_utc, "
+                        "metadata_json) VALUES ('session_pf1', :user_id, "
+                        ":account_id, 'Raw', 'manual_paper_session', "
+                        "'running', 10000, NULL, 'finite', "
+                        ":now, :now, :now, '{}')"
+                    ),
+                    {
+                        "user_id": user_id,
+                        "account_id": account_id,
+                        "now": FIXED_NOW,
+                    },
+                )
+
+    def test_an_infinite_state_carrying_a_number_is_refused(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+    ) -> None:
+        """NULL plus a state is the only honest encoding of infinity."""
+
+        with pytest.raises(
+            DatabaseError,
+            match="ck_paper_sessions_non_finite_profit_factor_is_null",
+        ):
+            with sessions_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO paper_sessions (session_id, user_id, "
+                        "account_id, session_name, session_type, status, "
+                        "initial_balance, profit_factor, profit_factor_state, "
+                        "started_at_utc, created_at_utc, updated_at_utc, "
+                        "metadata_json) VALUES ('session_pf2', :user_id, "
+                        ":account_id, 'Raw', 'manual_paper_session', "
+                        "'running', 10000, 2.5, 'infinite_no_losses', "
+                        ":now, :now, :now, '{}')"
+                    ),
+                    {
+                        "user_id": user_id,
+                        "account_id": account_id,
+                        "now": FIXED_NOW,
+                    },
+                )
+
+    def test_an_unknown_profit_factor_state_is_refused(
+        self,
+        sessions_database,
+        user_id,
+        account_id,
+    ) -> None:
+        with pytest.raises(
+            DatabaseError,
+            match="ck_paper_sessions_profit_factor_state",
+        ):
+            with sessions_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO paper_sessions (session_id, user_id, "
+                        "account_id, session_name, session_type, status, "
+                        "initial_balance, profit_factor, profit_factor_state, "
+                        "started_at_utc, created_at_utc, updated_at_utc, "
+                        "metadata_json) VALUES ('session_pf3', :user_id, "
+                        ":account_id, 'Raw', 'manual_paper_session', "
+                        "'running', 10000, NULL, 'made_up', "
+                        ":now, :now, :now, '{}')"
                     ),
                     {
                         "user_id": user_id,

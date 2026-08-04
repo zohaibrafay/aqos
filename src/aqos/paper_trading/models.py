@@ -24,6 +24,7 @@ from aqos.paper_trading.contracts import (
     PaperTradingError,
 )
 from aqos.paper_trading.sessions import (
+    PaperProfitFactorState,
     PaperSessionStatus,
     PaperSessionType,
     TERMINAL_PAPER_SESSION_STATUSES,
@@ -97,6 +98,15 @@ class PaperSessionRecord(AqosBase):
         Numeric(20, MONEY_PRECISION),
         nullable=True,
     )
+    profit_factor: Mapped[float | None] = mapped_column(
+        Numeric(20, MONEY_PRECISION),
+        nullable=True,
+    )
+    profit_factor_state: Mapped[PaperProfitFactorState] = mapped_column(
+        EnumString(PaperProfitFactorState),
+        nullable=False,
+        default=PaperProfitFactorState.UNAVAILABLE,
+    )
     max_drawdown: Mapped[float | None] = mapped_column(
         Numeric(20, MONEY_PRECISION),
         nullable=True,
@@ -114,6 +124,10 @@ class PaperSessionRecord(AqosBase):
 
     def __init__(self, **kwargs: Any) -> None:
         kwargs.setdefault("status", PaperSessionStatus.CREATED)
+        kwargs.setdefault(
+            "profit_factor_state",
+            PaperProfitFactorState.UNAVAILABLE,
+        )
         kwargs.setdefault("extra_metadata", {})
 
         super().__init__(**kwargs)
@@ -145,6 +159,35 @@ class PaperSessionRecord(AqosBase):
             model_id=self.model_id,
             strategy_name=self.strategy_name,
         )
+
+    @property
+    def has_infinite_profit_factor(self) -> bool:
+        return self.profit_factor_state == (
+            PaperProfitFactorState.INFINITE_NO_LOSSES
+        )
+
+    def assert_profit_factor_is_explained(self) -> None:
+        """
+        The stored number and its state must agree.
+
+        Infinity cannot live in a DECIMAL column, so a wins-only session stores
+        NULL plus ``infinite_no_losses``. Without the state that row would be
+        indistinguishable from one where nothing was measured at all.
+        """
+
+        if self.profit_factor_state == PaperProfitFactorState.FINITE:
+            if self.profit_factor is None:
+                raise PaperTradingError(
+                    "A finite profit factor must carry its value."
+                )
+
+            return
+
+        if self.profit_factor is not None:
+            raise PaperTradingError(
+                f"A {self.profit_factor_state.value} profit factor cannot "
+                "carry a numeric value."
+            )
 
     def assert_lifecycle_is_consistent(self) -> None:
         """
@@ -198,6 +241,13 @@ class PaperSessionRecord(AqosBase):
             "net_pnl": (
                 as_amount(self.net_pnl) if self.net_pnl is not None else None
             ),
+            "profit_factor": (
+                as_amount(self.profit_factor)
+                if self.profit_factor is not None
+                else None
+            ),
+            "profit_factor_state": self.profit_factor_state.value,
+            "has_infinite_profit_factor": self.has_infinite_profit_factor,
             "max_drawdown": (
                 as_amount(self.max_drawdown)
                 if self.max_drawdown is not None

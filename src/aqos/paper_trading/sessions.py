@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
@@ -29,6 +30,41 @@ MODEL_DRIVEN_SESSION_TYPES = (PaperSessionType.MODEL_FORWARD_TEST,)
 
 #: Session types that are driven by a strategy and must name one.
 STRATEGY_DRIVEN_SESSION_TYPES = (PaperSessionType.STRATEGY_FORWARD_TEST,)
+
+
+class PaperProfitFactorState(str, Enum):
+    """
+    Why a profit factor reads the way it does.
+
+    A numeric column cannot hold infinity, so the state carries the meaning that
+    the number alone would lose: a wins-only session is unbounded, which is not
+    the same as unmeasurable.
+    """
+
+    UNAVAILABLE = "unavailable"
+    FINITE = "finite"
+    INFINITE_NO_LOSSES = "infinite_no_losses"
+
+
+def resolve_profit_factor_state(
+    profit_factor: float | None,
+) -> PaperProfitFactorState:
+    if profit_factor is None:
+        return PaperProfitFactorState.UNAVAILABLE
+
+    if math.isinf(profit_factor):
+        return PaperProfitFactorState.INFINITE_NO_LOSSES
+
+    return PaperProfitFactorState.FINITE
+
+
+def finite_profit_factor(profit_factor: float | None) -> float | None:
+    """The value a numeric column may store; infinity becomes NULL."""
+
+    if profit_factor is None or math.isinf(profit_factor):
+        return None
+
+    return profit_factor
 
 
 class PaperSessionStatus(str, Enum):
@@ -206,6 +242,29 @@ class PaperSessionResult:
         return self.total_trades > 0
 
     @property
+    def profit_factor_state(self) -> PaperProfitFactorState:
+        """
+        Derived rather than stored, so it can never disagree with the value.
+
+        ``infinite_no_losses`` means the session won and never lost; it is a
+        real result, not a missing one.
+        """
+
+        return resolve_profit_factor_state(self.profit_factor)
+
+    @property
+    def has_infinite_profit_factor(self) -> bool:
+        return self.profit_factor_state == (
+            PaperProfitFactorState.INFINITE_NO_LOSSES
+        )
+
+    @property
+    def persisted_profit_factor(self) -> float | None:
+        """The value a DECIMAL column may hold; infinity is carried by state."""
+
+        return finite_profit_factor(self.profit_factor)
+
+    @property
     def total_decisions(self) -> int:
         return self.decisions_allowed + self.decisions_rejected
 
@@ -234,7 +293,11 @@ class PaperSessionResult:
             "net_pnl": self.net_pnl,
             "gross_profit": self.gross_profit,
             "gross_loss": self.gross_loss,
-            "profit_factor": self.profit_factor,
+            # JSON cannot carry infinity, so the state is what preserves the
+            # meaning for a wins-only session.
+            "profit_factor": self.persisted_profit_factor,
+            "profit_factor_state": self.profit_factor_state.value,
+            "has_infinite_profit_factor": self.has_infinite_profit_factor,
             "max_drawdown": self.max_drawdown,
             "ending_balance": self.ending_balance,
             "symbols_traded": list(self.symbols_traded),
@@ -262,6 +325,7 @@ __all__ = [
     "InvalidPaperSessionTransitionError",
     "MODEL_DRIVEN_SESSION_TYPES",
     "PAPER_SESSION_TRANSITIONS",
+    "PaperProfitFactorState",
     "PaperSessionResult",
     "PaperSessionStatus",
     "PaperSessionType",
@@ -269,7 +333,9 @@ __all__ = [
     "TERMINAL_PAPER_SESSION_STATUSES",
     "can_transition_session",
     "is_terminal_session_status",
+    "finite_profit_factor",
     "normalize_session_name",
+    "resolve_profit_factor_state",
     "validate_session_identity",
     "validate_session_transition",
 ]
