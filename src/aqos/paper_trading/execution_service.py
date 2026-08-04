@@ -151,9 +151,13 @@ class PaperExecutionService:
         self,
         session: Session,
         config: PaperSimulatorConfig | None = None,
+        session_id: str | None = None,
     ) -> None:
         self.session = session
         self.config = config or PaperSimulatorConfig()
+        #: Paper session every artefact from this service is booked against.
+        #: None means ungrouped activity, which stays valid.
+        self.session_id = session_id
 
         self.orders = PaperOrderRepository(session)
         self.positions = PaperPositionRepository(session)
@@ -317,6 +321,7 @@ class PaperExecutionService:
         decision_record = self.decisions.record_decision(
             eligibility,
             decided_at_utc=request.submitted_at_utc,
+            session_id=self.session_id,
         )
 
         if not eligibility.is_allowed:
@@ -413,12 +418,16 @@ class PaperExecutionService:
             order_id=order_record.order_id,
             signal_id=request.signal_id,
         )
-        position_record = self.positions.open_position(position)
+        position_record = self.positions.open_position(
+            position,
+            session_id=self.session_id,
+        )
 
         self.fills.record_fill(
             fill,
             account_id=request.account_id,
             position_id=position_record.position_id,
+            session_id=self.session_id,
         )
         self.orders.record_fill_on_order(
             order_id=order_record.order_id,
@@ -555,6 +564,7 @@ class PaperExecutionService:
             ),
             account_id=position_record.account_id,
             position_id=position_record.position_id,
+            session_id=self.session_id,
         )
         self.orders.record_fill_on_order(
             order_id=exit_order.order_id,
@@ -592,7 +602,11 @@ class PaperExecutionService:
             balance_after=as_amount(account.current_balance),
             signal_id=closed.signal_id,
         )
-        trade_record = self.trades.record_trade(trade, exit_reason=exit_reason)
+        trade_record = self.trades.record_trade(
+            trade,
+            exit_reason=exit_reason,
+            session_id=self.session_id,
+        )
 
         return PaperCloseOutcome(
             position=closed,
@@ -722,7 +736,7 @@ class PaperExecutionService:
             extra_metadata=dict(request.extra_metadata),
         )
 
-        return self.orders.create_order(order)
+        return self.orders.create_order(order, session_id=self.session_id)
 
     def _create_exit_order(
         self,
@@ -753,7 +767,7 @@ class PaperExecutionService:
             },
         )
 
-        return self.orders.create_order(order)
+        return self.orders.create_order(order, session_id=self.session_id)
 
     def _reject(
         self,

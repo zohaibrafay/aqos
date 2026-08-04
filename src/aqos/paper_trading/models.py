@@ -23,6 +23,13 @@ from aqos.paper_trading.contracts import (
     PaperTrade,
     PaperTradingError,
 )
+from aqos.paper_trading.sessions import (
+    PaperSessionStatus,
+    PaperSessionType,
+    TERMINAL_PAPER_SESSION_STATUSES,
+    normalize_session_name,
+    validate_session_identity,
+)
 from aqos.paper_trading.simulator import PaperExitReason
 
 
@@ -36,6 +43,177 @@ def as_amount(value: Any) -> float:
         return float(value)
 
     return float(value)
+
+
+class PaperSessionRecord(AqosBase):
+    """
+    A named paper trading run.
+
+    Result columns stay NULL until the session actually produces something to
+    measure; MySQL refuses a row that reports a win rate for a session that
+    closed no trade.
+    """
+
+    __tablename__ = "paper_sessions"
+    __table_args__ = AQOS_TABLE_ARGS
+
+    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("user_profiles.user_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    account_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    session_name: Mapped[str] = mapped_column(String(191), nullable=False)
+    session_type: Mapped[PaperSessionType] = mapped_column(
+        EnumString(PaperSessionType),
+        nullable=False,
+    )
+    status: Mapped[PaperSessionStatus] = mapped_column(
+        EnumString(PaperSessionStatus),
+        nullable=False,
+        default=PaperSessionStatus.CREATED,
+    )
+    status_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    strategy_name: Mapped[str | None] = mapped_column(String(191), nullable=True)
+    model_id: Mapped[str | None] = mapped_column(String(191), nullable=True)
+    model_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    symbol: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    timeframe: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    initial_balance: Mapped[float] = mapped_column(
+        Numeric(20, MONEY_PRECISION),
+        nullable=False,
+    )
+    final_balance: Mapped[float | None] = mapped_column(
+        Numeric(20, MONEY_PRECISION),
+        nullable=True,
+    )
+    total_trades: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    net_pnl: Mapped[float | None] = mapped_column(
+        Numeric(20, MONEY_PRECISION),
+        nullable=True,
+    )
+    max_drawdown: Mapped[float | None] = mapped_column(
+        Numeric(20, MONEY_PRECISION),
+        nullable=True,
+    )
+    started_at_utc: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ended_at_utc: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at_utc: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at_utc: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    extra_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata_json",
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("status", PaperSessionStatus.CREATED)
+        kwargs.setdefault("extra_metadata", {})
+
+        super().__init__(**kwargs)
+
+    @validates("session_name")
+    def _validate_session_name(self, key: str, value: str) -> str:
+        return normalize_session_name(value)
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.status in TERMINAL_PAPER_SESSION_STATUSES
+
+    @property
+    def is_running(self) -> bool:
+        return self.status == PaperSessionStatus.RUNNING
+
+    @property
+    def realized_pnl(self) -> float | None:
+        """None until the session recorded a final balance."""
+
+        if self.final_balance is None:
+            return None
+
+        return as_amount(self.final_balance) - as_amount(self.initial_balance)
+
+    def assert_identity_is_recorded(self) -> None:
+        validate_session_identity(
+            session_type=self.session_type,
+            model_id=self.model_id,
+            strategy_name=self.strategy_name,
+        )
+
+    def assert_lifecycle_is_consistent(self) -> None:
+        """
+        A finished session must be timestamped; an open one must not be.
+
+        MySQL enforces the same pair, so bypassing Python still fails.
+        """
+
+        if self.is_terminal and self.ended_at_utc is None:
+            raise PaperTradingError(
+                f"A {self.status.value} paper session must record an end time."
+            )
+
+        if not self.is_terminal and self.ended_at_utc is not None:
+            raise PaperTradingError(
+                f"A {self.status.value} paper session has not ended, so it "
+                "cannot carry an end time."
+            )
+
+        if (
+            self.ended_at_utc is not None
+            and self.ended_at_utc < self.started_at_utc
+        ):
+            raise PaperTradingError(
+                "ended_at_utc cannot be before started_at_utc."
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "session_id": self.session_id,
+            "user_id": self.user_id,
+            "account_id": self.account_id,
+            "session_name": self.session_name,
+            "session_type": self.session_type.value,
+            "status": self.status.value,
+            "status_reason": self.status_reason,
+            "is_terminal": self.is_terminal,
+            "strategy_name": self.strategy_name,
+            "model_id": self.model_id,
+            "model_version": self.model_version,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "initial_balance": as_amount(self.initial_balance),
+            "final_balance": (
+                as_amount(self.final_balance)
+                if self.final_balance is not None
+                else None
+            ),
+            "realized_pnl": self.realized_pnl,
+            "total_trades": self.total_trades,
+            "net_pnl": (
+                as_amount(self.net_pnl) if self.net_pnl is not None else None
+            ),
+            "max_drawdown": (
+                as_amount(self.max_drawdown)
+                if self.max_drawdown is not None
+                else None
+            ),
+            "started_at_utc": self.started_at_utc.isoformat(),
+            "ended_at_utc": (
+                self.ended_at_utc.isoformat()
+                if self.ended_at_utc is not None
+                else None
+            ),
+            "metadata": self.extra_metadata or {},
+        }
+
+    def __repr__(self) -> str:
+        return f"PaperSessionRecord(session_id={self.session_id!r})"
 
 
 class PaperOrderRecord(AqosBase):
@@ -54,6 +232,11 @@ class PaperOrderRecord(AqosBase):
         String(64),
         ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
         nullable=False,
+    )
+    session_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
     )
     signal_id: Mapped[str | None] = mapped_column(
         String(64),
@@ -130,11 +313,16 @@ class PaperOrderRecord(AqosBase):
             )
 
     @classmethod
-    def from_contract(cls, order: PaperOrder) -> "PaperOrderRecord":
+    def from_contract(
+        cls,
+        order: PaperOrder,
+        session_id: str | None = None,
+    ) -> "PaperOrderRecord":
         return cls(
             order_id=order.order_id,
             user_id=order.user_id,
             account_id=order.account_id,
+            session_id=session_id,
             signal_id=order.signal_id,
             symbol=order.symbol,
             action=order.action,
@@ -206,6 +394,11 @@ class PaperPositionRecord(AqosBase):
         String(64),
         ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
         nullable=False,
+    )
+    session_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
     )
     order_id: Mapped[str | None] = mapped_column(
         String(64),
@@ -280,10 +473,15 @@ class PaperPositionRecord(AqosBase):
             )
 
     @classmethod
-    def from_contract(cls, position: PaperPosition) -> "PaperPositionRecord":
+    def from_contract(
+        cls,
+        position: PaperPosition,
+        session_id: str | None = None,
+    ) -> "PaperPositionRecord":
         return cls(
             position_id=position.position_id,
             account_id=position.account_id,
+            session_id=session_id,
             order_id=position.order_id,
             signal_id=position.signal_id,
             symbol=position.symbol,
@@ -348,6 +546,11 @@ class PaperFillRecord(AqosBase):
         ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
         nullable=False,
     )
+    session_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
+    )
     position_id: Mapped[str | None] = mapped_column(
         String(64),
         ForeignKey("paper_positions.position_id", ondelete="SET NULL"),
@@ -386,11 +589,13 @@ class PaperFillRecord(AqosBase):
         fill: PaperFill,
         account_id: str,
         position_id: str | None = None,
+        session_id: str | None = None,
     ) -> "PaperFillRecord":
         return cls(
             fill_id=fill.fill_id,
             order_id=fill.order_id,
             account_id=account_id,
+            session_id=session_id,
             position_id=position_id,
             quantity=fill.quantity,
             price=fill.price,
@@ -431,6 +636,11 @@ class PaperTradeRecord(AqosBase):
         String(64),
         ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
         nullable=False,
+    )
+    session_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
     )
     signal_id: Mapped[str | None] = mapped_column(
         String(64),
@@ -520,11 +730,13 @@ class PaperTradeRecord(AqosBase):
         cls,
         trade: PaperTrade,
         exit_reason: PaperExitReason = PaperExitReason.MANUAL_CLOSE,
+        session_id: str | None = None,
     ) -> "PaperTradeRecord":
         return cls(
             trade_id=trade.trade_id,
             position_id=trade.position_id,
             account_id=trade.account_id,
+            session_id=session_id,
             signal_id=trade.signal_id,
             symbol=trade.symbol,
             side=trade.side,
@@ -702,6 +914,11 @@ class PaperExecutionDecisionRecord(AqosBase):
         ForeignKey("trading_accounts.account_id", ondelete="CASCADE"),
         nullable=False,
     )
+    session_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("paper_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
+    )
     signal_id: Mapped[str | None] = mapped_column(
         String(64),
         ForeignKey("trading_signals.signal_id", ondelete="SET NULL"),
@@ -810,6 +1027,7 @@ __all__ = [
     "PaperExecutionDecisionRecord",
     "PaperFillRecord",
     "PaperOrderRecord",
+    "PaperSessionRecord",
     "PaperPositionRecord",
     "PaperTradeRecord",
     "as_amount",

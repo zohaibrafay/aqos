@@ -50,8 +50,9 @@ class PaperOrderRepository(AqosRepository[PaperOrderRecord]):
     def create_order(
         self,
         order: PaperOrder,
+        session_id: str | None = None,
     ) -> PaperOrderRecord:
-        record = PaperOrderRecord.from_contract(order)
+        record = PaperOrderRecord.from_contract(order, session_id=session_id)
         record.assert_rejection_is_explained()
 
         self.add(record)
@@ -138,6 +139,7 @@ class PaperOrderRepository(AqosRepository[PaperOrderRecord]):
         self,
         account_id: str | None = None,
         user_id: str | None = None,
+        session_id: str | None = None,
         signal_id: str | None = None,
         status: PaperOrderStatus | None = None,
         symbol: str | None = None,
@@ -146,6 +148,9 @@ class PaperOrderRepository(AqosRepository[PaperOrderRecord]):
         limit: int | None = None,
     ) -> tuple[PaperOrderRecord, ...]:
         statement = select(PaperOrderRecord)
+
+        if session_id is not None:
+            statement = statement.where(PaperOrderRecord.session_id == session_id)
 
         if account_id is not None:
             statement = statement.where(PaperOrderRecord.account_id == account_id)
@@ -264,8 +269,12 @@ class PaperPositionRepository(AqosRepository[PaperPositionRecord]):
 
     model = PaperPositionRecord
 
-    def open_position(self, position: PaperPosition) -> PaperPositionRecord:
-        record = PaperPositionRecord.from_contract(position)
+    def open_position(
+        self,
+        position: PaperPosition,
+        session_id: str | None = None,
+    ) -> PaperPositionRecord:
+        record = PaperPositionRecord.from_contract(position, session_id=session_id)
         record.assert_close_is_timestamped()
 
         self.add(record)
@@ -323,6 +332,7 @@ class PaperPositionRepository(AqosRepository[PaperPositionRecord]):
     def list_positions(
         self,
         account_id: str | None = None,
+        session_id: str | None = None,
         symbol: str | None = None,
         side: PaperSide | None = None,
         status: PaperPositionStatus | None = None,
@@ -331,6 +341,9 @@ class PaperPositionRepository(AqosRepository[PaperPositionRecord]):
         limit: int | None = None,
     ) -> tuple[PaperPositionRecord, ...]:
         statement = select(PaperPositionRecord)
+
+        if session_id is not None:
+            statement = statement.where(PaperPositionRecord.session_id == session_id)
 
         if account_id is not None:
             statement = statement.where(PaperPositionRecord.account_id == account_id)
@@ -407,11 +420,13 @@ class PaperFillRepository(AqosRepository[PaperFillRecord]):
         fill: PaperFill,
         account_id: str,
         position_id: str | None = None,
+        session_id: str | None = None,
     ) -> PaperFillRecord:
         record = PaperFillRecord.from_contract(
             fill,
             account_id=account_id,
             position_id=position_id,
+            session_id=session_id,
         )
 
         self.add(record)
@@ -422,6 +437,7 @@ class PaperFillRepository(AqosRepository[PaperFillRecord]):
     def list_fills(
         self,
         account_id: str | None = None,
+        session_id: str | None = None,
         order_id: str | None = None,
         position_id: str | None = None,
         filled_since_utc: datetime | None = None,
@@ -429,6 +445,9 @@ class PaperFillRepository(AqosRepository[PaperFillRecord]):
         limit: int | None = None,
     ) -> tuple[PaperFillRecord, ...]:
         statement = select(PaperFillRecord)
+
+        if session_id is not None:
+            statement = statement.where(PaperFillRecord.session_id == session_id)
 
         if account_id is not None:
             statement = statement.where(PaperFillRecord.account_id == account_id)
@@ -485,8 +504,13 @@ class PaperTradeRepository(AqosRepository[PaperTradeRecord]):
         self,
         trade: PaperTrade,
         exit_reason: PaperExitReason = PaperExitReason.MANUAL_CLOSE,
+        session_id: str | None = None,
     ) -> PaperTradeRecord:
-        record = PaperTradeRecord.from_contract(trade, exit_reason=exit_reason)
+        record = PaperTradeRecord.from_contract(
+            trade,
+            exit_reason=exit_reason,
+            session_id=session_id,
+        )
         record.assert_net_pnl_is_derived()
 
         self.add(record)
@@ -497,6 +521,7 @@ class PaperTradeRepository(AqosRepository[PaperTradeRecord]):
     def list_trades(
         self,
         account_id: str | None = None,
+        session_id: str | None = None,
         symbol: str | None = None,
         signal_id: str | None = None,
         exit_reason: PaperExitReason | None = None,
@@ -506,6 +531,9 @@ class PaperTradeRepository(AqosRepository[PaperTradeRecord]):
         limit: int | None = None,
     ) -> tuple[PaperTradeRecord, ...]:
         statement = select(PaperTradeRecord)
+
+        if session_id is not None:
+            statement = statement.where(PaperTradeRecord.session_id == session_id)
 
         if account_id is not None:
             statement = statement.where(PaperTradeRecord.account_id == account_id)
@@ -688,6 +716,7 @@ class PaperExecutionDecisionRepository(AqosRepository[PaperExecutionDecisionReco
         decided_at_utc: datetime | None = None,
         order_id: str | None = None,
         decision_id: str | None = None,
+        session_id: str | None = None,
     ) -> PaperExecutionDecisionRecord:
         primary = decision.primary_reason
 
@@ -695,6 +724,7 @@ class PaperExecutionDecisionRepository(AqosRepository[PaperExecutionDecisionReco
             decision_id=decision_id or build_entity_id("paperdecision"),
             user_id=decision.user_id,
             account_id=decision.account_id,
+            session_id=session_id,
             signal_id=decision.signal_id,
             order_id=order_id,
             symbol=decision.symbol,
@@ -731,12 +761,16 @@ class PaperExecutionDecisionRepository(AqosRepository[PaperExecutionDecisionReco
         self,
         account_id: str | None = None,
         user_id: str | None = None,
+        session_id: str | None = None,
         signal_id: str | None = None,
         is_allowed: bool | None = None,
         primary_reason_code: str | None = None,
         limit: int | None = None,
     ) -> tuple[PaperExecutionDecisionRecord, ...]:
         statement = select(PaperExecutionDecisionRecord)
+
+        if session_id is not None:
+            statement = statement.where(PaperExecutionDecisionRecord.session_id == session_id)
 
         if account_id is not None:
             statement = statement.where(
