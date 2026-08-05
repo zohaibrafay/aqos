@@ -10,6 +10,7 @@ from aqos.account_analytics.metrics import (
     ReasonMetrics,
     SignalMetrics,
     TradeMetrics,
+    ProfitFactorState,
     TradeMetricsAvailability,
     build_equity_curve,
     calculate_drawdowns,
@@ -17,6 +18,7 @@ from aqos.account_analytics.metrics import (
     calculate_reason_metrics,
     calculate_signal_metrics,
     calculate_trade_metrics,
+    resolve_profit_factor_state,
 )
 from aqos.account_analytics.models import (
     AccountAnalytics,
@@ -454,3 +456,141 @@ def test_snapshot_repr_and_defaults() -> None:
     assert snapshot.payload_json == {}
     assert snapshot.extra_metadata == {}
     assert "snapshot_1" in repr(snapshot)
+
+
+class TestProfitFactorStatePersistence:
+    """
+    A NULL profit factor must always say why it is NULL.
+
+    The API layer reads these rows directly, so an unexplained NULL would be
+    exposed as "no result" for an account that in fact never lost a trade.
+    """
+
+    def build(self, **overrides) -> AccountAnalyticsSnapshot:
+        payload = {
+            "snapshot_id": "snapshot_1",
+            "user_id": "user_1",
+            "scope": AnalyticsScope.USER,
+            "calculated_at_utc": FIXED_NOW,
+        }
+        payload.update(overrides)
+
+        return AccountAnalyticsSnapshot(**payload)
+
+    def test_the_state_defaults_to_unavailable(self) -> None:
+        snapshot = self.build()
+
+        assert snapshot.profit_factor is None
+        assert snapshot.profit_factor_state == ProfitFactorState.UNAVAILABLE
+        assert snapshot.has_infinite_profit_factor is False
+
+        snapshot.assert_profit_factor_is_explained()
+
+    def test_a_finite_state_must_carry_its_value(self) -> None:
+        snapshot = self.build(
+            trade_metrics_available=True,
+            profit_factor_state=ProfitFactorState.FINITE,
+        )
+
+        with pytest.raises(AccountAnalyticsError, match="must carry its value"):
+            snapshot.assert_profit_factor_is_explained()
+
+    def test_an_infinite_state_cannot_carry_a_number(self) -> None:
+        snapshot = self.build(
+            trade_metrics_available=True,
+            profit_factor=2.5,
+            profit_factor_state=ProfitFactorState.INFINITE_NO_LOSSES,
+        )
+
+        with pytest.raises(AccountAnalyticsError, match="cannot carry a numeric"):
+            snapshot.assert_profit_factor_is_explained()
+
+    def test_an_unavailable_state_cannot_carry_a_number(self) -> None:
+        snapshot = self.build(
+            trade_metrics_available=True,
+            profit_factor=2.5,
+            profit_factor_state=ProfitFactorState.UNAVAILABLE,
+        )
+
+        with pytest.raises(AccountAnalyticsError, match="cannot carry a numeric"):
+            snapshot.assert_profit_factor_is_explained()
+
+    def test_unavailable_metrics_cannot_claim_a_state(self) -> None:
+        """No trade source means no profit factor state either."""
+
+        snapshot = self.build(
+            trade_metrics_available=False,
+            profit_factor_state=ProfitFactorState.INFINITE_NO_LOSSES,
+        )
+
+        with pytest.raises(AccountAnalyticsError, match="must stay unavailable"):
+            snapshot.assert_trade_metrics_are_honest()
+
+    def test_a_wins_only_snapshot_is_honest(self) -> None:
+        snapshot = self.build(
+            trade_metrics_available=True,
+            total_trades=3,
+            profit_factor=None,
+            profit_factor_state=ProfitFactorState.INFINITE_NO_LOSSES,
+        )
+        snapshot.assert_trade_metrics_are_honest()
+
+        payload = snapshot.to_dict()
+
+        assert payload["profit_factor"] is None
+        assert payload["profit_factor_state"] == "infinite_no_losses"
+        assert payload["has_infinite_profit_factor"] is True
+
+    def test_a_wins_only_snapshot_stays_distinct_from_no_trades(self) -> None:
+        wins_only = self.build(
+            trade_metrics_available=True,
+            total_trades=3,
+            profit_factor_state=ProfitFactorState.INFINITE_NO_LOSSES,
+        ).to_dict()
+        nothing_traded = self.build().to_dict()
+
+        assert wins_only["profit_factor"] == nothing_traded["profit_factor"]
+        # The numbers match, so only the state tells them apart.
+        assert (
+            wins_only["profit_factor_state"]
+            != nothing_traded["profit_factor_state"]
+        )
+
+    def test_a_finite_snapshot_keeps_its_number(self) -> None:
+        snapshot = self.build(
+            trade_metrics_available=True,
+            total_trades=4,
+            profit_factor=2.5,
+            profit_factor_state=ProfitFactorState.FINITE,
+        )
+        snapshot.assert_trade_metrics_are_honest()
+
+        assert snapshot.to_dict()["profit_factor"] == pytest.approx(2.5)
+        assert snapshot.to_dict()["profit_factor_state"] == "finite"
+
+
+class TestCanonicalProfitFactorState:
+    def test_paper_trading_reuses_the_analytics_enum(self) -> None:
+        """One definition, so the two can never drift apart."""
+
+        from aqos.paper_trading.sessions import PaperProfitFactorState
+
+        assert PaperProfitFactorState is ProfitFactorState
+
+    @pytest.mark.parametrize(
+        "gross_profit, gross_loss, expected_state",
+        [
+            (0.0, 0.0, ProfitFactorState.UNAVAILABLE),
+            (30.0, 0.0, ProfitFactorState.INFINITE_NO_LOSSES),
+            (30.0, 10.0, ProfitFactorState.FINITE),
+        ],
+    )
+    def test_the_calculator_and_the_state_agree(
+        self,
+        gross_profit,
+        gross_loss,
+        expected_state,
+    ) -> None:
+        value = calculate_profit_factor(gross_profit, gross_loss)
+
+        assert resolve_profit_factor_state(value) == expected_state

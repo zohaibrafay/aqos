@@ -10,6 +10,7 @@ from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, St
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from aqos.account_analytics.metrics import (
+    ProfitFactorState,
     ReasonMetrics,
     SignalMetrics,
     TradeMetrics,
@@ -153,6 +154,11 @@ class AccountAnalyticsSnapshot(AqosBase):
     win_rate: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     net_pnl: Mapped[float | None] = mapped_column(Numeric(20, 8), nullable=True)
     profit_factor: Mapped[float | None] = mapped_column(Numeric(20, 8), nullable=True)
+    profit_factor_state: Mapped[ProfitFactorState] = mapped_column(
+        EnumString(ProfitFactorState),
+        nullable=False,
+        default=ProfitFactorState.UNAVAILABLE,
+    )
     max_drawdown: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     payload_json: Mapped[dict[str, Any]] = mapped_column(
         JSON,
@@ -174,6 +180,10 @@ class AccountAnalyticsSnapshot(AqosBase):
 
     def __init__(self, **kwargs: Any) -> None:
         kwargs.setdefault("trade_metrics_available", False)
+        # A column default only lands at flush, so a transient snapshot would
+        # otherwise carry a None state and read as "no profit factor recorded"
+        # rather than "nothing measured yet".
+        kwargs.setdefault("profit_factor_state", ProfitFactorState.UNAVAILABLE)
         kwargs.setdefault("payload_json", {})
         kwargs.setdefault("extra_metadata", {})
 
@@ -191,6 +201,34 @@ class AccountAnalyticsSnapshot(AqosBase):
 
         return value
 
+    @property
+    def has_infinite_profit_factor(self) -> bool:
+        return self.profit_factor_state == ProfitFactorState.INFINITE_NO_LOSSES
+
+    def assert_profit_factor_is_explained(self) -> None:
+        """
+        The stored number and its state must agree.
+
+        Infinity cannot live in a DECIMAL column, so a wins-and-no-losses
+        account stores NULL plus ``infinite_no_losses``. Without the state that
+        row is indistinguishable from one where nothing was measured, which is
+        exactly what the API layer would then expose.
+        """
+
+        if self.profit_factor_state == ProfitFactorState.FINITE:
+            if self.profit_factor is None:
+                raise AccountAnalyticsError(
+                    "A finite profit factor must carry its value."
+                )
+
+            return
+
+        if self.profit_factor is not None:
+            raise AccountAnalyticsError(
+                f"A {self.profit_factor_state.value} profit factor cannot "
+                "carry a numeric value."
+            )
+
     def assert_trade_metrics_are_honest(self) -> None:
         """
         Refuse a snapshot that reports trade results it does not have.
@@ -199,8 +237,16 @@ class AccountAnalyticsSnapshot(AqosBase):
         trading history indistinguishable from one that traded and broke even.
         """
 
+        self.assert_profit_factor_is_explained()
+
         if self.trade_metrics_available:
             return
+
+        if self.profit_factor_state != ProfitFactorState.UNAVAILABLE:
+            raise AccountAnalyticsError(
+                "Trade metrics are unavailable, so profit_factor_state must "
+                f"stay unavailable; got {self.profit_factor_state.value}."
+            )
 
         populated = [
             field_name
@@ -258,6 +304,8 @@ class AccountAnalyticsSnapshot(AqosBase):
             "total_trades": self.total_trades,
             "win_rate": float(self.win_rate) if self.win_rate is not None else None,
             "net_pnl": float(self.net_pnl) if self.net_pnl is not None else None,
+            "profit_factor_state": self.profit_factor_state.value,
+            "has_infinite_profit_factor": self.has_infinite_profit_factor,
             "profit_factor": (
                 float(self.profit_factor) if self.profit_factor is not None else None
             ),
@@ -281,4 +329,5 @@ __all__ = [
     "AccountAnalyticsError",
     "AccountAnalyticsSnapshot",
     "AnalyticsScope",
+    "ProfitFactorState",
 ]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
@@ -15,6 +16,41 @@ from aqos.signal_reasons.taxonomy import (
 
 
 AQOS_ACCOUNT_ANALYTICS_METRICS_VERSION = "1.0"
+
+
+class ProfitFactorState(str, Enum):
+    """
+    Why a profit factor reads the way it does.
+
+    A numeric column cannot hold infinity, so the state carries what the number
+    alone would lose. ``infinite_no_losses`` is a real result — the account won
+    and never lost — which is not the same as having nothing to divide.
+    """
+
+    UNAVAILABLE = "unavailable"
+    FINITE = "finite"
+    INFINITE_NO_LOSSES = "infinite_no_losses"
+
+
+def resolve_profit_factor_state(
+    profit_factor: float | None,
+) -> ProfitFactorState:
+    if profit_factor is None:
+        return ProfitFactorState.UNAVAILABLE
+
+    if math.isinf(profit_factor):
+        return ProfitFactorState.INFINITE_NO_LOSSES
+
+    return ProfitFactorState.FINITE
+
+
+def finite_profit_factor(profit_factor: float | None) -> float | None:
+    """The value a numeric column may store; infinity becomes NULL."""
+
+    if profit_factor is None or math.isinf(profit_factor):
+        return None
+
+    return profit_factor
 
 
 class TradeMetricsAvailability(str, Enum):
@@ -114,6 +150,14 @@ class TradeMetrics:
     def is_available(self) -> bool:
         return self.availability == TradeMetricsAvailability.AVAILABLE
 
+    @property
+    def profit_factor_state(self) -> ProfitFactorState:
+        return resolve_profit_factor_state(self.profit_factor)
+
+    @property
+    def has_infinite_profit_factor(self) -> bool:
+        return self.profit_factor_state == ProfitFactorState.INFINITE_NO_LOSSES
+
     @classmethod
     def unavailable(
         cls,
@@ -137,7 +181,12 @@ class TradeMetrics:
             "gross_profit": self.gross_profit,
             "gross_loss": self.gross_loss,
             "net_pnl": self.net_pnl,
-            "profit_factor": self.profit_factor,
+            # ``json.dumps`` renders infinity as the bare token ``Infinity``,
+            # which is not valid JSON and which MySQL refuses outright. The
+            # number is dropped and the state carries the meaning instead.
+            "profit_factor": finite_profit_factor(self.profit_factor),
+            "profit_factor_state": self.profit_factor_state.value,
+            "has_infinite_profit_factor": self.has_infinite_profit_factor,
             "average_win": self.average_win,
             "average_loss": self.average_loss,
             "largest_win": self.largest_win,
@@ -556,11 +605,14 @@ __all__ = [
     "ReasonMetrics",
     "SignalMetrics",
     "TradeMetrics",
+    "ProfitFactorState",
     "TradeMetricsAvailability",
     "build_equity_curve",
     "calculate_drawdowns",
     "calculate_profit_factor",
+    "finite_profit_factor",
     "calculate_reason_metrics",
+    "resolve_profit_factor_state",
     "calculate_signal_metrics",
     "calculate_trade_metrics",
 ]

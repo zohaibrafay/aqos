@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from aqos.account_analytics.metrics import (
+    ProfitFactorState,
+    finite_profit_factor,
+    resolve_profit_factor_state,
+)
 from aqos.paper_trading.contracts import PaperTradingError, require_text
 
 
@@ -32,39 +36,10 @@ MODEL_DRIVEN_SESSION_TYPES = (PaperSessionType.MODEL_FORWARD_TEST,)
 STRATEGY_DRIVEN_SESSION_TYPES = (PaperSessionType.STRATEGY_FORWARD_TEST,)
 
 
-class PaperProfitFactorState(str, Enum):
-    """
-    Why a profit factor reads the way it does.
-
-    A numeric column cannot hold infinity, so the state carries the meaning that
-    the number alone would lose: a wins-only session is unbounded, which is not
-    the same as unmeasurable.
-    """
-
-    UNAVAILABLE = "unavailable"
-    FINITE = "finite"
-    INFINITE_NO_LOSSES = "infinite_no_losses"
-
-
-def resolve_profit_factor_state(
-    profit_factor: float | None,
-) -> PaperProfitFactorState:
-    if profit_factor is None:
-        return PaperProfitFactorState.UNAVAILABLE
-
-    if math.isinf(profit_factor):
-        return PaperProfitFactorState.INFINITE_NO_LOSSES
-
-    return PaperProfitFactorState.FINITE
-
-
-def finite_profit_factor(profit_factor: float | None) -> float | None:
-    """The value a numeric column may store; infinity becomes NULL."""
-
-    if profit_factor is None or math.isinf(profit_factor):
-        return None
-
-    return profit_factor
+#: The canonical profit factor state lives with ``calculate_profit_factor`` in
+#: Sprint 046's metrics module. Paper trading re-exports it under its own name
+#: rather than defining a second enum that could drift from it.
+PaperProfitFactorState = ProfitFactorState
 
 
 class PaperSessionStatus(str, Enum):

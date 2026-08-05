@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from aqos.account_analytics.metrics import (
     AccountTradeRecord,
+    finite_profit_factor,
+    resolve_profit_factor_state,
     ReasonMetrics,
     SignalMetrics,
     TradeMetrics,
@@ -19,6 +21,7 @@ from aqos.account_analytics.models import (
     AccountAnalytics,
     AccountAnalyticsSnapshot,
     AnalyticsScope,
+    ProfitFactorState,
 )
 from aqos.account_analytics.trade_source import AccountTradeSource, resolve_trades
 from aqos.database.repository import AqosRepository
@@ -75,10 +78,18 @@ class AccountAnalyticsSnapshotRepository(AqosRepository[AccountAnalyticsSnapshot
             total_trades=trade_metrics.total_trades if available else None,
             win_rate=trade_metrics.win_rate if available else None,
             net_pnl=trade_metrics.net_pnl if available else None,
+            # Infinity cannot live in a DECIMAL column, so the numeric value is
+            # dropped and the state records why it is missing. Without that a
+            # wins-and-no-losses account would read as never having traded.
             profit_factor=(
-                trade_metrics.profit_factor
-                if available and trade_metrics.profit_factor not in (float("inf"),)
+                finite_profit_factor(trade_metrics.profit_factor)
+                if available
                 else None
+            ),
+            profit_factor_state=(
+                resolve_profit_factor_state(trade_metrics.profit_factor)
+                if available
+                else ProfitFactorState.UNAVAILABLE
             ),
             max_drawdown=trade_metrics.max_drawdown if available else None,
             payload_json=analytics.to_dict(),

@@ -9,6 +9,7 @@ from aqos.account_analytics.metrics import (
     ReasonMetrics,
     SignalMetrics,
     TradeMetrics,
+    finite_profit_factor,
 )
 from aqos.accounts.models import AccountType
 
@@ -264,7 +265,14 @@ class AccountPerformanceReport:
             "total_trades": self.trade_metrics.total_trades,
             "win_rate": self.trade_metrics.win_rate,
             "net_pnl": self.trade_metrics.net_pnl,
-            "profit_factor": self.trade_metrics.profit_factor,
+            # Infinity is not valid JSON, so the state carries it here too.
+            "profit_factor": finite_profit_factor(
+                self.trade_metrics.profit_factor
+            ),
+            "profit_factor_state": self.trade_metrics.profit_factor_state.value,
+            "has_infinite_profit_factor": (
+                self.trade_metrics.has_infinite_profit_factor
+            ),
             "max_drawdown": self.trade_metrics.max_drawdown,
         }
 

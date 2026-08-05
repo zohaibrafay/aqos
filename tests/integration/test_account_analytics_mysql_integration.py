@@ -9,6 +9,7 @@ Run with::
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 
@@ -16,11 +17,17 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DatabaseError
 
-from aqos.account_analytics.metrics import AccountTradeRecord
+from aqos.account_analytics.metrics import (
+    AccountTradeRecord,
+    ProfitFactorState,
+)
 from aqos.account_analytics.models import (
     AccountAnalyticsError,
     AnalyticsScope,
 )
+from aqos.account_reports.artifacts import render_report_json
+from aqos.account_reports.builder import build_account_performance_report
+from aqos.account_reports.contracts import ReportType
 from aqos.account_analytics.service import (
     AccountAnalyticsService,
     AccountAnalyticsSnapshotRepository,
@@ -724,3 +731,353 @@ def test_deleting_an_account_cascades_to_snapshots(
 def test_analytics_service_requires_a_session() -> None:
     with pytest.raises(ValueError, match="session is required"):
         AccountAnalyticsService(None)  # type: ignore[arg-type]
+
+def test_mysql_refuses_a_finite_state_without_a_value(
+    analytics_database,
+    account,
+) -> None:
+    """A finite state must carry the number it claims to have measured."""
+
+    user_id, _ = account
+
+    with pytest.raises(
+        DatabaseError,
+        match="ck_account_analytics_finite_profit_factor_has_value",
+    ):
+        with analytics_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO account_analytics_snapshots ("
+                        "snapshot_id, user_id, scope, calculated_at_utc, "
+                        "trade_metrics_available, profit_factor, "
+                        "profit_factor_state, payload_json, metadata_json"
+                        ") VALUES (:snapshot_id, :user_id, 'user', "
+                        ":calculated_at, 1, NULL, 'finite', "
+                        "'{}', '{}')"
+                    ),
+                    {
+                        "snapshot_id": "snapshot_pf1",
+                        "user_id": user_id,
+                        "calculated_at": FIXED_NOW,
+                    },
+                )
+
+
+def test_mysql_refuses_an_infinite_state_carrying_a_number(
+    analytics_database,
+    account,
+) -> None:
+    user_id, _ = account
+
+    with pytest.raises(
+        DatabaseError,
+        match="ck_account_analytics_non_finite_profit_factor_is_null",
+    ):
+        with analytics_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO account_analytics_snapshots ("
+                        "snapshot_id, user_id, scope, calculated_at_utc, "
+                        "trade_metrics_available, profit_factor, "
+                        "profit_factor_state, payload_json, metadata_json"
+                        ") VALUES (:snapshot_id, :user_id, 'user', "
+                        ":calculated_at, 1, 2.5, 'infinite_no_losses', "
+                        "'{}', '{}')"
+                    ),
+                    {
+                        "snapshot_id": "snapshot_pf2",
+                        "user_id": user_id,
+                        "calculated_at": FIXED_NOW,
+                    },
+                )
+
+
+def test_mysql_refuses_an_unknown_profit_factor_state(
+    analytics_database,
+    account,
+) -> None:
+    user_id, _ = account
+
+    with pytest.raises(
+        DatabaseError,
+        match="ck_account_analytics_profit_factor_state",
+    ):
+        with analytics_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO account_analytics_snapshots ("
+                        "snapshot_id, user_id, scope, calculated_at_utc, "
+                        "trade_metrics_available, profit_factor, "
+                        "profit_factor_state, payload_json, metadata_json"
+                        ") VALUES (:snapshot_id, :user_id, 'user', "
+                        ":calculated_at, 1, NULL, 'made_up', "
+                        "'{}', '{}')"
+                    ),
+                    {
+                        "snapshot_id": "snapshot_pf3",
+                        "user_id": user_id,
+                        "calculated_at": FIXED_NOW,
+                    },
+                )
+
+
+def test_mysql_refuses_a_state_without_trade_metrics(
+    analytics_database,
+    account,
+) -> None:
+    """No trade source means no profit factor state either."""
+
+    user_id, _ = account
+
+    with pytest.raises(
+        DatabaseError,
+        match="ck_account_analytics_no_state_without_trade_metrics",
+    ):
+        with analytics_database.session() as session:
+                session.execute(
+                    text(
+                        "INSERT INTO account_analytics_snapshots ("
+                        "snapshot_id, user_id, scope, calculated_at_utc, "
+                        "trade_metrics_available, profit_factor, "
+                        "profit_factor_state, payload_json, metadata_json"
+                        ") VALUES (:snapshot_id, :user_id, 'user', "
+                        ":calculated_at, 0, NULL, 'infinite_no_losses', "
+                        "'{}', '{}')"
+                    ),
+                    {
+                        "snapshot_id": "snapshot_pf4",
+                        "user_id": user_id,
+                        "calculated_at": FIXED_NOW,
+                    },
+                )
+
+
+def test_a_wins_only_account_snapshot_keeps_its_meaning(
+    analytics_database,
+    account,
+) -> None:
+    """
+    The case the API layer would otherwise expose as 'no result'.
+
+    Every trade won, so the profit factor is unbounded rather than absent.
+    """
+
+    user_id, account_id = account
+    seed_lifecycle(analytics_database, user_id, account_id)
+
+    trades = [
+        AccountTradeRecord("t1", 120.0, datetime(2026, 1, 2)),
+        AccountTradeRecord("t2", 80.0, datetime(2026, 1, 3)),
+    ]
+
+    with analytics_database.session() as session:
+        analytics = AccountAnalyticsService(
+            session,
+            trade_source=trades,
+        ).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            starting_balance=10_000.0,
+            calculated_at_utc=FIXED_NOW,
+        )
+        snapshot_id = AccountAnalyticsSnapshotRepository(session).save_snapshot(
+            analytics
+        ).snapshot_id
+
+    with analytics_database.read_session() as session:
+        stored = AccountAnalyticsSnapshotRepository(session).require(snapshot_id)
+
+        assert stored.trade_metrics_available is True
+        assert stored.total_trades == 2
+        assert stored.profit_factor is None
+        assert stored.profit_factor_state == (
+            ProfitFactorState.INFINITE_NO_LOSSES
+        )
+        assert stored.has_infinite_profit_factor is True
+
+
+def test_a_mixed_account_snapshot_stores_a_finite_profit_factor(
+    analytics_database,
+    account,
+) -> None:
+    user_id, account_id = account
+    seed_lifecycle(analytics_database, user_id, account_id)
+
+    trades = [
+        AccountTradeRecord("t1", 200.0, datetime(2026, 1, 2)),
+        AccountTradeRecord("t2", -50.0, datetime(2026, 1, 3)),
+    ]
+
+    with analytics_database.session() as session:
+        analytics = AccountAnalyticsService(
+            session,
+            trade_source=trades,
+        ).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            starting_balance=10_000.0,
+            calculated_at_utc=FIXED_NOW,
+        )
+        snapshot_id = AccountAnalyticsSnapshotRepository(session).save_snapshot(
+            analytics
+        ).snapshot_id
+
+    with analytics_database.read_session() as session:
+        stored = AccountAnalyticsSnapshotRepository(session).require(snapshot_id)
+
+        assert float(stored.profit_factor) == pytest.approx(4.0)
+        assert stored.profit_factor_state == ProfitFactorState.FINITE
+
+
+def test_a_snapshot_without_a_trade_source_stays_unavailable(
+    analytics_database,
+    account,
+) -> None:
+    user_id, account_id = account
+
+    with analytics_database.session() as session:
+        analytics = AccountAnalyticsService(session).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            calculated_at_utc=FIXED_NOW,
+        )
+        snapshot_id = AccountAnalyticsSnapshotRepository(session).save_snapshot(
+            analytics
+        ).snapshot_id
+
+    with analytics_database.read_session() as session:
+        stored = AccountAnalyticsSnapshotRepository(session).require(snapshot_id)
+
+        assert stored.trade_metrics_available is False
+        assert stored.profit_factor is None
+        assert stored.profit_factor_state == ProfitFactorState.UNAVAILABLE
+        assert stored.has_infinite_profit_factor is False
+
+
+def test_profit_factor_state_procedure(analytics_database, account) -> None:
+    user_id, account_id = account
+    seed_lifecycle(analytics_database, user_id, account_id)
+
+    trades = [
+        AccountTradeRecord("t1", 120.0, datetime(2026, 1, 2)),
+    ]
+
+    with analytics_database.session() as session:
+        analytics = AccountAnalyticsService(
+            session,
+            trade_source=trades,
+        ).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            starting_balance=10_000.0,
+            calculated_at_utc=FIXED_NOW,
+        )
+        AccountAnalyticsSnapshotRepository(session).save_snapshot(analytics)
+
+    result = StoredProcedureService(analytics_database).call_read_only(
+        "sp_aqos_account_profit_factor_states",
+        parameters=(account_id,),
+    )
+
+    assert len(result.rows) == 1
+    assert result.rows[0]["profit_factor"] is None
+    assert result.rows[0]["profit_factor_state"] == "infinite_no_losses"
+
+
+def test_stored_payload_json_contains_no_non_json_numbers(
+    analytics_database,
+    account,
+) -> None:
+    """
+    The exact failure that made MySQL reject the insert.
+
+    Python renders infinity as the bare token ``Infinity``, which is not JSON.
+    The stored payload must be parseable by anything that reads the column.
+    """
+
+    user_id, account_id = account
+    seed_lifecycle(analytics_database, user_id, account_id)
+
+    trades = [
+        AccountTradeRecord("t1", 120.0, datetime(2026, 1, 2)),
+        AccountTradeRecord("t2", 80.0, datetime(2026, 1, 3)),
+    ]
+
+    with analytics_database.session() as session:
+        analytics = AccountAnalyticsService(
+            session,
+            trade_source=trades,
+        ).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            starting_balance=10_000.0,
+            calculated_at_utc=FIXED_NOW,
+        )
+        snapshot_id = AccountAnalyticsSnapshotRepository(session).save_snapshot(
+            analytics
+        ).snapshot_id
+
+    with analytics_database.read_session() as session:
+        raw = session.execute(
+            text(
+                "SELECT CAST(payload_json AS CHAR) FROM "
+                "account_analytics_snapshots WHERE snapshot_id = :snapshot_id"
+            ),
+            {"snapshot_id": snapshot_id},
+        ).scalar_one()
+
+    for token in ("Infinity", "-Infinity", "NaN"):
+        assert token not in raw
+
+    payload = json.loads(raw)
+
+    assert payload["trade_metrics"]["profit_factor"] is None
+    assert payload["trade_metrics"]["profit_factor_state"] == (
+        "infinite_no_losses"
+    )
+    assert payload["trade_metrics"]["has_infinite_profit_factor"] is True
+
+
+def test_a_wins_only_report_artifact_is_valid_json(
+    analytics_database,
+    account,
+) -> None:
+    """The report artifact a consumer would download must parse."""
+
+    user_id, account_id = account
+    seed_lifecycle(analytics_database, user_id, account_id)
+
+    trades = [
+        AccountTradeRecord("t1", 120.0, datetime(2026, 1, 2)),
+    ]
+
+    with analytics_database.read_session() as session:
+        analytics = AccountAnalyticsService(
+            session,
+            trade_source=trades,
+        ).build_account_analytics(
+            user_id=user_id,
+            account_id=account_id,
+            starting_balance=10_000.0,
+            calculated_at_utc=FIXED_NOW,
+        )
+        trading_account = TradingAccountRepository(session).require(account_id)
+
+        report = build_account_performance_report(
+            analytics=analytics,
+            account=trading_account,
+            report_type=ReportType.TRADE_PERFORMANCE,
+            generated_at_utc=FIXED_NOW,
+        )
+
+    rendered = render_report_json(report)
+
+    for token in ("Infinity", "-Infinity", "NaN"):
+        assert token not in rendered
+
+    restored = json.loads(rendered)
+
+    assert restored["trade_metrics"]["profit_factor"] is None
+    assert restored["trade_metrics"]["profit_factor_state"] == (
+        "infinite_no_losses"
+    )

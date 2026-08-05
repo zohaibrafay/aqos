@@ -65,13 +65,21 @@ def compute_checksum(content: str) -> str:
 
 def render_report_json(report: AccountPerformanceReport) -> str:
     """
-    Render a report as deterministic JSON.
+    Render a report as deterministic, strictly valid JSON.
 
     Keys are sorted so the same report always produces the same bytes and the
-    same checksum.
+    same checksum. ``allow_nan`` is off because Python would otherwise emit the
+    bare tokens ``Infinity`` and ``NaN``, which are not JSON: MySQL rejects them
+    outright and API consumers cannot parse them. Failing here is far better
+    than shipping an artifact nobody can read.
     """
 
-    return json.dumps(report.to_dict(), indent=2, sort_keys=True)
+    return json.dumps(
+        report.to_dict(),
+        indent=2,
+        sort_keys=True,
+        allow_nan=False,
+    )
 
 
 def render_report_summary_rows(
