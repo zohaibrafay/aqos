@@ -16,6 +16,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from aqos.database.config import parse_database_url
+from aqos.database.engine import AqosDatabase
 from aqos.http_api.app import create_aqos_api_app
 from aqos.http_api.config import API_V1_PREFIX, ApiConfig, ApiEnvironment
 from aqos.http_api.dependencies import get_session, get_write_session
@@ -41,9 +43,41 @@ def requires_mysql() -> str:
     return url
 
 
+def requires_reachable_mysql(url: str) -> None:
+    """
+    Skip explicitly when the server behind the URL cannot be reached.
+
+    Every other MySQL integration file pings before running. Without this a
+    stopped container turns into red failures rather than an honest "NOT
+    verified" skip, which quietly breaks the promise that a run without MySQL
+    says so plainly.
+    """
+
+    database = AqosDatabase(config=parse_database_url(url))
+
+    try:
+        reachable = database.ping()
+    except Exception:
+        reachable = False
+    finally:
+        database.dispose()
+
+    if not reachable:
+        pytest.skip(
+            f"{ENV_TEST_DB_URL} is set but the MySQL server is not reachable, "
+            "so the API database layer is NOT verified by this run. Start "
+            "MySQL and run it with:\n"
+            "  AQOS_TEST_DB_URL=mysql+pymysql://user:password@localhost:3306/"
+            "aqos_test pytest -m mysql"
+        )
+
+
 @pytest.fixture
 def database_url() -> str:
-    return requires_mysql()
+    url = requires_mysql()
+    requires_reachable_mysql(url)
+
+    return url
 
 
 @pytest.fixture

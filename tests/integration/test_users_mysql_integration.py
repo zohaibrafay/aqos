@@ -9,6 +9,7 @@ Run with::
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 
@@ -633,3 +634,161 @@ def test_rollback_leaves_no_partial_user(user_database) -> None:
         assert UserProfileRepository(session).find_by_email(
             "rollback@example.com"
         ) is None
+
+
+def test_a_rolled_back_failure_loses_the_lockout_bookkeeping(
+    user_database,
+) -> None:
+    """
+    The hazard a caller must not walk into.
+
+    ``authenticate`` stages the attempt counter; the caller owns the commit. A
+    caller that raises on a failed login and rolls back discards the count it
+    just incremented, so the threshold is never reached and brute-force
+    protection is silently absent. This pins that behaviour so the requirement
+    on callers is visible rather than folklore.
+    """
+
+    with user_database.session() as session:
+        user_id = create_user(session).user_id
+        UserCredentialRepository(
+            session,
+            password_iterations=FAST_ITERATIONS,
+        ).set_password(user_id, VALID_PASSWORD)
+
+    for _ in range(5):
+        with pytest.raises(RuntimeError, match="handler failed"):
+            with user_database.session() as session:
+                UserCredentialRepository(
+                    session,
+                    password_iterations=FAST_ITERATIONS,
+                    max_failed_attempts=3,
+                ).authenticate(user_id, "WrongPassword1")
+
+                # What a naive HTTP handler does: report the failure by raising.
+                raise RuntimeError("handler failed")
+
+    with user_database.read_session() as session:
+        credential = UserCredentialRepository(session).require(user_id)
+
+        assert credential.failed_attempt_count == 0
+        assert credential.locked_until_utc is None
+
+
+def test_a_committed_failure_keeps_the_lockout_bookkeeping(
+    user_database,
+) -> None:
+    """The same five attempts, committed, do reach the threshold."""
+
+    with user_database.session() as session:
+        user_id = create_user(session).user_id
+        UserCredentialRepository(
+            session,
+            password_iterations=FAST_ITERATIONS,
+        ).set_password(user_id, VALID_PASSWORD)
+
+    for _ in range(3):
+        with user_database.session() as session:
+            UserCredentialRepository(
+                session,
+                password_iterations=FAST_ITERATIONS,
+                max_failed_attempts=3,
+            ).authenticate(user_id, "WrongPassword1")
+
+    with user_database.read_session() as session:
+        credential = UserCredentialRepository(session).require(user_id)
+
+        assert credential.failed_attempt_count == 3
+        assert credential.locked_until_utc is not None
+
+
+def test_a_persisted_lockout_survives_a_new_session(user_database) -> None:
+    """
+    A lockout read back from MySQL still refuses the correct password.
+
+    The earlier lockout test works within one process; this proves the state
+    that matters is in the database, not in a live object.
+    """
+
+    with user_database.session() as session:
+        user_id = create_user(session).user_id
+        UserCredentialRepository(
+            session,
+            password_iterations=FAST_ITERATIONS,
+        ).set_password(user_id, VALID_PASSWORD)
+
+    for _ in range(3):
+        with user_database.session() as session:
+            UserCredentialRepository(
+                session,
+                password_iterations=FAST_ITERATIONS,
+                max_failed_attempts=3,
+            ).authenticate(user_id, "WrongPassword1")
+
+    with user_database.read_session() as session:
+        stored = session.execute(
+            text(
+                "SELECT locked_until_utc, failed_attempt_count "
+                "FROM user_credentials WHERE user_id = :user_id"
+            ),
+            {"user_id": user_id},
+        ).one()
+
+    assert stored[0] is not None
+    assert stored[1] == 3
+
+    with user_database.session() as session:
+        result = UserCredentialRepository(
+            session,
+            password_iterations=FAST_ITERATIONS,
+            max_failed_attempts=3,
+        ).authenticate(user_id, VALID_PASSWORD)
+
+    assert result.outcome == AuthenticationOutcome.LOCKED
+    assert result.authenticated is False
+
+
+def test_stored_credentials_never_expose_an_attackable_verifier(
+    user_database,
+) -> None:
+    """
+    A serialized credential must not be an offline cracking oracle.
+
+    The salt plus any part of the derived key is enough to confirm a guess:
+    derive a candidate with the same salt and compare. Neither may appear.
+    """
+
+    with user_database.session() as session:
+        user_id = create_user(session).user_id
+        UserCredentialRepository(
+            session,
+            password_iterations=FAST_ITERATIONS,
+        ).set_password(user_id, VALID_PASSWORD)
+
+    with user_database.read_session() as session:
+        credential = UserCredentialRepository(session).require(user_id)
+        parsed = credential.parsed_password_hash()
+        rendered = json.dumps(credential.to_dict())
+
+    assert parsed.salt_hex not in rendered
+    assert parsed.hash_hex not in rendered
+    assert parsed.hash_hex[:8] not in rendered
+    assert VALID_PASSWORD not in rendered
+    assert "salt" not in rendered.lower()
+    assert "preview" not in rendered.lower()
+
+
+def test_stored_sessions_never_expose_token_material(user_database) -> None:
+    with user_database.session() as session:
+        user_id = create_user(session).user_id
+        issued = UserSessionRepository(session).create_session(user_id=user_id)
+        token = issued.token
+        session_id = issued.session.session_id
+
+    with user_database.read_session() as session:
+        record = UserSessionRepository(session).require(session_id)
+        rendered = json.dumps(record.to_dict())
+
+    assert token not in rendered
+    assert record.token_hash not in rendered
+    assert "token_hash" not in rendered

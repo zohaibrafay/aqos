@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from aqos.users.passwords import (
@@ -171,11 +173,37 @@ def test_parse_password_hash_rejects_malformed_values() -> None:
         parse_password_hash(f"{PASSWORD_HASH_ALGORITHM}$many$aa$bb")
 
 
-def test_password_hash_dict_never_exposes_full_hash() -> None:
+def test_password_hash_dict_exposes_nothing_attackable() -> None:
+    """
+    The serialized verifier must not be an offline cracking oracle.
+
+    The salt plus any part of the derived key is enough to confirm a guess:
+    derive a candidate with the same salt and compare the prefix. So neither
+    the salt nor a preview of the key may appear — only the algorithm and the
+    work factor, which describe the scheme without helping to break it.
+    """
+
+    stored = hash_password(VALID_PASSWORD, iterations=FAST_ITERATIONS)
+    payload = stored.to_dict()
+
+    assert set(payload) == {"algorithm", "iterations"}
+    assert payload["algorithm"] == PASSWORD_HASH_ALGORITHM
+    assert payload["iterations"] == FAST_ITERATIONS
+
+    rendered = json.dumps(payload)
+
+    assert stored.salt_hex not in rendered
+    assert stored.hash_hex not in rendered
+    assert stored.hash_hex[:8] not in rendered
+    assert VALID_PASSWORD not in rendered
+
+
+def test_password_hash_dict_still_reports_the_work_factor() -> None:
+    """Operators need to see the iteration count to audit it over time."""
+
     payload = hash_password(VALID_PASSWORD, iterations=FAST_ITERATIONS).to_dict()
 
-    assert payload["hash_preview"].endswith("...")
-    assert "hash_hex" not in payload
+    assert payload["iterations"] == FAST_ITERATIONS
 
 
 def test_verify_password_rejects_bad_salt() -> None:

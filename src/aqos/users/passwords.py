@@ -61,13 +61,19 @@ class PasswordHash:
         return f"{self.algorithm}${self.iterations}${self.salt_hex}${self.hash_hex}"
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize without ever exposing the derived key."""
+        """
+        Describe the verifier without handing over the means to attack it.
+
+        Only the algorithm and the work factor are reported. The salt and any
+        part of the derived key are withheld: together they are an offline
+        oracle, because a guess can be derived with the same salt and compared
+        against even a short prefix of the real key. Reporting a truncated
+        preview is not meaningfully safer than reporting the whole thing.
+        """
 
         return {
             "algorithm": self.algorithm,
             "iterations": self.iterations,
-            "salt_hex": self.salt_hex,
-            "hash_preview": f"{self.hash_hex[:8]}...",
         }
 
 

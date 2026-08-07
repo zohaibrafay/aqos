@@ -297,6 +297,22 @@ class UserCredentialRepository(AqosRepository[UserCredential]):
         password: str,
         now_utc: datetime | None = None,
     ) -> AuthenticationResult:
+        """
+        Verify a password and record the attempt.
+
+        A failed attempt mutates state: the attempt counter always, and on the
+        attempt that reaches the threshold the lockout deadline too. Like every
+        AQOS repository this only stages the change — the caller owns the
+        transaction and has to commit it.
+
+        That matters more here than elsewhere. A caller that raises on a failed
+        login and rolls back its transaction discards the counter it just
+        incremented, so the count resets on every attempt and the lockout can
+        never engage. Brute-force protection is then silently absent while
+        appearing to work. Commit the failure bookkeeping before reporting the
+        failure.
+        """
+
         credential = self.get(user_id)
 
         if credential is None:
