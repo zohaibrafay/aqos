@@ -108,24 +108,242 @@ def test_paper_trading_imports_no_broker_or_network_library(
     )
 
 
-def test_no_real_execution_module_depends_on_paper_trading() -> None:
+#: Paper modules that only read persisted history.
+#:
+#: Importing one cannot cause a fill: they query rows the simulator already
+#: wrote. A read-only API needs these to show a user their own paper history.
+PAPER_READ_ONLY_MODULES = frozenset(
+    {
+        "aqos.paper_trading.contracts",
+        "aqos.paper_trading.history",
+        "aqos.paper_trading.models",
+        "aqos.paper_trading.repositories",
+        "aqos.paper_trading.sessions",
+        "aqos.paper_trading.session_service",
+    }
+)
+
+#: Paper modules that can actually execute something.
+#:
+#: These place orders, fill them, move balances and decide eligibility. Nothing
+#: outside the package may import them: that is the boundary which keeps a
+#: simulated fill from reaching a real execution route.
+PAPER_EXECUTION_MODULES = frozenset(
+    {
+        "aqos.paper_trading.eligibility",
+        "aqos.paper_trading.execution_service",
+        "aqos.paper_trading.memory_broker",
+        "aqos.paper_trading.simulator",
+        "aqos.paper_trading.validation",
+    }
+)
+
+#: Packages allowed to read persisted paper history.
+#:
+#: Only the read-only HTTP layer. Anything live, broker-facing or
+#: execution-facing stays out entirely, read-only or not.
+PAPER_READ_ONLY_CONSUMERS = ("aqos/http_api",)
+
+#: Packages that must never touch paper trading at all.
+EXECUTION_FACING_PACKAGES = (
+    "aqos/brokers",
+    "aqos/execution_policy",
+    "aqos/providers",
+    "aqos/news_providers",
+)
+
+
+def imported_modules(path: Path) -> set[str]:
     """
-    Paper trading stays a leaf.
+    Every module this file imports, by dotted name.
 
-    If a live or broker path imported it, a simulated fill could end up on a
-    real execution route by accident.
+    Parsed rather than grepped: a mention in a docstring or a comment is not a
+    dependency, and only a real import can create one.
     """
 
-    importers: list[str] = []
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    modules: set[str] = set()
 
-    for path in SRC_DIR.rglob("*.py"):
-        if PAPER_TRADING_DIR in path.parents:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modules.add(alias.name)
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+            modules.add(node.module)
+
+    return modules
+
+
+def paper_imports(path: Path) -> set[str]:
+    return {
+        module
+        for module in imported_modules(path)
+        if module == "aqos.paper_trading"
+        or module.startswith("aqos.paper_trading.")
+    }
+
+
+def source_modules_outside_paper_trading() -> tuple[Path, ...]:
+    return tuple(
+        path
+        for path in sorted(SRC_DIR.rglob("*.py"))
+        if PAPER_TRADING_DIR not in path.parents
+    )
+
+
+def test_the_module_split_covers_the_whole_package() -> None:
+    """
+    Every paper module is classified.
+
+    A new module that is neither read-only nor execution would otherwise fall
+    through the guard unnoticed.
+    """
+
+    classified = PAPER_READ_ONLY_MODULES | PAPER_EXECUTION_MODULES
+    actual = {
+        f"aqos.paper_trading.{path.stem}"
+        for path in paper_trading_modules()
+        if path.stem != "__init__"
+    }
+
+    assert actual == classified
+
+
+def test_the_two_module_sets_do_not_overlap() -> None:
+    assert not (PAPER_READ_ONLY_MODULES & PAPER_EXECUTION_MODULES)
+
+
+def test_no_module_outside_paper_trading_imports_execution_internals() -> None:
+    """
+    The boundary that matters: nothing outside may execute paper trades.
+
+    Importing the simulator, the broker or the execution service from elsewhere
+    is what could put a simulated fill on a real execution route.
+    """
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        forbidden = paper_imports(path) & PAPER_EXECUTION_MODULES
+
+        if forbidden:
+            offenders.append(f"{path.relative_to(SRC_DIR)} -> {sorted(forbidden)}")
+
+    assert offenders == []
+
+
+def test_the_package_root_counts_as_execution() -> None:
+    """
+    ``import aqos.paper_trading`` re-exports the execution surface.
+
+    Importing the package itself would hand a caller the simulator and the
+    execution service, so it is forbidden exactly like importing them directly.
+    """
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        if "aqos.paper_trading" in paper_imports(path):
+            offenders.append(str(path.relative_to(SRC_DIR)))
+
+    assert offenders == []
+
+
+def test_only_approved_consumers_read_paper_history() -> None:
+    """Read-only paper history is for the read-only API layer and nothing else."""
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        if not paper_imports(path) & PAPER_READ_ONLY_MODULES:
             continue
 
-        if "aqos.paper_trading" in path.read_text(encoding="utf-8"):
-            importers.append(str(path.relative_to(SRC_DIR)))
+        relative = path.relative_to(SRC_DIR).as_posix()
 
-    assert importers == []
+        if not any(
+            relative.startswith(f"{consumer.removeprefix('aqos/')}/")
+            for consumer in PAPER_READ_ONLY_CONSUMERS
+        ):
+            offenders.append(relative)
+
+    assert offenders == []
+
+
+def test_execution_facing_packages_import_nothing_from_paper_trading() -> None:
+    """
+    Broker and execution-policy code stays completely clear of the simulator.
+
+    Read-only or not: a live path has no business reading simulated history.
+    """
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        relative = path.relative_to(SRC_DIR).as_posix()
+
+        if not any(
+            relative.startswith(package.removeprefix("aqos/"))
+            for package in EXECUTION_FACING_PACKAGES
+        ):
+            continue
+
+        if paper_imports(path):
+            offenders.append(relative)
+
+    assert offenders == []
+
+
+def test_a_docstring_mention_is_not_a_dependency() -> None:
+    """
+    The guard parses imports, so prose about the boundary is not a violation.
+
+    The previous text search flagged any file that merely named the package,
+    including one documenting this very rule.
+    """
+
+    source = (
+        '"""A module that only talks about aqos.paper_trading."""\n'
+        "# aqos.paper_trading.simulator is mentioned here too\n"
+        "value = 'aqos.paper_trading.execution_service'\n"
+    )
+    tree = ast.parse(source)
+    modules: set[str] = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules.add(node.module)
+
+    assert modules == set()
+
+
+def test_a_forbidden_import_would_still_be_caught(tmp_path) -> None:
+    """The guard must actually fail on a real violation, not just pass."""
+
+    offender = tmp_path / "live_executor.py"
+    offender.write_text(
+        "from aqos.paper_trading.execution_service import "
+        "PaperExecutionService\n",
+        encoding="utf-8",
+    )
+
+    assert paper_imports(offender) & PAPER_EXECUTION_MODULES == {
+        "aqos.paper_trading.execution_service"
+    }
+
+
+def test_a_read_only_import_is_recognised_as_such(tmp_path) -> None:
+    reader = tmp_path / "reader.py"
+    reader.write_text(
+        "from aqos.paper_trading.history import PaperHistoryService\n",
+        encoding="utf-8",
+    )
+
+    imports = paper_imports(reader)
+
+    assert imports & PAPER_READ_ONLY_MODULES == {"aqos.paper_trading.history"}
+    assert not imports & PAPER_EXECUTION_MODULES
 
 
 def test_the_paper_only_rule_refuses_every_non_paper_account_type() -> None:

@@ -18,6 +18,7 @@ from aqos.http_api.config import (
     DEFAULT_API_NAME,
     DEFAULT_API_VERSION,
     DEFAULT_DEV_CORS_ORIGINS,
+    ENV_BACKTEST_REGISTRY,
     ENV_MODEL_PROMOTION_REGISTRY,
     ENV_PREDICTION_REGISTRY,
     PROTECTED_API_ENVIRONMENTS,
@@ -120,6 +121,16 @@ from aqos.http_api.routes_accounts import (
     collect_account_constraints,
 )
 
+from aqos.http_api.routes_paper import (
+    AQOS_HTTP_PAPER_ROUTES_VERSION,
+    build_paper_router,
+)
+
+from aqos.http_api.routes_backtests import (
+    AQOS_HTTP_BACKTEST_ROUTES_VERSION,
+    build_backtests_router,
+)
+
 from aqos.http_api.routes_models import (
     AQOS_HTTP_MODEL_ROUTES_VERSION,
     PromotionState,
@@ -150,11 +161,13 @@ __all__ = [
     "AQOS_API_ERRORS_VERSION",
     "AQOS_HTTP_ACCOUNT_ROUTES_VERSION",
     "AQOS_HTTP_APP_VERSION",
+    "AQOS_HTTP_BACKTEST_ROUTES_VERSION",
     "AQOS_HTTP_DEPENDENCIES_VERSION",
     "AQOS_HTTP_HEALTH_VERSION",
     "AQOS_HTTP_MIDDLEWARE_VERSION",
     "AQOS_HTTP_MODEL_ROUTES_VERSION",
     "AQOS_HTTP_PAGINATION_VERSION",
+    "AQOS_HTTP_PAPER_ROUTES_VERSION",
     "AQOS_HTTP_READ_SCHEMAS_VERSION",
     "AQOS_HTTP_RESPONSES_VERSION",
     "AQOS_HTTP_ROUTES_VERSION",
@@ -170,6 +183,7 @@ __all__ = [
     "DEFAULT_DEV_CORS_ORIGINS",
     "DEFAULT_PAGE_LIMIT",
     "DatabaseUnavailableApiError",
+    "ENV_BACKTEST_REGISTRY",
     "ENV_MODEL_PROMOTION_REGISTRY",
     "ENV_PREDICTION_REGISTRY",
     "GENERIC_INTERNAL_MESSAGE",
@@ -192,6 +206,7 @@ __all__ = [
     "build_account_summary",
     "build_accounts_router",
     "build_analytics_snapshot_summary",
+    "build_backtests_router",
     "build_database",
     "build_error_payload",
     "build_funded_rules",
@@ -200,6 +215,7 @@ __all__ = [
     "build_liveness_report",
     "build_models_router",
     "build_page",
+    "build_paper_router",
     "build_prediction_summary",
     "build_predictions_router",
     "build_promotion_summary",

@@ -173,6 +173,19 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/accounts/{{account_id}}/analytics/snapshots",
             f"{API_V1_PREFIX}/accounts/{{account_id}}/reports",
             f"{API_V1_PREFIX}/accounts/{{account_id}}/reports/{{report_id}}",
+            f"{API_V1_PREFIX}/paper/sessions",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/result",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/orders",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/fills",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/positions",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/trades",
+            f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/decisions",
+            f"{API_V1_PREFIX}/backtests",
+            f"{API_V1_PREFIX}/backtests/{{backtest_id}}",
+            f"{API_V1_PREFIX}/backtests/{{backtest_id}}/trades",
+            f"{API_V1_PREFIX}/backtests/{{backtest_id}}/orders",
+            f"{API_V1_PREFIX}/backtests/{{backtest_id}}/equity",
         }
 
     def test_no_mutation_routes_exist(self) -> None:

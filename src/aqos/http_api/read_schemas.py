@@ -315,6 +315,220 @@ def build_report_detail(record: Any) -> dict[str, Any]:
     return detail
 
 
+def build_paper_session_summary(record: Any) -> dict[str, Any]:
+    """
+    A paper session as the API describes it in a list.
+
+    ``profit_factor_state`` travels beside the number because infinity has no
+    JSON form: without it a wins-and-no-losses run is indistinguishable from
+    one that measured nothing.
+    """
+
+    return {
+        "session_id": record.session_id,
+        "user_id": record.user_id,
+        "account_id": record.account_id,
+        "session_name": record.session_name,
+        "session_type": record.session_type.value,
+        "status": record.status.value,
+        "is_terminal": record.is_terminal,
+        "started_at_utc": isoformat_or_none(record.started_at_utc),
+        "ended_at_utc": isoformat_or_none(record.ended_at_utc),
+        "total_trades": record.total_trades,
+        "net_pnl": as_number_or_none(record.net_pnl),
+        "profit_factor": as_number_or_none(record.profit_factor),
+        "profit_factor_state": record.profit_factor_state.value,
+    }
+
+
+def build_paper_session_detail(record: Any) -> dict[str, Any]:
+    """
+    One paper session with its identity and balances.
+
+    ``extra_metadata`` stays off the wire: free-form JSON written by internal
+    producers, with no vetted allow list.
+    """
+
+    detail = build_paper_session_summary(record)
+    detail.update(
+        {
+            "status_reason": record.status_reason,
+            "strategy_name": record.strategy_name,
+            "model_id": record.model_id,
+            "model_version": record.model_version,
+            "symbol": record.symbol,
+            "timeframe": record.timeframe,
+            "initial_balance": as_number_or_none(record.initial_balance),
+            "final_balance": as_number_or_none(record.final_balance),
+            "realized_pnl": record.realized_pnl,
+            "max_drawdown": as_number_or_none(record.max_drawdown),
+            "has_infinite_profit_factor": record.has_infinite_profit_factor,
+            "created_at_utc": isoformat_or_none(record.created_at_utc),
+            "updated_at_utc": isoformat_or_none(record.updated_at_utc),
+        }
+    )
+
+    return detail
+
+
+def build_paper_session_result(result: Any) -> dict[str, Any]:
+    """
+    A measured session result.
+
+    The contract already reports unknowns as ``None``; this hands them through
+    unchanged rather than substituting zeros the run did not earn.
+    """
+
+    payload = result.to_dict()
+    payload.pop("metadata", None)
+
+    return payload
+
+
+def build_paper_order(record: Any) -> dict[str, Any]:
+    """One persisted paper order, with its rejection reason when refused."""
+
+    return {
+        "order_id": record.order_id,
+        "session_id": record.session_id,
+        "account_id": record.account_id,
+        "signal_id": record.signal_id,
+        "symbol": record.symbol,
+        "action": record.action.value,
+        "order_type": record.order_type.value,
+        "status": record.status.value,
+        "quantity": as_number_or_none(record.quantity),
+        "filled_quantity": as_number_or_none(record.filled_quantity),
+        "average_fill_price": as_number_or_none(record.average_fill_price),
+        "requested_price": as_number_or_none(record.requested_price),
+        "stop_loss": as_number_or_none(record.stop_loss),
+        "take_profit": as_number_or_none(record.take_profit),
+        "rejection_reason": (
+            record.rejection_reason.value if record.rejection_reason else None
+        ),
+        "rejection_message": record.rejection_message,
+        "created_at_utc": isoformat_or_none(record.created_at_utc),
+        "updated_at_utc": isoformat_or_none(record.updated_at_utc),
+    }
+
+
+def build_paper_fill(record: Any) -> dict[str, Any]:
+    return {
+        "fill_id": record.fill_id,
+        "session_id": record.session_id,
+        "order_id": record.order_id,
+        "account_id": record.account_id,
+        "position_id": record.position_id,
+        "quantity": as_number_or_none(record.quantity),
+        "price": as_number_or_none(record.price),
+        "commission": as_number_or_none(record.commission),
+        "filled_at_utc": isoformat_or_none(record.filled_at_utc),
+    }
+
+
+def build_paper_position(record: Any) -> dict[str, Any]:
+    return {
+        "position_id": record.position_id,
+        "session_id": record.session_id,
+        "account_id": record.account_id,
+        "order_id": record.order_id,
+        "signal_id": record.signal_id,
+        "symbol": record.symbol,
+        "side": record.side.value,
+        "status": record.status.value,
+        "quantity": as_number_or_none(record.quantity),
+        "closed_quantity": as_number_or_none(record.closed_quantity),
+        "entry_price": as_number_or_none(record.entry_price),
+        "stop_loss": as_number_or_none(record.stop_loss),
+        "take_profit": as_number_or_none(record.take_profit),
+        "realized_pnl": as_number_or_none(record.realized_pnl),
+        "opened_at_utc": isoformat_or_none(record.opened_at_utc),
+        "closed_at_utc": isoformat_or_none(record.closed_at_utc),
+    }
+
+
+def build_paper_trade(record: Any) -> dict[str, Any]:
+    return {
+        "trade_id": record.trade_id,
+        "session_id": record.session_id,
+        "account_id": record.account_id,
+        "position_id": record.position_id,
+        "signal_id": record.signal_id,
+        "symbol": record.symbol,
+        "side": record.side.value,
+        "quantity": as_number_or_none(record.quantity),
+        "entry_price": as_number_or_none(record.entry_price),
+        "exit_price": as_number_or_none(record.exit_price),
+        "gross_pnl": as_number_or_none(record.gross_pnl),
+        "commission": as_number_or_none(record.commission),
+        "net_pnl": as_number_or_none(record.net_pnl),
+        "exit_reason": record.exit_reason.value,
+        "risk_amount": as_number_or_none(record.risk_amount),
+        "reward_amount": as_number_or_none(record.reward_amount),
+        "balance_after": as_number_or_none(record.balance_after),
+        "opened_at_utc": isoformat_or_none(record.opened_at_utc),
+        "closed_at_utc": isoformat_or_none(record.closed_at_utc),
+    }
+
+
+def build_paper_decision(record: Any) -> dict[str, Any]:
+    """
+    One recorded eligibility decision.
+
+    Refusals keep their structured reason code so a blocked attempt is
+    explainable without reading a server log.
+    """
+
+    return {
+        "decision_id": record.decision_id,
+        "session_id": record.session_id,
+        "account_id": record.account_id,
+        "signal_id": record.signal_id,
+        "order_id": record.order_id,
+        "symbol": record.symbol,
+        "is_allowed": bool(record.is_allowed),
+        "requested_execution_mode": record.requested_execution_mode.value,
+        "effective_execution_mode": record.effective_execution_mode.value,
+        "primary_reason_code": record.primary_reason_code,
+        "blocking_reason_count": record.blocking_reason_count,
+        "blocking_sources": list(record.blocking_sources_json or ()),
+        "reasons": [
+            {
+                "code": reason.get("code"),
+                "source": reason.get("source"),
+                "category": reason.get("category"),
+                "severity": reason.get("severity"),
+                "message": reason.get("message"),
+                "is_blocking": reason.get("is_blocking"),
+            }
+            for reason in (record.reasons_json or ())
+        ],
+        "decided_at_utc": isoformat_or_none(record.decided_at_utc),
+    }
+
+
+def build_backtest_summary(entry: Any) -> dict[str, Any]:
+    """
+    One registered backtest run.
+
+    Report, manifest and analytics paths are all withheld: they describe the
+    server's disk layout, which a client has no use for.
+    """
+
+    return {
+        "backtest_id": entry.run_id,
+        "created_at_utc": entry.created_at_utc,
+        "kind": entry.kind.value,
+        "strategy_name": entry.strategy_name,
+        "symbol": entry.symbol,
+        "timeframe": entry.timeframe,
+        "model_id": entry.model_identity.get("model_id"),
+        "model_version": entry.model_identity.get("model_version"),
+        "metrics": entry.metrics or {},
+        "tags": list(entry.tags),
+    }
+
+
 def build_prediction_summary(run: dict[str, Any]) -> dict[str, Any]:
     """
     One prediction run as the API describes it.
@@ -371,6 +585,15 @@ __all__ = [
     "build_funded_rules",
     "build_report_detail",
     "build_report_summary",
+    "build_backtest_summary",
+    "build_paper_decision",
+    "build_paper_fill",
+    "build_paper_order",
+    "build_paper_position",
+    "build_paper_session_detail",
+    "build_paper_session_result",
+    "build_paper_session_summary",
+    "build_paper_trade",
     "build_prediction_summary",
     "build_promotion_summary",
     "build_signal_detail",

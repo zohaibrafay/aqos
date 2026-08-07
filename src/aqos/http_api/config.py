@@ -30,6 +30,7 @@ ENV_API_DEBUG = "AQOS_API_DEBUG"
 ENV_DB_URL = "AQOS_DB_URL"
 ENV_PREDICTION_REGISTRY = "AQOS_API_PREDICTION_REGISTRY"
 ENV_MODEL_PROMOTION_REGISTRY = "AQOS_API_MODEL_PROMOTION_REGISTRY"
+ENV_BACKTEST_REGISTRY = "AQOS_API_BACKTEST_REGISTRY"
 
 TRUTHY_VALUES = ("1", "true", "yes", "on")
 FALSY_VALUES = ("0", "false", "no", "off")
@@ -148,6 +149,7 @@ class ApiConfig:
     #: is unavailable instead of inventing an empty result.
     prediction_registry_path: str | None = None
     model_promotion_registry_path: str | None = None
+    backtest_registry_path: str | None = None
     api_prefix: str = API_V1_PREFIX
     extra_metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
@@ -176,6 +178,12 @@ class ApiConfig:
         return bool(
             self.prediction_registry_path
             and self.prediction_registry_path.strip()
+        )
+
+    @property
+    def has_backtest_registry(self) -> bool:
+        return bool(
+            self.backtest_registry_path and self.backtest_registry_path.strip()
         )
 
     @property
@@ -230,6 +238,7 @@ class ApiConfig:
             # something about the filesystem.
             "has_prediction_registry": self.has_prediction_registry,
             "has_model_promotion_registry": self.has_model_promotion_registry,
+            "has_backtest_registry": self.has_backtest_registry,
             "metadata": self.extra_metadata,
         }
 
@@ -277,6 +286,7 @@ def load_api_config_from_env(
         model_promotion_registry_path=(
             source.get(ENV_MODEL_PROMOTION_REGISTRY) or None
         ),
+        backtest_registry_path=(source.get(ENV_BACKTEST_REGISTRY) or None),
     )
 
 
@@ -294,6 +304,7 @@ __all__ = [
     "ENV_API_ENV",
     "ENV_API_NAME",
     "ENV_API_VERSION",
+    "ENV_BACKTEST_REGISTRY",
     "ENV_DB_URL",
     "ENV_MODEL_PROMOTION_REGISTRY",
     "ENV_PREDICTION_REGISTRY",
