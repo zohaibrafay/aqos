@@ -13,6 +13,11 @@ from aqos.http_api.health import (
 )
 from aqos.http_api.middleware import read_request_id
 from aqos.http_api.responses import json_response
+from aqos.http_api.routes_models import (
+    build_models_router,
+    build_predictions_router,
+)
+from aqos.http_api.routes_signals import build_signals_router
 
 
 AQOS_HTTP_ROUTES_VERSION = "1.0"
@@ -79,6 +84,9 @@ def register_routes(app: FastAPI, config: ApiConfig) -> None:
 
     app.include_router(build_health_router())
     app.include_router(build_system_router(), prefix=config.api_prefix)
+    app.include_router(build_signals_router(), prefix=config.api_prefix)
+    app.include_router(build_predictions_router(), prefix=config.api_prefix)
+    app.include_router(build_models_router(), prefix=config.api_prefix)
 
 
 __all__ = [

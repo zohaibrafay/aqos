@@ -145,17 +145,36 @@ class TestVersioningAndRoutes:
 
         assert f"{API_V1_PREFIX}/system/info" in paths
 
-    def test_no_business_routes_are_registered_yet(self) -> None:
-        """Sprint 053 is a foundation; endpoints arrive with their sprints."""
+    def test_the_exposed_surface_is_exactly_this(self) -> None:
+        """
+        An allow list, so an unintended route fails rather than sneaks in.
 
-        paths = collect_route_paths(create_aqos_api_app(build_config()))
-        business = {
-            path
-            for path in paths
-            if path.startswith(API_V1_PREFIX) and "/system/" not in path
+        Endpoints arrive with their own sprints; adding one here is a deliberate
+        act that has to be written down.
+        """
+
+        assert collect_route_paths(create_aqos_api_app(build_config())) == {
+            "/health/live",
+            "/health/ready",
+            f"{API_V1_PREFIX}/system/info",
+            f"{API_V1_PREFIX}/signals",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/events",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/reasons",
+            f"{API_V1_PREFIX}/predictions",
+            f"{API_V1_PREFIX}/predictions/{{prediction_id}}",
+            f"{API_V1_PREFIX}/models/promotions",
+            f"{API_V1_PREFIX}/models/{{model_id}}/promotion-status",
         }
 
-        assert business == set()
+    def test_no_mutation_routes_exist(self) -> None:
+        """Sprint 054 is read-only: nothing may accept a write verb."""
+
+        app = create_aqos_api_app(build_config())
+        write_verbs = {"post", "put", "patch", "delete"}
+
+        for path, operations in app.openapi()["paths"].items():
+            assert not (write_verbs & set(operations)), path
 
     def test_the_prefix_can_be_moved(self) -> None:
         app = create_aqos_api_app(build_config(api_prefix="/api/v2"))

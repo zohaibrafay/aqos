@@ -28,6 +28,8 @@ ENV_API_VERSION = "AQOS_API_VERSION"
 ENV_API_CORS_ORIGINS = "AQOS_API_CORS_ORIGINS"
 ENV_API_DEBUG = "AQOS_API_DEBUG"
 ENV_DB_URL = "AQOS_DB_URL"
+ENV_PREDICTION_REGISTRY = "AQOS_API_PREDICTION_REGISTRY"
+ENV_MODEL_PROMOTION_REGISTRY = "AQOS_API_MODEL_PROMOTION_REGISTRY"
 
 TRUTHY_VALUES = ("1", "true", "yes", "on")
 FALSY_VALUES = ("0", "false", "no", "off")
@@ -139,6 +141,13 @@ class ApiConfig:
     debug: bool = False
     cors_origins: tuple[str, ...] = DEFAULT_DEV_CORS_ORIGINS
     database_url: str | None = None
+    #: Paths to the file-backed model registries.
+    #:
+    #: Predictions and promotions live in JSON registries on disk rather than in
+    #: MySQL. When a path is unset the matching endpoints report that the source
+    #: is unavailable instead of inventing an empty result.
+    prediction_registry_path: str | None = None
+    model_promotion_registry_path: str | None = None
     api_prefix: str = API_V1_PREFIX
     extra_metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
@@ -161,6 +170,20 @@ class ApiConfig:
     @property
     def has_database(self) -> bool:
         return bool(self.database_url and self.database_url.strip())
+
+    @property
+    def has_prediction_registry(self) -> bool:
+        return bool(
+            self.prediction_registry_path
+            and self.prediction_registry_path.strip()
+        )
+
+    @property
+    def has_model_promotion_registry(self) -> bool:
+        return bool(
+            self.model_promotion_registry_path
+            and self.model_promotion_registry_path.strip()
+        )
 
     @property
     def allows_any_origin(self) -> bool:
@@ -202,6 +225,11 @@ class ApiConfig:
             "api_prefix": self.api_prefix,
             "has_database": self.has_database,
             "database_url": mask_database_url(self.database_url),
+            # Only whether a registry is configured, never where it lives: a
+            # server-side path tells a client nothing useful and an attacker
+            # something about the filesystem.
+            "has_prediction_registry": self.has_prediction_registry,
+            "has_model_promotion_registry": self.has_model_promotion_registry,
             "metadata": self.extra_metadata,
         }
 
@@ -245,6 +273,10 @@ def load_api_config_from_env(
         debug=parse_bool(source.get(ENV_API_DEBUG), default=False),
         cors_origins=origins,
         database_url=(source.get(ENV_DB_URL) or None),
+        prediction_registry_path=(source.get(ENV_PREDICTION_REGISTRY) or None),
+        model_promotion_registry_path=(
+            source.get(ENV_MODEL_PROMOTION_REGISTRY) or None
+        ),
     )
 
 
@@ -263,6 +295,8 @@ __all__ = [
     "ENV_API_NAME",
     "ENV_API_VERSION",
     "ENV_DB_URL",
+    "ENV_MODEL_PROMOTION_REGISTRY",
+    "ENV_PREDICTION_REGISTRY",
     "PROTECTED_API_ENVIRONMENTS",
     "load_api_config_from_env",
     "mask_database_url",

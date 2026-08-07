@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import math
+from datetime import date, datetime, time
+from decimal import Decimal
+from enum import Enum
 from typing import Any
 
 from starlette.responses import JSONResponse
@@ -18,16 +21,26 @@ NON_FINITE_REPLACEMENT = None
 
 def replace_non_finite(value: Any) -> Any:
     """
-    Walk a payload and replace infinity and NaN with null.
+    Walk a payload and make every value safe to encode as JSON.
 
-    Python's ``json`` writes the bare tokens ``Infinity`` and ``NaN``, which are
-    not JSON: a browser or any strict parser rejects them outright. AQOS
-    contracts already pair such values with an explicit state field, so dropping
-    the number here loses no meaning.
+    Two problems are handled here. Python's ``json`` writes the bare tokens
+    ``Infinity`` and ``NaN``, which are not JSON and which strict parsers and
+    MySQL both reject; those become null, and AQOS contracts already pair such
+    values with an explicit state field so no meaning is lost.
+
+    The second is types the encoder simply cannot write. MySQL hands back
+    ``DECIMAL`` columns as :class:`~decimal.Decimal`, which raises rather than
+    serialising, so an endpoint returning a price would fail with a 500 that
+    looks like a server fault rather than a serialisation gap.
     """
 
     if isinstance(value, bool):
         return value
+
+    if isinstance(value, Decimal):
+        # A Decimal has no JSON form, and float is what JSON offers anyway.
+        # Routed back through this function so a non-finite one is still caught.
+        return replace_non_finite(float(value))
 
     if isinstance(value, float):
         if math.isnan(value) or math.isinf(value):
@@ -35,10 +48,16 @@ def replace_non_finite(value: Any) -> Any:
 
         return value
 
+    if isinstance(value, Enum):
+        return replace_non_finite(value.value)
+
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+
     if isinstance(value, dict):
         return {key: replace_non_finite(item) for key, item in value.items()}
 
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple, set, frozenset)):
         return [replace_non_finite(item) for item in value]
 
     return value
