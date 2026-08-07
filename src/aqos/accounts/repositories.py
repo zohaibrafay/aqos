@@ -121,12 +121,28 @@ class TradingAccountRepository(AqosRepository[TradingAccount]):
 
     def list_accounts(
         self,
-        user_id: str,
+        user_id: str | None = None,
         account_type: AccountType | None = None,
         status: AccountStatus | None = None,
         broker: BrokerKind | None = None,
+        execution_mode: ExecutionMode | None = None,
     ) -> tuple[TradingAccount, ...]:
-        statement = select(TradingAccount).where(TradingAccount.user_id == user_id)
+        """
+        Accounts matching the given filters.
+
+        ``user_id`` is optional so an operator view can span users; every
+        caller that means to scope to one user still passes it.
+        """
+
+        statement = select(TradingAccount)
+
+        if user_id is not None:
+            statement = statement.where(TradingAccount.user_id == user_id)
+
+        if execution_mode is not None:
+            statement = statement.where(
+                TradingAccount.execution_mode == execution_mode
+            )
 
         if account_type is not None:
             statement = statement.where(TradingAccount.account_type == account_type)

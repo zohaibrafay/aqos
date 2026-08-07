@@ -5,6 +5,9 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, TypeVar
 
+from aqos.account_analytics.models import AccountAnalyticsSnapshot
+from aqos.accounts.models import TradingAccount
+from aqos.funded_rules.models import FundedAccountRules
 from aqos.http_api.errors import ValidationApiError
 from aqos.signal_reasons.models import SignalReason
 from aqos.signals.models import SignalEvent, TradingSignal
@@ -149,6 +152,169 @@ def build_signal_reason(reason: SignalReason) -> dict[str, Any]:
     }
 
 
+def build_account_summary(account: TradingAccount) -> dict[str, Any]:
+    """
+    An account as the API describes it in a list.
+
+    Broker references are absent by design. ``broker_credential_ref`` points at
+    a stored secret, and ``broker_account_ref`` is an external identifier a read
+    API has no reason to hand out; neither is needed to render an account.
+    """
+
+    return {
+        "account_id": account.account_id,
+        "user_id": account.user_id,
+        "account_name": account.name,
+        "account_type": account.account_type.value,
+        "venue": account.broker.value,
+        "status": account.status.value,
+        "currency": account.currency,
+        "execution_mode": account.execution_mode.value,
+        "auto_trade_enabled": bool(account.auto_trade_enabled),
+        "is_default": bool(account.is_default),
+        "is_real_money": account.is_real_money,
+        "created_at_utc": isoformat_or_none(account.created_at_utc),
+    }
+
+
+def build_account_detail(account: TradingAccount) -> dict[str, Any]:
+    """
+    One account with its balances.
+
+    ``extra_metadata`` stays off the wire for the same reason as signals: it is
+    free-form JSON written by internal producers and has no vetted allow list.
+    """
+
+    detail = build_account_summary(account)
+    detail.update(
+        {
+            "initial_balance": as_number_or_none(account.initial_balance),
+            "current_balance": as_number_or_none(account.current_balance),
+            "equity": as_number_or_none(account.equity),
+            "leverage": account.leverage,
+            "is_tradable": account.is_tradable,
+            "updated_at_utc": isoformat_or_none(account.updated_at_utc),
+        }
+    )
+
+    return detail
+
+
+def build_funded_rules(rules: FundedAccountRules) -> dict[str, Any]:
+    """
+    Funded rule limits as the API describes them.
+
+    The values are the account's own copied limits, never a live template
+    lookup: Sprint 043 copies a template at assignment so a later template edit
+    cannot silently move an active account's goalposts.
+    """
+
+    return {
+        "rules_id": rules.rules_id,
+        "account_id": rules.account_id,
+        "status": rules.status.value if rules.status else None,
+        "is_blocking": rules.is_blocking,
+        "is_breached": rules.is_breached,
+        "breached_at_utc": isoformat_or_none(rules.breached_at_utc),
+        "breach_reason": rules.breach_reason,
+        "execution_ceiling": rules.execution_ceiling().value,
+        "max_daily_loss_fraction": as_number_or_none(
+            rules.max_daily_loss_fraction
+        ),
+        "max_total_drawdown_fraction": as_number_or_none(
+            rules.max_total_drawdown_fraction
+        ),
+        "profit_target_fraction": as_number_or_none(
+            rules.profit_target_fraction
+        ),
+        "max_risk_per_trade_fraction": as_number_or_none(
+            rules.max_risk_per_trade_fraction
+        ),
+        "drawdown_basis": rules.drawdown_basis.value,
+        "max_open_positions": rules.max_open_positions,
+        "max_daily_trades": rules.max_daily_trades,
+        "min_trading_days": rules.min_trading_days,
+        "weekend_holding_allowed": bool(rules.weekend_holding_allowed),
+        "news_restriction_enabled": bool(rules.news_restriction_enabled),
+        # Provenance only: which template the values were copied from, never a
+        # re-read of that template's current contents.
+        "copied_from_template_id": rules.template_id,
+        "created_at_utc": isoformat_or_none(rules.created_at_utc),
+        "updated_at_utc": isoformat_or_none(rules.updated_at_utc),
+    }
+
+
+def build_analytics_snapshot_summary(
+    snapshot: AccountAnalyticsSnapshot,
+) -> dict[str, Any]:
+    """
+    A stored analytics snapshot.
+
+    ``profit_factor_state`` travels with the number because infinity has no
+    JSON form: without it a wins-and-no-losses account is indistinguishable
+    from one that never traded.
+    """
+
+    return {
+        "snapshot_id": snapshot.snapshot_id,
+        "user_id": snapshot.user_id,
+        "account_id": snapshot.account_id,
+        "scope": snapshot.scope.value if snapshot.scope else None,
+        "period_start_utc": isoformat_or_none(snapshot.period_start_utc),
+        "period_end_utc": isoformat_or_none(snapshot.period_end_utc),
+        "calculated_at_utc": isoformat_or_none(snapshot.calculated_at_utc),
+        "signals_received": snapshot.signals_received,
+        "signals_executed": snapshot.signals_executed,
+        "signals_rejected": snapshot.signals_rejected,
+        "signals_missed": snapshot.signals_missed,
+        "execution_rate": as_number_or_none(snapshot.execution_rate),
+        "rejection_rate": as_number_or_none(snapshot.rejection_rate),
+        "trade_metrics_available": bool(snapshot.trade_metrics_available),
+        "total_trades": snapshot.total_trades,
+        "win_rate": as_number_or_none(snapshot.win_rate),
+        "net_pnl": as_number_or_none(snapshot.net_pnl),
+        "profit_factor": as_number_or_none(snapshot.profit_factor),
+        "profit_factor_state": snapshot.profit_factor_state.value,
+        "has_infinite_profit_factor": snapshot.has_infinite_profit_factor,
+        "max_drawdown": as_number_or_none(snapshot.max_drawdown),
+    }
+
+
+def build_report_summary(record: Any) -> dict[str, Any]:
+    """
+    A stored report.
+
+    ``artifact_path`` is a server-side file location and never leaves the
+    process. The checksum is withheld too: nothing can download the artifact
+    yet, so the digest has no consumer and exposing an unused value is all
+    downside.
+    """
+
+    return {
+        "report_id": record.report_id,
+        "user_id": record.user_id,
+        "account_id": record.account_id,
+        "account_type": record.account_type.value,
+        "report_type": record.report_type.value,
+        "analytics_snapshot_id": record.analytics_snapshot_id,
+        "period_start_utc": isoformat_or_none(record.period_start_utc),
+        "period_end_utc": isoformat_or_none(record.period_end_utc),
+        "generated_at_utc": isoformat_or_none(record.generated_at_utc),
+        "trade_metrics_available": bool(record.trade_metrics_available),
+        "artifact_format": record.artifact_format.value,
+        "has_artifact": record.artifact_path is not None,
+    }
+
+
+def build_report_detail(record: Any) -> dict[str, Any]:
+    """The report plus its already JSON-safe stored payload."""
+
+    detail = build_report_summary(record)
+    detail["payload"] = record.payload_json or {}
+
+    return detail
+
+
 def build_prediction_summary(run: dict[str, Any]) -> dict[str, Any]:
     """
     One prediction run as the API describes it.
@@ -199,6 +365,12 @@ def build_promotion_summary(entry: Any) -> dict[str, Any]:
 __all__ = [
     "AQOS_HTTP_READ_SCHEMAS_VERSION",
     "as_number_or_none",
+    "build_account_detail",
+    "build_account_summary",
+    "build_analytics_snapshot_summary",
+    "build_funded_rules",
+    "build_report_detail",
+    "build_report_summary",
     "build_prediction_summary",
     "build_promotion_summary",
     "build_signal_detail",

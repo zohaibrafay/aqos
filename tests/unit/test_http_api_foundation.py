@@ -165,6 +165,14 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/predictions/{{prediction_id}}",
             f"{API_V1_PREFIX}/models/promotions",
             f"{API_V1_PREFIX}/models/{{model_id}}/promotion-status",
+            f"{API_V1_PREFIX}/accounts",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/execution-constraints",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/funded-rules",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/analytics",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/analytics/snapshots",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/reports",
+            f"{API_V1_PREFIX}/accounts/{{account_id}}/reports/{{report_id}}",
         }
 
     def test_no_mutation_routes_exist(self) -> None:
