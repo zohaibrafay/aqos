@@ -14,6 +14,7 @@ from aqos.http_api.health import (
 from aqos.http_api.middleware import read_request_id
 from aqos.http_api.responses import json_response
 from aqos.http_api.routes_accounts import build_accounts_router
+from aqos.http_api.routes_auth import build_auth_router
 from aqos.http_api.routes_backtests import build_backtests_router
 from aqos.http_api.routes_paper import build_paper_router
 from aqos.http_api.routes_models import (
@@ -87,6 +88,7 @@ def register_routes(app: FastAPI, config: ApiConfig) -> None:
 
     app.include_router(build_health_router())
     app.include_router(build_system_router(), prefix=config.api_prefix)
+    app.include_router(build_auth_router(), prefix=config.api_prefix)
     app.include_router(build_signals_router(), prefix=config.api_prefix)
     app.include_router(build_accounts_router(), prefix=config.api_prefix)
     app.include_router(build_paper_router(), prefix=config.api_prefix)

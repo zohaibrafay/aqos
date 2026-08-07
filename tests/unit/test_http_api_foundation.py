@@ -186,16 +186,45 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/backtests/{{backtest_id}}/trades",
             f"{API_V1_PREFIX}/backtests/{{backtest_id}}/orders",
             f"{API_V1_PREFIX}/backtests/{{backtest_id}}/equity",
+            f"{API_V1_PREFIX}/auth/login",
+            f"{API_V1_PREFIX}/auth/logout",
+            f"{API_V1_PREFIX}/auth/logout-all",
+            f"{API_V1_PREFIX}/auth/me",
+            f"{API_V1_PREFIX}/auth/sessions",
+            f"{API_V1_PREFIX}/auth/sessions/{{session_id}}/revoke",
         }
 
-    def test_no_mutation_routes_exist(self) -> None:
-        """Sprint 054 is read-only: nothing may accept a write verb."""
+    def test_only_auth_accepts_a_write_verb(self) -> None:
+        """
+        The business surface stays read-only.
+
+        Sprint 057 adds POST for authentication only — logging in, logging out
+        and revoking a session. Nothing that reads trading data may mutate, so
+        any new write verb outside ``/auth`` has to be a deliberate decision
+        recorded here.
+        """
 
         app = create_aqos_api_app(build_config())
         write_verbs = {"post", "put", "patch", "delete"}
+        offenders = [
+            path
+            for path, operations in app.openapi()["paths"].items()
+            if (write_verbs & set(operations))
+            and f"{API_V1_PREFIX}/auth" not in path
+        ]
+
+        assert offenders == []
+
+    def test_no_business_endpoint_mutates(self) -> None:
+        """Signals, accounts, paper and backtests are read-only throughout."""
+
+        app = create_aqos_api_app(build_config())
 
         for path, operations in app.openapi()["paths"].items():
-            assert not (write_verbs & set(operations)), path
+            if f"{API_V1_PREFIX}/auth" in path:
+                continue
+
+            assert set(operations) == {"get"}, path
 
     def test_the_prefix_can_be_moved(self) -> None:
         app = create_aqos_api_app(build_config(api_prefix="/api/v2"))
