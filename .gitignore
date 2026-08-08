@@ -27,3 +27,10 @@ logs/
 *.log
 # Local Claude Code settings
 .claude/
+
+# Frontend build and dependency artifacts
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/*.tsbuildinfo
+apps/web/.env.local
