@@ -120,6 +120,19 @@ from aqos.paper_trading.repositories import (
     PaperTradeRepository,
 )
 
+from aqos.paper_trading.commands import (
+    AQOS_PAPER_COMMANDS_VERSION,
+    COMMANDED_EXECUTION_MODE,
+    PAPER_SESSION_COMMANDS,
+    REASON_REQUIRED_SESSION_COMMANDS,
+    PaperCommandError,
+    PaperCommandService,
+    PaperMarketQuote,
+    PaperOrderCommand,
+    PaperOrderOutcome,
+    PaperSessionCommand,
+)
+
 from aqos.paper_trading.session_service import (
     AQOS_PAPER_SESSION_SERVICE_VERSION,
     DEFAULT_TOP_REJECTION_LIMIT,
@@ -149,6 +162,7 @@ from aqos.paper_trading.execution_service import (
 )
 
 __all__ = [
+    "AQOS_PAPER_COMMANDS_VERSION",
     "AQOS_PAPER_ELIGIBILITY_VERSION",
     "AQOS_PAPER_EXECUTION_SERVICE_VERSION",
     "AQOS_PAPER_HISTORY_VERSION",
@@ -160,6 +174,7 @@ __all__ = [
     "AQOS_PAPER_SIMULATOR_VERSION",
     "AQOS_PAPER_TRADING_VERSION",
     "AQOS_PAPER_VALIDATION_VERSION",
+    "COMMANDED_EXECUTION_MODE",
     "CREATABLE_PAPER_SESSION_STATUSES",
     "DEFAULT_TOP_REJECTION_LIMIT",
     "DailyPnlPoint",
@@ -176,6 +191,7 @@ __all__ = [
     "OpenRisk",
     "PAPER_ORDER_TRANSITIONS",
     "PAPER_POSITION_TRANSITIONS",
+    "PAPER_SESSION_COMMANDS",
     "PAPER_SESSION_TRANSITIONS",
     "PAPER_TRADING_PROMOTION_STAGE",
     "PRICE_REQUIRED_ORDER_TYPES",
@@ -186,6 +202,8 @@ __all__ = [
     "PaperBalance",
     "PaperBroker",
     "PaperCloseOutcome",
+    "PaperCommandError",
+    "PaperCommandService",
     "PaperEligibilityContext",
     "PaperEligibilityReason",
     "PaperEligibilitySource",
@@ -201,7 +219,10 @@ __all__ = [
     "PaperFillRepository",
     "PaperHistoryService",
     "PaperMarketBar",
+    "PaperMarketQuote",
     "PaperOrder",
+    "PaperOrderCommand",
+    "PaperOrderOutcome",
     "PaperOrderRecord",
     "PaperOrderRepository",
     "PaperOrderStatus",
@@ -212,6 +233,7 @@ __all__ = [
     "PaperPositionStatus",
     "PaperProfitFactorState",
     "PaperRejectionReason",
+    "PaperSessionCommand",
     "PaperSessionRecord",
     "PaperSessionRepository",
     "PaperSessionResult",
@@ -228,6 +250,7 @@ __all__ = [
     "PaperTradingError",
     "PaperValidationResult",
     "PositionExitDecision",
+    "REASON_REQUIRED_SESSION_COMMANDS",
     "REJECTION_REASON_BY_CODE",
     "REQUIRED_PAPER_EXECUTION_MODES",
     "STRATEGY_DRIVEN_SESSION_TYPES",

@@ -89,6 +89,7 @@ def test_the_package_has_modules_to_check() -> None:
         "repositories.py",
         "simulator.py",
         "validation.py",
+        "commands.py",
     }
 
 
@@ -138,11 +139,26 @@ PAPER_EXECUTION_MODULES = frozenset(
     }
 )
 
+#: The one module outside callers may use to cause paper activity.
+#:
+#: Sprint 060 opened paper mutation over HTTP. Rather than letting the API
+#: import the execution service — which would let a transport layer choose its
+#: own safety rails — it imports this, which takes plain values and always runs
+#: the same gate. Widening this set is how the boundary would be lost, so it
+#: stays exactly one module.
+PAPER_COMMAND_MODULES = frozenset({"aqos.paper_trading.commands"})
+
 #: Packages allowed to read persisted paper history.
 #:
 #: Only the read-only HTTP layer. Anything live, broker-facing or
 #: execution-facing stays out entirely, read-only or not.
 PAPER_READ_ONLY_CONSUMERS = ("aqos/http_api",)
+
+#: Packages allowed to issue paper commands.
+#:
+#: The same HTTP layer, and nothing else. A live or broker-facing package that
+#: could issue a paper command could book simulated activity from a real path.
+PAPER_COMMAND_CONSUMERS = ("aqos/http_api",)
 
 #: Packages that must never touch paper trading at all.
 EXECUTION_FACING_PACKAGES = (
@@ -199,7 +215,9 @@ def test_the_module_split_covers_the_whole_package() -> None:
     through the guard unnoticed.
     """
 
-    classified = PAPER_READ_ONLY_MODULES | PAPER_EXECUTION_MODULES
+    classified = (
+        PAPER_READ_ONLY_MODULES | PAPER_EXECUTION_MODULES | PAPER_COMMAND_MODULES
+    )
     actual = {
         f"aqos.paper_trading.{path.stem}"
         for path in paper_trading_modules()
@@ -209,8 +227,36 @@ def test_the_module_split_covers_the_whole_package() -> None:
     assert actual == classified
 
 
-def test_the_two_module_sets_do_not_overlap() -> None:
+def test_the_module_sets_do_not_overlap() -> None:
     assert not (PAPER_READ_ONLY_MODULES & PAPER_EXECUTION_MODULES)
+    assert not (PAPER_READ_ONLY_MODULES & PAPER_COMMAND_MODULES)
+    assert not (PAPER_EXECUTION_MODULES & PAPER_COMMAND_MODULES)
+
+
+def test_the_command_boundary_is_exactly_one_module() -> None:
+    """
+    One door in, not a corridor of them.
+
+    Every module added here is another place a caller could reach past the
+    gate, so growing this set has to be a deliberate, visible act.
+    """
+
+    assert PAPER_COMMAND_MODULES == {"aqos.paper_trading.commands"}
+
+
+def test_the_command_boundary_owns_the_execution_internals() -> None:
+    """
+    The boundary is only a boundary if it is the one importing the internals.
+
+    If ``commands`` delegated to something outside the package, or reached the
+    execution service indirectly, callers would be relying on a door that does
+    not lead anywhere.
+    """
+
+    commands = PAPER_TRADING_DIR / "commands.py"
+
+    assert commands.exists()
+    assert "aqos.paper_trading.execution_service" in imported_modules(commands)
 
 
 def test_no_module_outside_paper_trading_imports_execution_internals() -> None:
@@ -267,6 +313,110 @@ def test_only_approved_consumers_read_paper_history() -> None:
             offenders.append(relative)
 
     assert offenders == []
+
+
+def test_only_approved_consumers_issue_paper_commands() -> None:
+    """The command boundary is for the HTTP layer and nothing else."""
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        if not paper_imports(path) & PAPER_COMMAND_MODULES:
+            continue
+
+        relative = path.relative_to(SRC_DIR).as_posix()
+
+        if not any(
+            relative.startswith(f"{consumer.removeprefix('aqos/')}/")
+            for consumer in PAPER_COMMAND_CONSUMERS
+        ):
+            offenders.append(relative)
+
+    assert offenders == []
+
+
+def test_the_http_layer_reaches_paper_trading_only_through_approved_modules() -> None:
+    """
+    The API may read history and issue commands. Nothing else.
+
+    Stated from the API's side as well as from paper trading's, because this is
+    the rule that keeps a transport layer from assembling its own execution
+    path out of the internals.
+    """
+
+    allowed = PAPER_READ_ONLY_MODULES | PAPER_COMMAND_MODULES
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        relative = path.relative_to(SRC_DIR).as_posix()
+
+        if not relative.startswith("http_api/"):
+            continue
+
+        forbidden = paper_imports(path) - allowed
+
+        if forbidden:
+            offenders.append(f"{relative} -> {sorted(forbidden)}")
+
+    assert offenders == []
+
+
+def test_the_http_layer_imports_no_execution_internal() -> None:
+    """
+    Said separately and bluntly, because this is the one that matters.
+
+    The simulator, the broker, the execution service, the eligibility gate and
+    the validation rules are all unreachable from the API.
+    """
+
+    offenders: list[str] = []
+
+    for path in source_modules_outside_paper_trading():
+        relative = path.relative_to(SRC_DIR).as_posix()
+
+        if not relative.startswith("http_api/"):
+            continue
+
+        forbidden = paper_imports(path) & PAPER_EXECUTION_MODULES
+
+        if forbidden:
+            offenders.append(f"{relative} -> {sorted(forbidden)}")
+
+    assert offenders == []
+
+
+def test_an_api_module_reaching_the_execution_service_would_be_caught(
+    tmp_path,
+) -> None:
+    """The guard fails on a real violation rather than only passing."""
+
+    offender = tmp_path / "routes_sneaky.py"
+    offender.write_text(
+        "from aqos.paper_trading.execution_service import "
+        "PaperExecutionService\n"
+        "from aqos.paper_trading.simulator import PaperMarketBar\n",
+        encoding="utf-8",
+    )
+
+    forbidden = paper_imports(offender) & PAPER_EXECUTION_MODULES
+
+    assert forbidden == {
+        "aqos.paper_trading.execution_service",
+        "aqos.paper_trading.simulator",
+    }
+
+
+def test_a_command_import_is_recognised_as_approved(tmp_path) -> None:
+    caller = tmp_path / "routes_paper_actions.py"
+    caller.write_text(
+        "from aqos.paper_trading.commands import PaperCommandService\n",
+        encoding="utf-8",
+    )
+
+    imports = paper_imports(caller)
+
+    assert imports & PAPER_COMMAND_MODULES == {"aqos.paper_trading.commands"}
+    assert not imports & PAPER_EXECUTION_MODULES
 
 
 def test_execution_facing_packages_import_nothing_from_paper_trading() -> None:

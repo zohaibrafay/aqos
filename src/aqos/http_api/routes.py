@@ -19,6 +19,7 @@ from aqos.http_api.routes_accounts import build_accounts_router
 from aqos.http_api.routes_auth import build_auth_router
 from aqos.http_api.routes_backtests import build_backtests_router
 from aqos.http_api.routes_paper import build_paper_router
+from aqos.http_api.routes_paper_actions import build_paper_actions_router
 from aqos.http_api.routes_models import (
     build_models_router,
     build_predictions_router,
@@ -108,6 +109,10 @@ def register_routes(app: FastAPI, config: ApiConfig) -> None:
     )
     app.include_router(build_accounts_router(), prefix=config.api_prefix)
     app.include_router(build_paper_router(), prefix=config.api_prefix)
+    app.include_router(
+        build_paper_actions_router(),
+        prefix=config.api_prefix,
+    )
     app.include_router(build_backtests_router(), prefix=config.api_prefix)
     app.include_router(build_predictions_router(), prefix=config.api_prefix)
     app.include_router(build_models_router(), prefix=config.api_prefix)
