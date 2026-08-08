@@ -202,7 +202,13 @@ describe("no secret is referenced", () => {
   it("hardcodes no production API URL", () => {
     // The origin comes from configuration. A literal one would ship the wrong
     // target in every build that forgot to override it.
-    const allowed = new Set(["config/env.test.ts", "api/client.test.ts"]);
+    // The action tests assert that a URL is refused as a dataset name, so
+    // they necessarily contain one.
+    const allowed = new Set([
+      "config/env.test.ts",
+      "api/client.test.ts",
+      "test/paper-actions.test.tsx",
+    ]);
     const found = SOURCES.filter(
       ({ path, text }) =>
         !allowed.has(path) && /https?:\/\/(?!localhost|127\.0\.0\.1)[a-z0-9.-]+/i.test(text),
@@ -250,35 +256,76 @@ describe("only signal lifecycle actions exist in the UI", () => {
    * order, no paper session control, no account mutation.
    */
   const ALLOWED_ACTION_PATHS = [
+    // Signal lifecycle, Sprint 059.
     "/approve",
     "/reject",
     "/miss",
     "/expire",
     "/cancel",
     "/mark-pending-approval",
-  ];
-
-  /** Paths that would mean this app can move money or reach a venue. */
-  const FORBIDDEN_ACTION_PATHS = [
-    "/execute",
-    "/orders",
-    "/positions/",
+    // Paper session lifecycle, Sprint 060. Simulated activity only.
     "/start",
     "/pause",
     "/resume",
     "/complete",
     "/fail",
-    "/close",
   ];
 
-  it.each(FORBIDDEN_ACTION_PATHS)("never calls %s", (forbidden) => {
-    // Matched as a quoted path segment, not as a word. The action panel's
-    // prose explains that these controls reach no broker, and "execution"
-    // appearing in that sentence is the boundary being documented rather than
-    // crossed.
-    const found = APPLICATION_SOURCES.filter(
-      ({ text }) =>
-        text.includes(`"${forbidden}`) || text.includes(`${forbidden}"`),
+  /**
+   * Prefixes a write may target.
+   *
+   * Stated positively rather than as a deny-list. A deny-list has to guess
+   * what a future venue integration would be called; this cannot be satisfied
+   * by anything except the four areas that were actually approved.
+   */
+  const ALLOWED_WRITE_PREFIXES = ["/auth/", "/signals/", "/paper/", "/backtests"];
+
+  it("targets only approved prefixes with a write", () => {
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+    const lines = resources.split("\n");
+
+    const targets = lines
+      .map((line, index) =>
+        /client\.post</.test(line)
+          // Wide enough to cover a multi-line inline return type before
+          // the path argument is reached.
+          ? lines.slice(index, index + 12).join(" ")
+          : null,
+      )
+      .filter((block): block is string => block !== null);
+
+    expect(targets.length).toBeGreaterThan(0);
+
+    for (const block of targets) {
+      // The signal actions build their path through `actionPath`, so the
+      // literal prefix is in the helper rather than at the call site. The
+      // helper is checked on its own below.
+      const viaHelper = block.includes("actionPath(");
+
+      expect(
+        viaHelper ||
+          ALLOWED_WRITE_PREFIXES.some((prefix) => block.includes(prefix)),
+      ).toBe(true);
+    }
+  });
+
+  it("builds helper paths under an approved prefix too", () => {
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+    const start = resources.indexOf("function actionPath(");
+
+    expect(start).toBeGreaterThan(-1);
+
+    // The few lines after the signature are the whole helper.
+    const body = resources.slice(start, start + 240);
+
+    expect(body).toContain("/signals/");
+  });
+
+  it("reaches no broker or venue endpoint", () => {
+    const found = APPLICATION_SOURCES.filter(({ text }) =>
+      /["`][^"`]*\/(execute|broker|mt5|binance)\b/.test(text),
     ).map(({ path }) => path);
 
     expect(found).toEqual([]);
@@ -294,12 +341,13 @@ describe("only signal lifecycle actions exist in the UI", () => {
   });
 
   it("declares exactly the approved write calls", () => {
-    // Two for authentication, six for signal lifecycle. A ninth would be a
-    // capability nobody approved.
+    // Two for authentication, six for signal lifecycle, five for simulated
+    // paper activity and one for a historical backtest run. A fifteenth would
+    // be a capability nobody approved.
     const resources = SOURCES.find(({ path }) => path === "api/resources.ts");
     const posts = resources?.text.match(/client\.post</g) ?? [];
 
-    expect(posts.length).toBe(8);
+    expect(posts.length).toBe(14);
   });
 
   it("targets only auth and signal endpoints with those writes", () => {
@@ -335,12 +383,32 @@ describe("only signal lifecycle actions exist in the UI", () => {
     }
   });
 
-  it("renders no order or session control", () => {
-    // Scanned over application source only: a test that asserts the absence
-    // of a "Place order" button has to name it, and flagging that would be
-    // flagging the guard working.
+  it("every order and position path is a paper path", () => {
+    // Sprint 068 opened simulated order and position controls. The rule that
+    // matters is not that they exist but that none of them can address
+    // anything outside the simulator.
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+    const lines = resources
+      .split("\n")
+      .filter((line) => /\/(orders|positions)/.test(line))
+      // Backtest orders are rows from a stored historical report, not orders
+      // this app can place.
+      .filter((line) => !line.includes("/backtests/"));
+
+    expect(lines.length).toBeGreaterThan(0);
+
+    for (const line of lines) {
+      expect(line).toContain("/paper/");
+    }
+  });
+
+  it("uses no wording that offers a real execution", () => {
+    // Phrased as an offer, because the modules here legitimately say in prose
+    // that they place *no* real order — flagging that sentence would be
+    // flagging the disclaimer.
     const found = APPLICATION_SOURCES.filter(({ text }) =>
-      /(Place order|Submit order|Start session|Run backtest|Close position|Execute signal)/i.test(
+      /(Execute signal|Place live order|Send to broker|Place real order|Trade live)/i.test(
         text,
       ),
     ).map(({ path }) => path);

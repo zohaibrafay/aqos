@@ -405,6 +405,198 @@ export const paper = {
   },
 };
 
+/**
+ * A simulated market bar an order prices against.
+ *
+ * Paper trading replays a market rather than subscribing to one, so the bar
+ * comes from the caller. The server validates it as a real bar before anything
+ * prices against it; the form checks the same rules first so an impossible
+ * market is refused before a round trip.
+ */
+export interface PaperMarketBarInput {
+  readonly symbol: string;
+  readonly timestamp_utc: string;
+  readonly open: number;
+  readonly high: number;
+  readonly low: number;
+  readonly close: number;
+  readonly volume?: number;
+}
+
+export interface PaperSessionCreateInput {
+  readonly account_id: string;
+  readonly session_name: string;
+  readonly session_type: string;
+  readonly strategy_name?: string;
+  readonly model_id?: string;
+  readonly model_version?: string;
+  readonly symbol?: string;
+  readonly timeframe?: string;
+}
+
+export interface PaperOrderInput {
+  readonly symbol: string;
+  readonly action: string;
+  readonly order_type: string;
+  readonly quantity: number;
+  readonly market: PaperMarketBarInput;
+  readonly requested_price?: number;
+  readonly stop_loss?: number;
+  readonly take_profit?: number;
+  readonly signal_id?: string;
+}
+
+export interface PaperOrderOutcome {
+  readonly accepted: boolean;
+  readonly decision: PaperDecision;
+  readonly order: PaperOrder | null;
+  readonly fills: readonly PaperFill[];
+  readonly position: PaperPosition | null;
+  readonly trade: PaperTrade | null;
+  readonly rejection_reason: string | null;
+  readonly rejection_message: string | null;
+}
+
+export interface PaperSessionTransition {
+  readonly command: string;
+  readonly from_status: string | null;
+  readonly to_status: string;
+  readonly reason: string | null;
+}
+
+export interface PaperSessionActionResult {
+  readonly session: PaperSessionDetail;
+  readonly transition: PaperSessionTransition;
+}
+
+/**
+ * The paper session commands this app may issue.
+ *
+ * An allow list. Every value is a Sprint 060 paper endpoint; none of them
+ * reaches a broker, and there is no entry that could.
+ */
+export const PAPER_SESSION_ACTIONS = {
+  start: "start",
+  pause: "pause",
+  resume: "resume",
+  complete: "complete",
+  cancel: "cancel",
+  fail: "fail",
+} as const;
+
+export type PaperSessionActionName =
+  (typeof PAPER_SESSION_ACTIONS)[keyof typeof PAPER_SESSION_ACTIONS];
+
+/** Commands the server refuses without a reason. */
+export const PAPER_REASON_REQUIRED: readonly PaperSessionActionName[] = [
+  "cancel",
+  "fail",
+];
+
+/**
+ * Simulated paper activity.
+ *
+ * Every path below is under `/paper`. Nothing here places a real order, and
+ * `initial_balance` is absent from session creation on purpose: the balance
+ * comes from the account, and letting a client state one would let a run start
+ * from a figure the account never had.
+ */
+export const paperActions = {
+  createSession(client: AqosApiClient, input: PaperSessionCreateInput) {
+    return client.post<{ session: PaperSessionDetail }>(
+      `${API_PREFIX}/paper/sessions`,
+      input,
+    );
+  },
+
+  command(
+    client: AqosApiClient,
+    sessionId: string,
+    action: PaperSessionActionName,
+    reason?: string,
+  ) {
+    return client.post<PaperSessionActionResult>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/${action}`,
+      reason ? { reason } : {},
+    );
+  },
+
+  /**
+   * Submit one simulated order.
+   *
+   * A refusal comes back as a normal response with `accepted: false` and a
+   * recorded decision, not as an error: the attempt happened and was audited.
+   */
+  submitOrder(client: AqosApiClient, sessionId: string, input: PaperOrderInput) {
+    return client.post<PaperOrderOutcome>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/orders`,
+      input,
+    );
+  },
+
+  cancelOrder(client: AqosApiClient, sessionId: string, orderId: string) {
+    return client.post<{ order: PaperOrder }>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/orders/${orderId}/cancel`,
+    );
+  },
+
+  closePosition(
+    client: AqosApiClient,
+    sessionId: string,
+    positionId: string,
+    exitPrice: number,
+  ) {
+    return client.post<{
+      position: PaperPosition;
+      trade: PaperTrade;
+      exit_reason: string;
+      exit_price: number;
+    }>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/positions/${positionId}/close`,
+      { exit_price: exitPrice },
+    );
+  },
+};
+
+export interface BacktestRunInput {
+  readonly strategy_name: string;
+  readonly dataset: string;
+  readonly symbol: string;
+  readonly timeframe: string;
+  readonly period_start?: string;
+  readonly period_end?: string;
+  readonly initial_balance?: number;
+  readonly model_id?: string;
+  readonly model_version?: string;
+}
+
+/**
+ * What one run produced.
+ *
+ * `status` is only ever `completed` or `failed`: the run happens inside the
+ * request, so there is no queue and claiming one would describe machinery that
+ * does not exist.
+ */
+export interface BacktestRunResult {
+  readonly backtest: {
+    readonly backtest_id: string;
+    readonly status: string;
+    readonly strategy_name: string;
+    readonly dataset: string;
+    readonly symbol: string | null;
+    readonly timeframe: string | null;
+    readonly metrics: Record<string, number>;
+    readonly profit_factor_state: string | null;
+    readonly failure_reason: string | null;
+  };
+}
+
+export const backtestActions = {
+  run(client: AqosApiClient, input: BacktestRunInput) {
+    return client.post<BacktestRunResult>(`${API_PREFIX}/backtests`, input);
+  },
+};
+
 export type BacktestListQuery = ListQuery & {
   readonly kind?: string;
   readonly symbol?: string;

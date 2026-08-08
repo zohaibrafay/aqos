@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
 import { paper } from "@/api/resources";
 import { PaperSessionListTable, SimulatedNotice } from "@/components/paper";
+import { PaperSessionCreateForm } from "@/components/paper/forms";
 import {
   EMPTY_PAPER_FILTERS,
   PaperSessionFilters,
@@ -21,14 +23,14 @@ const PAGE_SIZE = 25;
 /**
  * Simulated trading runs.
  *
- * Read-only in this sprint. Creating a session, starting one or submitting an
- * order are decisions with their own confirmation rules, and they arrive with
- * their own sprint rather than half-built here.
+ * A run can be opened from here. Everything it will then do is simulated,
+ * and the list below reflects only what the server confirmed.
  */
 export default function PaperPage() {
   const [draft, setDraft] = useState<PaperFilterValues>(EMPTY_PAPER_FILTERS);
   const [applied, setApplied] = useState<PaperFilterValues>(EMPTY_PAPER_FILTERS);
   const [offset, setOffset] = useState(0);
+  const router = useRouter();
 
   const query = useMemo(
     () => buildPaperQuery(applied, PAGE_SIZE, offset),
@@ -49,6 +51,12 @@ export default function PaperPage() {
         description="Simulated runs, their results and every decision behind them."
       />
       <SimulatedNotice />
+
+      <div className="mb-6">
+        <PaperSessionCreateForm
+          onCreated={(sessionId) => router.push(`/paper/sessions/${sessionId}`)}
+        />
+      </div>
 
       <PaperSessionFilters
         values={draft}

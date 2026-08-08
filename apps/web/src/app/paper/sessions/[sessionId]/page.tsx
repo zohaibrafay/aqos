@@ -15,6 +15,10 @@ import {
   PaperTradesTable,
   SimulatedNotice,
 } from "@/components/paper";
+import {
+  PaperOrderSubmitForm,
+  PaperSessionActionsPanel,
+} from "@/components/paper/actions";
 import { LoadingState } from "@/components/states";
 import { ApiErrorPanel } from "@/components/states/ApiErrorPanel";
 import { Card, PageHeader } from "@/components/ui";
@@ -26,6 +30,9 @@ import { getApiClient } from "@/lib/api";
  *
  * Each panel fetches and fails on its own, so an unavailable result does not
  * hide the orders and a missing decision log does not blank the trades.
+ *
+ * The controls below act on the simulator only. Nothing on screen moves until
+ * a refetch returns the server's own view of what happened.
  */
 export default function PaperSessionDetailPage() {
   const params = useParams<{ sessionId: string }>();
@@ -61,6 +68,17 @@ export default function PaperSessionDetailPage() {
     [sessionId],
   );
 
+  /** Everything a simulated action can change, refetched together. */
+  const refreshAll = () => {
+    session.reload();
+    result.reload();
+    orders.reload();
+    fills.reload();
+    positions.reload();
+    trades.reload();
+    decisions.reload();
+  };
+
   return (
     <>
       <PageHeader title="Paper session" description={sessionId} />
@@ -77,7 +95,19 @@ export default function PaperSessionDetailPage() {
             <ApiErrorPanel error={session.error} onRetry={session.reload} />
           ) : null}
           {!session.loading && !session.error && session.data ? (
-            <PaperSessionDetailCard session={session.data} />
+            <>
+              <PaperSessionDetailCard session={session.data} />
+              <PaperSessionActionsPanel
+                session={session.data}
+                onCompleted={refreshAll}
+              />
+              {session.data.status === "running" ? (
+                <PaperOrderSubmitForm
+                  sessionId={sessionId}
+                  onCompleted={refreshAll}
+                />
+              ) : null}
+            </>
           ) : null}
 
           <Card title="Result">

@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
 import { backtests } from "@/api/resources";
 import { BacktestListTable, NotReadyPanel } from "@/components/backtests";
+import { BacktestRunForm } from "@/components/paper/forms";
 import { EmptyState, LoadingState } from "@/components/states";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { useApiResource } from "@/hooks/useApiResource";
@@ -14,12 +16,12 @@ const PAGE_SIZE = 25;
 /**
  * Historical backtest runs.
  *
- * Read-only in this sprint. Starting a run needs a dataset picker and bounded
- * inputs done carefully, which is a sprint of its own rather than a form
- * bolted onto a list.
+ * A run can be started from here. It replays stored history while the request
+ * is open, so the result is real by the time the page navigates to it.
  */
 export default function BacktestsPage() {
   const [offset, setOffset] = useState(0);
+  const router = useRouter();
 
   const query = useMemo(() => ({ limit: PAGE_SIZE, offset }), [offset]);
   const load = useCallback(() => backtests.list(getApiClient(), query), [query]);
@@ -36,6 +38,12 @@ export default function BacktestsPage() {
         title="Backtests"
         description="Historical strategy runs and what each one measured."
       />
+
+      <div className="mb-6">
+        <BacktestRunForm
+          onStarted={(backtestId) => router.push(`/backtests/${backtestId}`)}
+        />
+      </div>
 
       <Card>
         {loading ? <LoadingState label="Loading backtests…" /> : null}

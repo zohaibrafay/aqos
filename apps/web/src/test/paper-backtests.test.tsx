@@ -25,6 +25,7 @@ const fetchMock = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => "/paper",
   useParams: () => ({ sessionId: "papersession_1", backtestId: "backtest_1" }),
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("@/lib/api", async () => {
@@ -481,12 +482,14 @@ describe("the backtests page", () => {
     expect(screen.queryByTestId("not-ready")).toBeNull();
   });
 
-  it("offers no run control in this sprint", async () => {
+  it("offers a run form but never a path or URL field", async () => {
+    // Sprint 068 added the run form. What must stay absent is any way to name
+    // a location: the dataset is a configured name and nothing else.
     render(<BacktestsPage />);
     await screen.findByText("csv_signal_strategy");
 
-    expect(screen.queryByRole("button", { name: /run backtest|new run/i })).toBeNull();
-    expect(screen.queryByLabelText(/dataset|path|url/i)).toBeNull();
+    expect(screen.getByLabelText("Dataset")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/file path|directory|url/i)).toBeNull();
   });
 });
 
