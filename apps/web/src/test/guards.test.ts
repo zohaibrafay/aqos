@@ -225,13 +225,26 @@ describe("every request goes through the API client", () => {
   });
 });
 
-describe("no trading action exists in the UI", () => {
-  const ACTION_PATHS = [
+describe("only signal lifecycle actions exist in the UI", () => {
+  /**
+   * The six Sprint 059 signal lifecycle endpoints, and nothing else.
+   *
+   * These record what a signal *means*. Sprint 065 opened them deliberately.
+   * Everything below proves the door did not open any wider: no execution, no
+   * order, no paper session control, no account mutation.
+   */
+  const ALLOWED_ACTION_PATHS = [
     "/approve",
     "/reject",
     "/miss",
     "/expire",
+    "/cancel",
     "/mark-pending-approval",
+  ];
+
+  /** Paths that would mean this app can move money or reach a venue. */
+  const FORBIDDEN_ACTION_PATHS = [
+    "/execute",
     "/orders",
     "/positions/",
     "/start",
@@ -239,34 +252,71 @@ describe("no trading action exists in the UI", () => {
     "/resume",
     "/complete",
     "/fail",
+    "/close",
   ];
 
-  it.each(ACTION_PATHS)("never calls %s", (path) => {
-    // The endpoints exist on the server; Sprint 063 deliberately leaves them
-    // unreachable from this app.
-    const found = offenders((text) => text.includes(`"${path}`) || text.includes(`${path}"`));
-
-    expect(found).toEqual([]);
-  });
-
-  it("posts to nothing except login and logout", () => {
-    const allowed = new Set(["api/client.ts", "api/client.test.ts", "api/resources.ts"]);
-    const found = SOURCES.filter(
-      ({ path, text }) => !allowed.has(path) && /\.post\s*\(/.test(text),
+  it.each(FORBIDDEN_ACTION_PATHS)("never calls %s", (forbidden) => {
+    // Matched as a quoted path segment, not as a word. The action panel's
+    // prose explains that these controls reach no broker, and "execution"
+    // appearing in that sentence is the boundary being documented rather than
+    // crossed.
+    const found = APPLICATION_SOURCES.filter(
+      ({ text }) =>
+        text.includes(`"${forbidden}`) || text.includes(`${forbidden}"`),
     ).map(({ path }) => path);
 
     expect(found).toEqual([]);
   });
 
-  it("declares only read wrappers plus authentication", () => {
+  it("posts only from the API client and its resource wrappers", () => {
+    const allowed = new Set(["api/client.ts", "api/resources.ts"]);
+    const found = APPLICATION_SOURCES.filter(
+      ({ path, text }) => !allowed.has(path) && /client\.post\s*</.test(text),
+    ).map(({ path }) => path);
+
+    expect(found).toEqual([]);
+  });
+
+  it("declares exactly the approved write calls", () => {
+    // Two for authentication, six for signal lifecycle. A ninth would be a
+    // capability nobody approved.
     const resources = SOURCES.find(({ path }) => path === "api/resources.ts");
-
-    expect(resources).toBeDefined();
-
     const posts = resources?.text.match(/client\.post</g) ?? [];
 
-    // login and logout, and nothing else.
-    expect(posts.length).toBe(2);
+    expect(posts.length).toBe(8);
+  });
+
+  it("targets only auth and signal endpoints with those writes", () => {
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+    const targets = [...resources.matchAll(/API_PREFIX\}(\/[a-z-]+)/g)].map(
+      (match) => match[1],
+    );
+
+    for (const target of targets) {
+      expect([
+        "/auth",
+        "/signals",
+        "/system",
+        "/predictions",
+        "/models",
+        "/accounts",
+        "/paper",
+        "/backtests",
+      ]).toContain(target);
+    }
+  });
+
+  it("builds action paths only from the allow list", () => {
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+    const declared = [...resources.matchAll(/^\s+(\w+): "([a-z-]+)",$/gm)].map(
+      (match) => `/${match[2]}`,
+    );
+
+    for (const path of declared) {
+      expect(ALLOWED_ACTION_PATHS).toContain(path);
+    }
   });
 
   it("renders no order or session control", () => {
@@ -274,7 +324,7 @@ describe("no trading action exists in the UI", () => {
     // of a "Place order" button has to name it, and flagging that would be
     // flagging the guard working.
     const found = APPLICATION_SOURCES.filter(({ text }) =>
-      /(Place order|Submit order|Start session|Run backtest|Approve signal|Reject signal|Close position)/i.test(
+      /(Place order|Submit order|Start session|Run backtest|Close position|Execute signal)/i.test(
         text,
       ),
     ).map(({ path }) => path);
@@ -286,6 +336,25 @@ describe("no trading action exists in the UI", () => {
     expect(
       offenders((text) => /(createAccount|updateAccount|deleteAccount)/.test(text)),
     ).toEqual([]);
+  });
+
+  it("sends no metadata, category or severity on any action", () => {
+    // The taxonomy decides both on the server. A client that could send them
+    // could file a breached rule as informational.
+    const resources =
+      SOURCES.find(({ path }) => path === "api/resources.ts")?.text ?? "";
+
+    // Matched as object properties, not as words: the module documents in
+    // prose that it sends no metadata, and a guard that failed on its own
+    // rationale would teach people to delete the rationale.
+    for (const forbidden of [
+      /\bmetadata\s*:/,
+      /\bextra_metadata\s*:/,
+      /\bseverity\s*:/,
+      /\breason_category\s*:/,
+    ]) {
+      expect(forbidden.test(resources)).toBe(false);
+    }
   });
 });
 

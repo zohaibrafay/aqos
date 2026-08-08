@@ -14,15 +14,16 @@ import {
   SignalEventsTimeline,
   SignalReasonsPanel,
 } from "@/components/signals";
+import { SignalActionPanel } from "@/components/signals/SignalActionPanel";
 import { useApiResource } from "@/hooks/useApiResource";
 import { getApiClient } from "@/lib/api";
 
 /**
  * One signal, its audit trail and its structured reasons.
  *
- * Read-only. Lifecycle actions exist on the server but are deliberately not
- * wired here; they arrive with their own sprint so the confirmation flow and
- * the reason-code rules get built properly rather than bolted on.
+ * Lifecycle actions record a decision about the signal and nothing more. A
+ * successful one refetches all three panels, so what is on screen is always
+ * the server's own view rather than an assumption about what it did.
  */
 export default function SignalDetailPage() {
   const params = useParams<{ signalId: string }>();
@@ -70,7 +71,19 @@ export default function SignalDetailPage() {
             <ApiErrorPanel error={signal.error} onRetry={signal.reload} />
           ) : null}
           {!signal.loading && !signal.error && signal.data ? (
-            <SignalDetailCard signal={signal.data} />
+            <>
+              <SignalDetailCard signal={signal.data} />
+              <SignalActionPanel
+                signal={signal.data}
+                onCompleted={() => {
+                  // All three, because a rejection writes an event and a
+                  // reason, and the detail carries the new status.
+                  signal.reload();
+                  events.reload();
+                  reasons.reload();
+                }}
+              />
+            </>
           ) : null}
 
           {modelId ? (

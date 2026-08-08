@@ -109,6 +109,105 @@ export const signals = {
   },
 };
 
+/**
+ * The lifecycle result the server returns for every action.
+ *
+ * The signal comes back as the server now holds it, which is what lets the UI
+ * refuse to change a status until the transition actually happened.
+ */
+export interface SignalActionResult {
+  readonly signal: SignalDetail;
+  readonly event: SignalEvent | null;
+  readonly reason: SignalReason | null;
+}
+
+/**
+ * The lifecycle actions this app may take.
+ *
+ * An allow list, not a template. Every value here is a Sprint 059 signal
+ * lifecycle endpoint; none of them places an order, touches an account or
+ * reaches a broker, and `executed` and `failed` have no entry because those
+ * describe what a broker did.
+ */
+export const SIGNAL_ACTIONS = {
+  approve: "approve",
+  reject: "reject",
+  miss: "miss",
+  expire: "expire",
+  cancel: "cancel",
+  markPendingApproval: "mark-pending-approval",
+} as const;
+
+export type SignalActionName =
+  (typeof SIGNAL_ACTIONS)[keyof typeof SIGNAL_ACTIONS];
+
+function actionPath(signalId: string, action: SignalActionName): string {
+  return `${API_PREFIX}/signals/${signalId}/${action}`;
+}
+
+export const signalActions = {
+  approve(client: AqosApiClient, signalId: string, note?: string) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.approve),
+      note ? { note } : {},
+    );
+  },
+
+  markPendingApproval(client: AqosApiClient, signalId: string, note?: string) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.markPendingApproval),
+      note ? { note } : {},
+    );
+  },
+
+  /**
+   * Refuse a signal, with a taxonomy code.
+   *
+   * Only the code and an optional human message are sent. The category and the
+   * severity are resolved from the code on the server, and no metadata is sent
+   * at all — the API refuses unknown fields, and there is nothing here a client
+   * should be deciding.
+   */
+  reject(
+    client: AqosApiClient,
+    signalId: string,
+    reasonCode: string,
+    message?: string,
+  ) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.reject),
+      message ? { reason_code: reasonCode, message } : { reason_code: reasonCode },
+    );
+  },
+
+  miss(
+    client: AqosApiClient,
+    signalId: string,
+    reasonCode: string,
+    message?: string,
+  ) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.miss),
+      message ? { reason_code: reasonCode, message } : { reason_code: reasonCode },
+    );
+  },
+
+  /** Retire a signal whose expiry has passed. The server checks that it has. */
+  expire(client: AqosApiClient, signalId: string) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.expire),
+    );
+  },
+
+  /** Withdraw a signal deliberately. The note is required by the API. */
+  cancel(client: AqosApiClient, signalId: string, note: string) {
+    return client.post<SignalActionResult>(
+      actionPath(signalId, SIGNAL_ACTIONS.cancel),
+      { note },
+    );
+  },
+};
+
 export const predictions = {
   list(client: AqosApiClient, query: ListQuery = {}) {
     return client.get<Page<PredictionSummary>>(`${API_PREFIX}/predictions`, {

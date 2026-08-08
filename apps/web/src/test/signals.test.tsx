@@ -318,7 +318,10 @@ describe("the signal detail page", () => {
     expect(screen.getAllByTestId("request-id")[0]).toHaveTextContent("req_fail_123");
   });
 
-  it("never offers a trading action", async () => {
+  it("never offers execution or an order", async () => {
+    // Lifecycle decisions are offered as of Sprint 065. Placing an order,
+    // executing a signal or reaching a broker are not, and never will be from
+    // this screen.
     render(<SignalDetailPage />);
     await screen.findByText("Breakout");
 
@@ -326,9 +329,8 @@ describe("the signal detail page", () => {
       /execute/i,
       /place order/i,
       /submit order/i,
-      /approve/i,
-      /reject/i,
-      /cancel/i,
+      /close position/i,
+      /start session/i,
     ]) {
       expect(screen.queryByRole("button", { name: label })).toBeNull();
     }
