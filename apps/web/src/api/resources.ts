@@ -14,7 +14,13 @@ import type {
   LoginResult,
   Page,
   PaperSessionSummary,
+  PredictionSummary,
+  PromotionStatus,
+  PromotionSummary,
   SessionUser,
+  SignalDetail,
+  SignalEvent,
+  SignalReason,
   SignalSummary,
   SystemInfo,
 } from "@/api/types";
@@ -65,9 +71,75 @@ export const system = {
   },
 };
 
+/**
+ * What a caller may narrow a signal list by.
+ *
+ * `user_id` is deliberately absent. The backend already scopes every list to
+ * the caller, and offering the field would only let somebody discover that
+ * asking for another user is forbidden.
+ */
+export type SignalListQuery = ListQuery & {
+  readonly symbol?: string;
+  readonly status?: string;
+  readonly source?: string;
+  readonly action?: string;
+  readonly generated_from?: string;
+  readonly generated_to?: string;
+};
+
 export const signals = {
-  list(client: AqosApiClient, query: ListQuery = {}) {
+  list(client: AqosApiClient, query: SignalListQuery = {}) {
     return client.get<Page<SignalSummary>>(`${API_PREFIX}/signals`, { query });
+  },
+
+  get(client: AqosApiClient, signalId: string) {
+    return client.get<SignalDetail>(`${API_PREFIX}/signals/${signalId}`);
+  },
+
+  events(client: AqosApiClient, signalId: string) {
+    return client.get<Page<SignalEvent>>(
+      `${API_PREFIX}/signals/${signalId}/events`,
+    );
+  },
+
+  reasons(client: AqosApiClient, signalId: string) {
+    return client.get<Page<SignalReason>>(
+      `${API_PREFIX}/signals/${signalId}/reasons`,
+    );
+  },
+};
+
+export const predictions = {
+  list(client: AqosApiClient, query: ListQuery = {}) {
+    return client.get<Page<PredictionSummary>>(`${API_PREFIX}/predictions`, {
+      query,
+    });
+  },
+
+  get(client: AqosApiClient, predictionId: string) {
+    return client.get<PredictionSummary>(
+      `${API_PREFIX}/predictions/${predictionId}`,
+    );
+  },
+};
+
+export const models = {
+  listPromotions(client: AqosApiClient, query: ListQuery = {}) {
+    return client.get<Page<PromotionSummary>>(`${API_PREFIX}/models/promotions`, {
+      query,
+    });
+  },
+
+  /**
+   * Whether one model is promoted.
+   *
+   * The answer may be `unknown`, which the UI must show as unknown rather than
+   * resolving it to either of the other two.
+   */
+  promotionStatus(client: AqosApiClient, modelId: string) {
+    return client.get<PromotionStatus>(
+      `${API_PREFIX}/models/${modelId}/promotion-status`,
+    );
   },
 };
 

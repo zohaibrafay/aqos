@@ -8,7 +8,6 @@ import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
 import NotFoundPage from "@/app/not-found";
 import PaperPage from "@/app/paper/page";
-import SignalsPage from "@/app/signals/page";
 import { AppShell, NAV_ITEMS } from "@/components/layout/AppShell";
 import { ErrorMessage } from "@/components/states";
 import { AqosApiError } from "@/api/errors";
@@ -50,7 +49,6 @@ describe("every route placeholder renders", () => {
   const pages = [
     { name: "Home", Component: HomePage, heading: "AQOS" },
     { name: "Dashboard", Component: DashboardPage, heading: "Dashboard" },
-    { name: "Signals", Component: SignalsPage, heading: "Signals" },
     { name: "Accounts", Component: AccountsPage, heading: "Accounts" },
     { name: "Paper", Component: PaperPage, heading: "Paper" },
     { name: "Backtests", Component: BacktestsPage, heading: "Backtests" },
@@ -64,9 +62,10 @@ describe("every route placeholder renders", () => {
   });
 
   it("says a placeholder is unbuilt rather than showing an empty list", () => {
-    // "Nothing here yet" and "you have no signals" are different claims, and
-    // only one of them is true.
-    render(<SignalsPage />);
+    // "Nothing here yet" and "you have no accounts" are different claims, and
+    // only one of them is true. Signals is a real screen as of Sprint 064, so
+    // the assertion moved to one that is still a placeholder.
+    render(<AccountsPage />);
 
     expect(screen.getByText("Not built yet")).toBeInTheDocument();
   });

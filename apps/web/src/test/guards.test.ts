@@ -51,6 +51,11 @@ const GUARD_FILE = "test/guards.test.ts";
 
 const SOURCES = readSources().filter(({ path }) => path !== GUARD_FILE);
 
+/** Application source: everything that actually ships to a browser. */
+const APPLICATION_SOURCES = SOURCES.filter(
+  ({ path }) => !path.includes(".test.") && !path.startsWith("test/"),
+);
+
 function offenders(predicate: (text: string) => boolean): string[] {
   return SOURCES.filter(({ text }) => predicate(text)).map(({ path }) => path);
 }
@@ -265,13 +270,16 @@ describe("no trading action exists in the UI", () => {
   });
 
   it("renders no order or session control", () => {
-    expect(
-      offenders((text) =>
-        /(Place order|Submit order|Start session|Run backtest|Approve signal|Reject signal|Close position)/i.test(
-          text,
-        ),
+    // Scanned over application source only: a test that asserts the absence
+    // of a "Place order" button has to name it, and flagging that would be
+    // flagging the guard working.
+    const found = APPLICATION_SOURCES.filter(({ text }) =>
+      /(Place order|Submit order|Start session|Run backtest|Approve signal|Reject signal|Close position)/i.test(
+        text,
       ),
-    ).toEqual([]);
+    ).map(({ path }) => path);
+
+    expect(found).toEqual([]);
   });
 
   it("mutates no account", () => {
