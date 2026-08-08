@@ -17,6 +17,7 @@ class ApiErrorCode(str, Enum):
     UNAUTHORIZED = "unauthorized"
     FORBIDDEN = "forbidden"
     RATE_LIMITED = "rate_limited"
+    PAYLOAD_TOO_LARGE = "payload_too_large"
     DATABASE_UNAVAILABLE = "database_unavailable"
     NOT_READY = "not_ready"
     INTERNAL_ERROR = "internal_error"
@@ -29,6 +30,7 @@ HTTP_STATUS_BY_ERROR_CODE: dict[ApiErrorCode, int] = {
     ApiErrorCode.UNAUTHORIZED: 401,
     ApiErrorCode.FORBIDDEN: 403,
     ApiErrorCode.RATE_LIMITED: 429,
+    ApiErrorCode.PAYLOAD_TOO_LARGE: 413,
     ApiErrorCode.DATABASE_UNAVAILABLE: 503,
     ApiErrorCode.NOT_READY: 503,
     ApiErrorCode.INTERNAL_ERROR: 500,

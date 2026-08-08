@@ -20,6 +20,12 @@ from aqos.http_api.errors import (
     build_error_payload,
     build_internal_error_payload,
 )
+from aqos.http_api.hardening import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+    resolve_rate_limiting,
+)
 from aqos.http_api.middleware import RequestIdMiddleware, read_request_id
 from aqos.http_api.responses import json_response
 from aqos.http_api.routes import register_routes
@@ -133,6 +139,27 @@ def jsonable_validation_errors(exc: RequestValidationError) -> list[dict]:
 
 
 def register_middleware(app: FastAPI, config: ApiConfig) -> None:
+    """
+    Attach the middleware stack, outermost last.
+
+    Starlette runs the most recently added middleware first, so this list is
+    written in reverse of the order things actually happen. Reading it from the
+    bottom up: the request id is established outermost, so every refusal below
+    it carries one — including a throttled request, which is exactly the sort a
+    caller will ask about. Security headers wrap whatever comes back, then
+    throttling refuses a noisy caller, and the body size is checked innermost,
+    before a large upload reaches any route.
+    """
+
+    app.add_middleware(
+        RequestSizeLimitMiddleware,
+        max_bytes=config.max_request_bytes,
+    )
+
+    if resolve_rate_limiting(config):
+        app.add_middleware(RateLimitMiddleware, config=config)
+
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestIdMiddleware)
 
     if config.cors_origins:

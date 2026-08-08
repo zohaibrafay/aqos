@@ -364,3 +364,24 @@ class TestStrategiesAreAFixedList:
             assert "." not in name
             assert "/" not in name
             assert ":" not in name
+
+
+def test_the_api_introduces_no_token_framework() -> None:
+    """
+    Sessions stay opaque server-side tokens.
+
+    A JWT or an OAuth flow would move trust from a row this system controls
+    into a signed blob it merely verifies, which is a different security model
+    than the one every other guard here assumes.
+    """
+
+    forbidden = {"jwt", "jose", "authlib", "oauthlib", "itsdangerous"}
+    offenders: list[str] = []
+
+    for path in python_files(HTTP_API_DIR):
+        found = imported_roots(path) & forbidden
+
+        if found:
+            offenders.append(f"{path.name} -> {sorted(found)}")
+
+    assert offenders == []

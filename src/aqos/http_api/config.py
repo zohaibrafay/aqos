@@ -164,6 +164,19 @@ class ApiConfig:
     #: Also configured rather than requested, and never returned: the read
     #: endpoints serve the contents of these files, never their locations.
     backtest_output_dir: str | None = None
+    #: Whether request throttling is on.
+    #:
+    #: ``None`` means "follow the environment", which is how production
+    #: ends up protected without anybody remembering to switch it on.
+    rate_limit_enabled: bool | None = None
+    rate_limit_per_minute: int = 120
+    #: Deliberately far stricter: logging in is where guessing happens.
+    auth_rate_limit_per_minute: int = 10
+    #: The largest body any endpoint accepts.
+    #:
+    #: Every request this API takes is a small JSON object; a megabyte of
+    #: it is a mistake or an attempt to exhaust the process.
+    max_request_bytes: int = 65_536
     api_prefix: str = API_V1_PREFIX
     extra_metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
@@ -176,6 +189,17 @@ class ApiConfig:
 
         if not self.api_prefix.startswith("/"):
             raise ApiConfigError("api_prefix must start with '/'.")
+
+        if self.rate_limit_per_minute < 1:
+            raise ApiConfigError("rate_limit_per_minute must be at least 1.")
+
+        if self.auth_rate_limit_per_minute < 1:
+            raise ApiConfigError(
+                "auth_rate_limit_per_minute must be at least 1."
+            )
+
+        if self.max_request_bytes < 1:
+            raise ApiConfigError("max_request_bytes must be at least 1.")
 
         self.assert_cors_is_safe()
 
