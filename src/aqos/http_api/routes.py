@@ -5,6 +5,8 @@ from starlette.requests import Request
 
 from aqos.database.engine import AqosDatabase
 from aqos.http_api.config import ApiConfig
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import get_read_only_caller
 from aqos.http_api.dependencies import get_api_config, get_optional_database
 from aqos.http_api.health import (
     build_liveness_report,
@@ -69,7 +71,16 @@ def build_system_router() -> APIRouter:
     def read_system_info(
         request: Request,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
+        """
+        Describe the running API.
+
+        Protected rather than public: the payload names the allowed CORS
+        origins, which in a real deployment are internal hostnames, alongside
+        the environment and debug state. That is deployment reconnaissance, so
+        it needs a session even though it carries no user data.
+        """
         payload = build_system_info(config)
         payload["request_id"] = read_request_id(request)
 

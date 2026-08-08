@@ -5,8 +5,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import (
+    get_read_only_caller,
+    require_owned_record,
+    resolve_scoped_user_id,
+)
 from aqos.http_api.dependencies import get_session
-from aqos.http_api.errors import NotFoundApiError, ValidationApiError
+from aqos.http_api.errors import ValidationApiError
 from aqos.http_api.pagination import (
     MAX_PAGE_LIMIT,
     build_page,
@@ -31,23 +37,25 @@ AQOS_HTTP_SIGNAL_ROUTES_VERSION = "1.0"
 SIGNALS_PREFIX = "/signals"
 
 
-def require_signal(session: Session, signal_id: str):
+def require_signal(
+    session: Session,
+    signal_id: str,
+    caller: AuthenticatedCaller,
+):
     """
-    Load a signal or raise the standard not-found error.
+    Load a signal the caller owns, or refuse.
 
-    The repository raises its own domain error; translating it here keeps the
-    HTTP layer's error contract in one shape.
+    A signal belonging to somebody else answers exactly like one that does not
+    exist, so this cannot be used to discover which signal ids are real on
+    other accounts.
     """
 
-    signal = TradingSignalRepository(session).get(signal_id)
-
-    if signal is None:
-        raise NotFoundApiError(
-            "Signal was not found.",
-            details={"signal_id": signal_id},
-        )
-
-    return signal
+    return require_owned_record(
+        caller=caller,
+        record=TradingSignalRepository(session).get(signal_id),
+        resource="signal",
+        resource_id=signal_id,
+    )
 
 
 def validate_period(
@@ -74,6 +82,7 @@ def build_signals_router() -> APIRouter:
     @router.get("")
     def list_signals(
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         user_id: str | None = None,
         account_id: str | None = None,
         symbol: str | None = None,
@@ -98,7 +107,7 @@ def build_signals_router() -> APIRouter:
         validate_period(generated_from, generated_to)
 
         records = TradingSignalRepository(session).list_signals(
-            user_id=user_id,
+            user_id=resolve_scoped_user_id(caller, user_id),
             account_id=account_id,
             symbol=symbol,
             status=parse_enum(status, SignalStatus, "status"),
@@ -135,17 +144,21 @@ def build_signals_router() -> APIRouter:
     def get_signal(
         signal_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
-        return json_response(build_signal_detail(require_signal(session, signal_id)))
+        return json_response(
+            build_signal_detail(require_signal(session, signal_id, caller))
+        )
 
     @router.get("/{signal_id}/events")
     def get_signal_events(
         signal_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """The signal's lifecycle audit trail, oldest first."""
 
-        require_signal(session, signal_id)
+        require_signal(session, signal_id, caller)
 
         events = TradingSignalRepository(session).list_events(signal_id)
 
@@ -161,10 +174,11 @@ def build_signals_router() -> APIRouter:
     def get_signal_reasons(
         signal_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """Structured reasons explaining why the signal ended as it did."""
 
-        require_signal(session, signal_id)
+        require_signal(session, signal_id, caller)
 
         reasons = SignalReasonRepository(session).list_reasons(
             signal_id=signal_id,

@@ -7,6 +7,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 
 from aqos.http_api.config import ApiConfig
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import get_read_only_caller
 from aqos.http_api.dependencies import get_api_config
 from aqos.http_api.errors import ApiErrorCode, AqosApiError, NotFoundApiError
 from aqos.http_api.pagination import (
@@ -156,6 +158,7 @@ def build_predictions_router() -> APIRouter:
     @router.get("")
     def list_predictions(
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         model_id: str | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
@@ -202,6 +205,7 @@ def build_predictions_router() -> APIRouter:
     def get_prediction(
         prediction_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         path = require_registry_path(
             config.prediction_registry_path,
@@ -227,6 +231,7 @@ def build_models_router() -> APIRouter:
     @router.get("/promotions")
     def list_promotions(
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         model_id: str | None = None,
         approved_only: bool = False,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
@@ -260,6 +265,7 @@ def build_models_router() -> APIRouter:
     def get_promotion_status(
         model_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """
         Whether this model is promoted, not promoted, or unknown.

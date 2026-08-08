@@ -20,6 +20,12 @@ from aqos.execution_policy.modes import (
     resolve_execution_mode,
 )
 from aqos.funded_rules.repositories import FundedAccountRulesRepository
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import (
+    get_read_only_caller,
+    require_owned_record,
+    resolve_scoped_user_id,
+)
 from aqos.http_api.dependencies import get_session
 from aqos.http_api.errors import NotFoundApiError
 from aqos.http_api.pagination import (
@@ -61,16 +67,24 @@ TRADE_SOURCE_NOT_CONNECTED_REASON = (
 )
 
 
-def require_account(session: Session, account_id: str):
-    account = TradingAccountRepository(session).get(account_id)
+def require_account(
+    session: Session,
+    account_id: str,
+    caller: AuthenticatedCaller,
+):
+    """
+    Load an account the caller owns, or refuse.
 
-    if account is None:
-        raise NotFoundApiError(
-            "Account was not found.",
-            details={"account_id": account_id},
-        )
+    Another user's account answers exactly like a missing one, so account ids
+    cannot be probed across users.
+    """
 
-    return account
+    return require_owned_record(
+        caller=caller,
+        record=TradingAccountRepository(session).get(account_id),
+        resource="account",
+        resource_id=account_id,
+    )
 
 
 def collect_account_constraints(
@@ -119,6 +133,7 @@ def build_accounts_router() -> APIRouter:
     @router.get("")
     def list_accounts(
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         user_id: str | None = None,
         account_type: str | None = None,
         venue: str | None = None,
@@ -131,7 +146,7 @@ def build_accounts_router() -> APIRouter:
         resolved_offset = validate_offset(offset)
 
         records = TradingAccountRepository(session).list_accounts(
-            user_id=user_id,
+            user_id=resolve_scoped_user_id(caller, user_id),
             account_type=parse_enum(account_type, AccountType, "account_type"),
             status=parse_enum(status, AccountStatus, "status"),
             broker=parse_enum(venue, BrokerKind, "venue"),
@@ -156,15 +171,17 @@ def build_accounts_router() -> APIRouter:
     def get_account(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         return json_response(
-            build_account_detail(require_account(session, account_id))
+            build_account_detail(require_account(session, account_id, caller))
         )
 
     @router.get("/{account_id}/execution-constraints")
     def get_execution_constraints(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """
         Why this account may or may not act autonomously.
@@ -173,7 +190,7 @@ def build_accounts_router() -> APIRouter:
         mode: raising an execution ceiling is a decision, not a GET.
         """
 
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
         constraints = collect_account_constraints(session, account)
 
         decision = resolve_execution_mode(
@@ -203,8 +220,9 @@ def build_accounts_router() -> APIRouter:
     def get_funded_rules(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
         rules = FundedAccountRulesRepository(session).get_for_account(
             account.account_id
         )
@@ -221,6 +239,7 @@ def build_accounts_router() -> APIRouter:
     def get_account_analytics(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """
         Analytics calculated now from the account's real lifecycle rows.
@@ -233,7 +252,7 @@ def build_accounts_router() -> APIRouter:
         ``/analytics/snapshots`` do carry measured trade metrics.
         """
 
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
 
         analytics = AccountAnalyticsService(
             session,
@@ -261,13 +280,14 @@ def build_accounts_router() -> APIRouter:
     def list_analytics_snapshots(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
 
         records = AccountAnalyticsSnapshotRepository(session).list_snapshots(
             account_id=account.account_id,
@@ -289,6 +309,7 @@ def build_accounts_router() -> APIRouter:
     def list_reports(
         account_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         report_type: str | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
@@ -296,7 +317,7 @@ def build_accounts_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
 
         records = AccountPerformanceReportRepository(session).list_reports(
             account_id=account.account_id,
@@ -318,8 +339,9 @@ def build_accounts_router() -> APIRouter:
         account_id: str,
         report_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
-        account = require_account(session, account_id)
+        account = require_account(session, account_id, caller)
 
         record = AccountPerformanceReportRepository(session).get(report_id)
 

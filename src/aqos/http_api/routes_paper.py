@@ -6,8 +6,14 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import (
+    get_read_only_caller,
+    require_owned_record,
+    resolve_scoped_user_id,
+)
 from aqos.http_api.dependencies import get_session
-from aqos.http_api.errors import NotFoundApiError, ValidationApiError
+from aqos.http_api.errors import ValidationApiError
 from aqos.http_api.pagination import (
     MAX_PAGE_LIMIT,
     build_page,
@@ -46,16 +52,24 @@ AQOS_HTTP_PAPER_ROUTES_VERSION = "1.0"
 PAPER_PREFIX = "/paper"
 
 
-def require_session_record(session: Session, session_id: str):
-    record = PaperSessionRepository(session).get(session_id)
+def require_session_record(
+    session: Session,
+    session_id: str,
+    caller: AuthenticatedCaller,
+):
+    """
+    Load a paper session the caller owns, or refuse.
 
-    if record is None:
-        raise NotFoundApiError(
-            "Paper session was not found.",
-            details={"session_id": session_id},
-        )
+    Another user's session answers exactly like a missing one, so session ids
+    cannot be probed across users.
+    """
 
-    return record
+    return require_owned_record(
+        caller=caller,
+        record=PaperSessionRepository(session).get(session_id),
+        resource="paper_session",
+        resource_id=session_id,
+    )
 
 
 def validate_period(
@@ -102,6 +116,7 @@ def build_paper_router() -> APIRouter:
     @router.get("/sessions")
     def list_sessions(
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         user_id: str | None = None,
         account_id: str | None = None,
         session_type: str | None = None,
@@ -118,7 +133,7 @@ def build_paper_router() -> APIRouter:
         validate_period(started_from, started_to)
 
         records = PaperSessionRepository(session).list_sessions(
-            user_id=user_id,
+            user_id=resolve_scoped_user_id(caller, user_id),
             account_id=account_id,
             session_type=parse_enum(
                 session_type,
@@ -146,10 +161,11 @@ def build_paper_router() -> APIRouter:
     def get_session_detail(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         return json_response(
             build_paper_session_detail(
-                require_session_record(session, session_id)
+                require_session_record(session, session_id, caller)
             )
         )
 
@@ -157,6 +173,7 @@ def build_paper_router() -> APIRouter:
     def get_session_result(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         """
         The session's measured result.
@@ -165,7 +182,7 @@ def build_paper_router() -> APIRouter:
         no trade reports unknown ratios rather than zeros it did not earn.
         """
 
-        require_session_record(session, session_id)
+        require_session_record(session, session_id, caller)
 
         result = PaperSessionResultService(session).build_result(
             session_id=session_id,
@@ -177,6 +194,7 @@ def build_paper_router() -> APIRouter:
     def get_session_orders(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         status: str | None = None,
         symbol: str | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
@@ -185,7 +203,7 @@ def build_paper_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        record = require_session_record(session, session_id)
+        record = require_session_record(session, session_id, caller)
 
         # Scoped to both the session and its account, so a session id can never
         # surface another account's records.
@@ -211,13 +229,14 @@ def build_paper_router() -> APIRouter:
     def get_session_fills(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        record = require_session_record(session, session_id)
+        record = require_session_record(session, session_id, caller)
 
         records = PaperFillRepository(session).list_fills(
             session_id=record.session_id,
@@ -239,6 +258,7 @@ def build_paper_router() -> APIRouter:
     def get_session_positions(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         status: str | None = None,
         symbol: str | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
@@ -247,7 +267,7 @@ def build_paper_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        record = require_session_record(session, session_id)
+        record = require_session_record(session, session_id, caller)
 
         records = PaperPositionRepository(session).list_positions(
             session_id=record.session_id,
@@ -271,6 +291,7 @@ def build_paper_router() -> APIRouter:
     def get_session_trades(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         symbol: str | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
@@ -278,7 +299,7 @@ def build_paper_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        record = require_session_record(session, session_id)
+        record = require_session_record(session, session_id, caller)
 
         records = PaperTradeRepository(session).list_trades(
             session_id=record.session_id,
@@ -301,6 +322,7 @@ def build_paper_router() -> APIRouter:
     def get_session_decisions(
         session_id: str,
         session: Session = Depends(get_session),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         is_allowed: bool | None = None,
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
@@ -315,7 +337,7 @@ def build_paper_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        record = require_session_record(session, session_id)
+        record = require_session_record(session, session_id, caller)
 
         records = PaperExecutionDecisionRepository(session).list_decisions(
             session_id=record.session_id,

@@ -14,6 +14,12 @@ from fastapi.testclient import TestClient
 
 from aqos.http_api.app import create_aqos_api_app
 from aqos.http_api.config import API_V1_PREFIX, ApiConfig, ApiEnvironment
+from datetime import datetime, timedelta
+
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import get_read_only_caller
+from aqos.users.models import UserProfile, UserRole, UserSession, UserStatus
+
 from aqos.model_training.model_evaluation import ModelPromotionStage
 from aqos.model_training.model_promotion import ModelPromotionStatus
 from aqos.model_training.model_promotion_registry import (
@@ -24,6 +30,40 @@ from aqos.model_training.model_promotion_registry import (
 
 
 SECRET_PATH = "/srv/aqos/models/secret-artifact.joblib"
+
+
+def build_stub_caller() -> AuthenticatedCaller:
+    """
+    A caller for tests that have no database.
+
+    These suites exercise route behaviour, not authentication. The real token
+    path is covered end to end by the MySQL protection tests; overriding the
+    dependency here keeps these fast without pretending auth does not exist.
+    """
+
+    now = datetime(2026, 1, 1, 0, 0, 0)
+    profile = UserProfile(
+        user_id="user_stub",
+        email="stub@example.com",
+        display_name="Stub",
+        role=UserRole.TRADER,
+        status=UserStatus.ACTIVE,
+        created_at_utc=now,
+        updated_at_utc=now,
+    )
+    user_session = UserSession(
+        session_id="session_stub",
+        user_id="user_stub",
+        token_hash="a" * 64,
+        created_at_utc=now,
+        expires_at_utc=now + timedelta(hours=1),
+    )
+
+    return AuthenticatedCaller(user=profile, session=user_session)
+
+
+def authenticate(app) -> None:
+    app.dependency_overrides[get_read_only_caller] = build_stub_caller
 
 
 def build_entry(**overrides) -> ModelPromotionRegistryEntry:
@@ -109,7 +149,10 @@ def build_client(**overrides) -> TestClient:
     payload = {"environment": ApiEnvironment.TEST}
     payload.update(overrides)
 
-    return TestClient(create_aqos_api_app(ApiConfig(**payload)))
+    app = create_aqos_api_app(ApiConfig(**payload))
+    authenticate(app)
+
+    return TestClient(app)
 
 
 class TestPredictionEndpoints:

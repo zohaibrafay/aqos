@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi import APIRouter
@@ -48,7 +49,15 @@ from aqos.http_api.middleware import (
     is_valid_request_id,
     resolve_request_id,
 )
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import get_read_only_caller
 from aqos.http_api.responses import SafeJSONResponse, replace_non_finite
+from aqos.users.models import (
+    UserProfile,
+    UserRole,
+    UserSession,
+    UserStatus,
+)
 
 
 SECRET_DB_URL = "mysql+pymysql://aqos:sup3rs3cret@db.internal:3306/aqos"
@@ -63,6 +72,43 @@ def build_config(**overrides) -> ApiConfig:
 
 def build_client(**overrides) -> TestClient:
     return TestClient(create_aqos_api_app(build_config(**overrides)))
+
+
+def build_stub_caller() -> AuthenticatedCaller:
+    """
+    A caller for tests that have no database.
+
+    This suite is about routing and serialization, not about authentication;
+    the real token path is proven end to end by the MySQL protection suite.
+    """
+
+    now = datetime(2026, 1, 1, 0, 0, 0)
+
+    return AuthenticatedCaller(
+        user=UserProfile(
+            user_id="user_stub",
+            email="stub@example.com",
+            display_name="Stub",
+            role=UserRole.TRADER,
+            status=UserStatus.ACTIVE,
+            created_at_utc=now,
+            updated_at_utc=now,
+        ),
+        session=UserSession(
+            session_id="session_stub",
+            user_id="user_stub",
+            token_hash="a" * 64,
+            created_at_utc=now,
+            expires_at_utc=now + timedelta(hours=1),
+        ),
+    )
+
+
+def build_authenticated_client(**overrides) -> TestClient:
+    app = create_aqos_api_app(build_config(**overrides))
+    app.dependency_overrides[get_read_only_caller] = build_stub_caller
+
+    return TestClient(app)
 
 
 def collect_route_paths(app) -> set[str]:
@@ -298,15 +344,34 @@ class TestReadiness:
 
 
 class TestSystemInfo:
+    def test_system_info_is_not_public(self) -> None:
+        """
+        It reports deployment configuration, so it needs a caller.
+
+        The response names the environment, the debug flag and the allowed
+        origins, which is exactly the kind of detail an anonymous client should
+        not be able to enumerate. This app has no database, so the refusal is
+        "no caller can be resolved" rather than a 401; either way nothing is
+        served. The 401 itself is proven against real MySQL in the protection
+        suite.
+        """
+
+        response = build_client().get(f"{API_V1_PREFIX}/system/info")
+
+        assert response.status_code >= 400
+        assert "api" not in response.json()
+
     def test_system_info_masks_the_database_url(self) -> None:
-        client = build_client(database_url=SECRET_DB_URL)
+        client = build_authenticated_client(database_url=SECRET_DB_URL)
         payload = client.get(f"{API_V1_PREFIX}/system/info").json()
 
         assert payload["api"]["has_database"] is True
         assert payload["api"]["database_url"] == "mysql+pymysql://***"
 
     def test_system_info_carries_the_request_id(self) -> None:
-        response = build_client().get(f"{API_V1_PREFIX}/system/info")
+        response = build_authenticated_client().get(
+            f"{API_V1_PREFIX}/system/info"
+        )
 
         assert response.json()["request_id"] == response.headers[
             REQUEST_ID_HEADER

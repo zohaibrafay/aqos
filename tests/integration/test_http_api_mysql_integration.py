@@ -18,10 +18,15 @@ from sqlalchemy import text
 
 from aqos.database.config import parse_database_url
 from aqos.database.engine import AqosDatabase
+from aqos.database.migration_runner import apply_migrations
 from aqos.http_api.app import create_aqos_api_app
 from aqos.http_api.config import API_V1_PREFIX, ApiConfig, ApiEnvironment
 from aqos.http_api.dependencies import get_session, get_write_session
 from aqos.http_api.middleware import REQUEST_ID_HEADER
+from aqos.users.repositories import (
+    UserCredentialRepository,
+    UserProfileRepository,
+)
 
 
 ENV_TEST_DB_URL = "AQOS_TEST_DB_URL"
@@ -95,6 +100,52 @@ def client(database_url: str) -> TestClient:
     app.state.aqos_database.dispose()
 
 
+SYSTEM_INFO_PASSWORD = "Correct-Horse-Battery-9"
+
+
+@pytest.fixture
+def authenticated_client(client, database_url: str) -> TestClient:
+    """
+    The same client, carrying a token.
+
+    ``/system/info`` reports deployment configuration, so Sprint 058 protects
+    it; the health probes above stay public and keep using the bare client.
+    """
+
+    database = AqosDatabase(config=parse_database_url(database_url))
+    apply_migrations(database)
+
+    try:
+        with database.session() as session:
+            user_id = UserProfileRepository(session).create_user(
+                email="system-info@example.com",
+                display_name="System Info Reader",
+            ).user_id
+
+            UserCredentialRepository(session).set_password(
+                user_id=user_id,
+                password=SYSTEM_INFO_PASSWORD,
+            )
+
+        response = client.post(
+            f"{API_V1_PREFIX}/auth/login",
+            json={
+                "email": "system-info@example.com",
+                "password": SYSTEM_INFO_PASSWORD,
+            },
+        )
+
+        assert response.status_code == 201, response.text
+
+        client.headers.update(
+            {"Authorization": f"Bearer {response.json()['token']}"}
+        )
+
+        yield client
+    finally:
+        database.dispose()
+
+
 class TestReadinessAgainstMysql:
     def test_ready_reports_healthy_with_a_reachable_database(
         self,
@@ -129,8 +180,18 @@ class TestReadinessAgainstMysql:
         for fragment in ("aqos_pw", "password", "@127.0.0.1", "@localhost"):
             assert fragment not in body
 
-    def test_system_info_masks_the_configured_url(self, client) -> None:
-        payload = client.get(f"{API_V1_PREFIX}/system/info").json()
+    def test_system_info_needs_a_token(self, client) -> None:
+        assert client.get(
+            f"{API_V1_PREFIX}/system/info"
+        ).status_code == 401
+
+    def test_system_info_masks_the_configured_url(
+        self,
+        authenticated_client,
+    ) -> None:
+        payload = authenticated_client.get(
+            f"{API_V1_PREFIX}/system/info"
+        ).json()
 
         assert payload["api"]["has_database"] is True
         assert payload["api"]["database_url"] == "mysql+pymysql://***"

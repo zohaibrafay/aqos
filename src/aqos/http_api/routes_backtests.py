@@ -11,6 +11,8 @@ from aqos.backtesting.registry import (
     read_backtest_result_registry,
 )
 from aqos.http_api.config import ApiConfig
+from aqos.http_api.auth import AuthenticatedCaller
+from aqos.http_api.authz import get_read_only_caller
 from aqos.http_api.dependencies import get_api_config
 from aqos.http_api.errors import ApiErrorCode, AqosApiError, NotFoundApiError
 from aqos.http_api.pagination import (
@@ -143,6 +145,7 @@ def build_backtests_router() -> APIRouter:
     @router.get("")
     def list_backtests(
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         kind: str | None = None,
         symbol: str | None = None,
         strategy_name: str | None = None,
@@ -187,6 +190,7 @@ def build_backtests_router() -> APIRouter:
     def get_backtest(
         backtest_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         return json_response(
             build_backtest_summary(require_entry(config, backtest_id))
@@ -196,6 +200,7 @@ def build_backtests_router() -> APIRouter:
     def get_backtest_trades(
         backtest_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
@@ -205,6 +210,7 @@ def build_backtests_router() -> APIRouter:
     def get_backtest_orders(
         backtest_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
@@ -214,6 +220,7 @@ def build_backtests_router() -> APIRouter:
     def get_backtest_equity(
         backtest_id: str,
         config: ApiConfig = Depends(get_api_config),
+        caller: AuthenticatedCaller = Depends(get_read_only_caller),
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):

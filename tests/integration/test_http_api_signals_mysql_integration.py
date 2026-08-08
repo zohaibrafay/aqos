@@ -32,7 +32,10 @@ from aqos.signal_reasons.repositories import (
 from aqos.signal_reasons.taxonomy import SignalReasonCode
 from aqos.signals.models import SignalAction, SignalSource, SignalStatus
 from aqos.signals.repositories import TradingSignalRepository
-from aqos.users.repositories import UserProfileRepository
+from aqos.users.repositories import (
+    UserCredentialRepository,
+    UserProfileRepository,
+)
 
 
 ENV_TEST_DB_URL = "AQOS_TEST_DB_URL"
@@ -178,8 +181,40 @@ def seeded(signal_database) -> dict:
         }
 
 
+API_TEST_PASSWORD = "Correct-Horse-Battery-9"
+
+
+def authenticate_as(database, client: TestClient, user_id: str) -> None:
+    """
+    Give the client a bearer token belonging to the seeded owner.
+
+    These endpoints are protected and scoped by ownership, so the suite has to
+    read as the user who owns the seeded rows; any other token would
+    legitimately see nothing at all.
+    """
+
+    with database.session() as session:
+        profile = UserProfileRepository(session).require(user_id)
+        UserCredentialRepository(session).set_password(
+            user_id=user_id,
+            password=API_TEST_PASSWORD,
+        )
+        email = profile.email
+
+    response = client.post(
+        f"{API_V1_PREFIX}/auth/login",
+        json={"email": email, "password": API_TEST_PASSWORD},
+    )
+
+    assert response.status_code == 201, response.text
+
+    client.headers.update(
+        {"Authorization": f"Bearer {response.json()['token']}"}
+    )
+
+
 @pytest.fixture
-def client(signal_database, database_url: str) -> TestClient:
+def client(signal_database, seeded, database_url: str) -> TestClient:
     app = create_aqos_api_app(
         ApiConfig(
             environment=ApiEnvironment.TEST,
@@ -188,6 +223,8 @@ def client(signal_database, database_url: str) -> TestClient:
     )
 
     with TestClient(app) as test_client:
+        authenticate_as(signal_database, test_client, seeded["user_id"])
+
         yield test_client
 
     app.state.aqos_database.dispose()

@@ -52,7 +52,10 @@ from aqos.paper_trading.execution_service import PaperExecutionService
 from aqos.paper_trading.history import PaperTradeSource
 from aqos.paper_trading.simulator import PaperMarketBar
 from aqos.trading_settings.repositories import TradingSettingsRepository
-from aqos.users.repositories import UserProfileRepository
+from aqos.users.repositories import (
+    UserCredentialRepository,
+    UserProfileRepository,
+)
 
 
 ENV_TEST_DB_URL = "AQOS_TEST_DB_URL"
@@ -203,8 +206,40 @@ def seeded(account_database) -> dict:
         }
 
 
+API_TEST_PASSWORD = "Correct-Horse-Battery-9"
+
+
+def authenticate_as(database, client: TestClient, user_id: str) -> None:
+    """
+    Give the client a bearer token belonging to the seeded owner.
+
+    These endpoints are protected and scoped by ownership, so the suite has to
+    read as the user who owns the seeded rows; any other token would
+    legitimately see nothing at all.
+    """
+
+    with database.session() as session:
+        profile = UserProfileRepository(session).require(user_id)
+        UserCredentialRepository(session).set_password(
+            user_id=user_id,
+            password=API_TEST_PASSWORD,
+        )
+        email = profile.email
+
+    response = client.post(
+        f"{API_V1_PREFIX}/auth/login",
+        json={"email": email, "password": API_TEST_PASSWORD},
+    )
+
+    assert response.status_code == 201, response.text
+
+    client.headers.update(
+        {"Authorization": f"Bearer {response.json()['token']}"}
+    )
+
+
 @pytest.fixture
-def client(account_database, database_url: str) -> TestClient:
+def client(account_database, seeded, database_url: str) -> TestClient:
     app = create_aqos_api_app(
         ApiConfig(
             environment=ApiEnvironment.TEST,
@@ -213,6 +248,8 @@ def client(account_database, database_url: str) -> TestClient:
     )
 
     with TestClient(app) as test_client:
+        authenticate_as(account_database, test_client, seeded["user_id"])
+
         yield test_client
 
     app.state.aqos_database.dispose()
@@ -261,9 +298,19 @@ class TestAccountList:
         assert client.get(
             accounts_url(user_id=seeded["user_id"])
         ).json()["count"] == 2
-        assert client.get(
-            accounts_url(user_id="user_missing")
-        ).json()["count"] == 0
+
+    def test_filtering_by_another_user_is_refused(self, client) -> None:
+        """
+        Asking for someone else's accounts is forbidden, not empty.
+
+        An empty page would answer the question "does this user exist and own
+        nothing?", so the filter is refused before it ever reaches the query.
+        """
+
+        response = client.get(accounts_url(user_id="user_missing"))
+
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "forbidden"
 
     def test_pagination_windows_the_result(self, client, seeded) -> None:
         first = client.get(accounts_url(limit=1, offset=0)).json()
