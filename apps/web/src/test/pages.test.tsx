@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import AccountsPage from "@/app/accounts/page";
 import BacktestsPage from "@/app/backtests/page";
 import DashboardPage from "@/app/dashboard/page";
 import HomePage from "@/app/page";
@@ -49,7 +48,6 @@ describe("every route placeholder renders", () => {
   const pages = [
     { name: "Home", Component: HomePage, heading: "AQOS" },
     { name: "Dashboard", Component: DashboardPage, heading: "Dashboard" },
-    { name: "Accounts", Component: AccountsPage, heading: "Accounts" },
     { name: "Paper", Component: PaperPage, heading: "Paper" },
     { name: "Backtests", Component: BacktestsPage, heading: "Backtests" },
     { name: "Not found", Component: NotFoundPage, heading: "Page not found" },
@@ -62,10 +60,10 @@ describe("every route placeholder renders", () => {
   });
 
   it("says a placeholder is unbuilt rather than showing an empty list", () => {
-    // "Nothing here yet" and "you have no accounts" are different claims, and
-    // only one of them is true. Signals is a real screen as of Sprint 064, so
+    // "Nothing here yet" and "you have no sessions" are different claims, and
+    // only one of them is true. Signals and accounts are real screens now, so
     // the assertion moved to one that is still a placeholder.
-    render(<AccountsPage />);
+    render(<PaperPage />);
 
     expect(screen.getByText("Not built yet")).toBeInTheDocument();
   });

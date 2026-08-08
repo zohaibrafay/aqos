@@ -9,7 +9,14 @@
 
 import type { AqosApiClient } from "@/api/client";
 import type {
+  AccountAnalytics,
+  AccountDetail,
   AccountSummary,
+  AnalyticsSnapshot,
+  ExecutionConstraints,
+  FundedRules,
+  ReportDetail,
+  ReportSummary,
   BacktestSummary,
   LoginResult,
   Page,
@@ -242,9 +249,75 @@ export const models = {
   },
 };
 
+/**
+ * What a caller may narrow their account list by.
+ *
+ * No `user_id`, for the same reason signals has none: the backend scopes every
+ * list to the caller already.
+ */
+export type AccountListQuery = ListQuery & {
+  readonly account_type?: string;
+  readonly venue?: string;
+  readonly status?: string;
+  readonly execution_mode?: string;
+};
+
+/**
+ * Account reads. Every method is a GET.
+ *
+ * There is no create, update or delete here, and no way to change an execution
+ * mode, toggle auto-trade or edit a funded rule. Those endpoints do not exist
+ * on the server either; this module simply does not invent them.
+ */
 export const accounts = {
-  list(client: AqosApiClient, query: ListQuery = {}) {
+  list(client: AqosApiClient, query: AccountListQuery = {}) {
     return client.get<Page<AccountSummary>>(`${API_PREFIX}/accounts`, { query });
+  },
+
+  get(client: AqosApiClient, accountId: string) {
+    return client.get<AccountDetail>(`${API_PREFIX}/accounts/${accountId}`);
+  },
+
+  executionConstraints(client: AqosApiClient, accountId: string) {
+    return client.get<ExecutionConstraints>(
+      `${API_PREFIX}/accounts/${accountId}/execution-constraints`,
+    );
+  },
+
+  fundedRules(client: AqosApiClient, accountId: string) {
+    return client.get<FundedRules | null>(
+      `${API_PREFIX}/accounts/${accountId}/funded-rules`,
+    );
+  },
+
+  analytics(client: AqosApiClient, accountId: string) {
+    return client.get<AccountAnalytics>(
+      `${API_PREFIX}/accounts/${accountId}/analytics`,
+    );
+  },
+
+  analyticsSnapshots(
+    client: AqosApiClient,
+    accountId: string,
+    query: ListQuery = {},
+  ) {
+    return client.get<Page<AnalyticsSnapshot>>(
+      `${API_PREFIX}/accounts/${accountId}/analytics/snapshots`,
+      { query },
+    );
+  },
+
+  reports(client: AqosApiClient, accountId: string, query: ListQuery = {}) {
+    return client.get<Page<ReportSummary>>(
+      `${API_PREFIX}/accounts/${accountId}/reports`,
+      { query },
+    );
+  },
+
+  report(client: AqosApiClient, accountId: string, reportId: string) {
+    return client.get<ReportDetail>(
+      `${API_PREFIX}/accounts/${accountId}/reports/${reportId}`,
+    );
   },
 };
 

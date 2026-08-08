@@ -137,12 +137,151 @@ export interface PromotionStatus {
 
 export interface AccountSummary {
   readonly account_id: string;
-  readonly name: string;
+  readonly user_id: string;
+  readonly account_name: string;
   readonly account_type: string;
+  readonly venue: string | null;
   readonly status: string;
   readonly currency: string | null;
+  readonly execution_mode: string | null;
+  readonly auto_trade_enabled: boolean;
+  readonly is_default: boolean;
+  readonly is_real_money: boolean;
+  readonly created_at_utc: string | null;
+}
+
+export interface AccountDetail extends AccountSummary {
+  readonly initial_balance: number | null;
   readonly current_balance: number | null;
   readonly equity: number | null;
+  readonly leverage: number | null;
+  readonly is_tradable: boolean;
+  readonly updated_at_utc: string | null;
+}
+
+export interface ExecutionConstraint {
+  readonly source: string;
+  readonly allowed_mode: string;
+  readonly reason: string | null;
+}
+
+export interface ExecutionConstraints {
+  readonly account_id: string;
+  readonly stored_execution_mode: string | null;
+  readonly auto_trade_enabled: boolean;
+  readonly requested_execution_mode: string | null;
+  readonly effective_execution_mode: string | null;
+  readonly was_downgraded: boolean;
+  readonly allows_orders: boolean;
+  readonly requires_manual_approval: boolean;
+  readonly binding_sources: readonly string[];
+  readonly explanation: string | null;
+  readonly constraints: readonly ExecutionConstraint[];
+}
+
+export interface FundedRules {
+  readonly rules_id: string;
+  readonly account_id: string;
+  readonly status: string;
+  readonly is_blocking: boolean;
+  readonly is_breached: boolean;
+  readonly breached_at_utc: string | null;
+  readonly breach_reason: string | null;
+  readonly execution_ceiling: string | null;
+  readonly max_daily_loss_fraction: number | null;
+  readonly max_total_drawdown_fraction: number | null;
+  readonly profit_target_fraction: number | null;
+  readonly max_risk_per_trade_fraction: number | null;
+  readonly drawdown_basis: string | null;
+  readonly max_open_positions: number | null;
+  readonly max_daily_trades: number | null;
+  readonly min_trading_days: number | null;
+  readonly weekend_holding_allowed: boolean | null;
+  readonly news_restriction_enabled: boolean | null;
+  readonly copied_from_template_id: string | null;
+  readonly created_at_utc: string | null;
+  readonly updated_at_utc: string | null;
+}
+
+/**
+ * Why trade metrics are or are not measured.
+ *
+ * Present on the live analytics endpoint, which connects no trade source. It
+ * exists so "unavailable" can never be read as a measured zero, and so a
+ * client knows where the real numbers do live.
+ */
+export interface TradeMetricsSource {
+  readonly connected: boolean;
+  readonly reason_code: string;
+  readonly reason: string;
+  readonly measured_metrics_endpoint: string;
+}
+
+export interface SignalMetrics {
+  readonly signals_received: number;
+  readonly signals_executed: number;
+  readonly signals_rejected: number;
+  readonly signals_missed: number;
+  readonly execution_rate: number | null;
+  readonly rejection_rate: number | null;
+}
+
+export interface TradeMetrics {
+  readonly is_available: boolean;
+  readonly unavailable_reason: string | null;
+  readonly total_trades: number | null;
+  readonly win_rate: number | null;
+  readonly net_pnl: number | null;
+  readonly profit_factor: number | null;
+  readonly profit_factor_state: string | null;
+  readonly max_drawdown: number | null;
+}
+
+export interface AccountAnalytics {
+  readonly scope: string;
+  readonly account_id: string | null;
+  readonly calculated_at_utc: string | null;
+  readonly has_trade_metrics: boolean;
+  readonly signal_metrics: SignalMetrics;
+  readonly trade_metrics: TradeMetrics;
+  readonly trade_metrics_source?: TradeMetricsSource;
+}
+
+export interface AnalyticsSnapshot {
+  readonly snapshot_id: string;
+  readonly account_id: string;
+  readonly scope: string;
+  readonly period_start_utc: string | null;
+  readonly period_end_utc: string | null;
+  readonly calculated_at_utc: string | null;
+  readonly signals_received: number | null;
+  readonly signals_executed: number | null;
+  readonly trade_metrics_available: boolean;
+  readonly total_trades: number | null;
+  readonly win_rate: number | null;
+  readonly net_pnl: number | null;
+  readonly profit_factor: number | null;
+  readonly profit_factor_state: string | null;
+  readonly has_infinite_profit_factor: boolean;
+  readonly max_drawdown: number | null;
+}
+
+export interface ReportSummary {
+  readonly report_id: string;
+  readonly account_id: string;
+  readonly account_type: string | null;
+  readonly report_type: string;
+  readonly analytics_snapshot_id: string | null;
+  readonly period_start_utc: string | null;
+  readonly period_end_utc: string | null;
+  readonly generated_at_utc: string | null;
+  readonly trade_metrics_available: boolean;
+  readonly artifact_format: string | null;
+  readonly has_artifact: boolean;
+}
+
+export interface ReportDetail extends ReportSummary {
+  readonly payload: Record<string, unknown>;
 }
 
 export interface PaperSessionSummary {

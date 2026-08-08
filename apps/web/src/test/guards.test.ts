@@ -151,21 +151,37 @@ describe("the frontend never reaches the backend directly", () => {
   });
 
   it("names no broker or venue integration", () => {
+    // The account filters list the venue identifiers the API itself returns —
+    // `mt5`, `binance` and so on. Those are values, not integrations, so the
+    // pattern targets the libraries and bridges that would actually reach a
+    // venue rather than the words.
     expect(
       offenders((text) =>
-        /\b(MetaTrader5|mt5_bridge|binance|ccxt|ib_insync|oandapy)\b/i.test(text),
+        /\b(MetaTrader5|mt5_bridge|binance-api|node-binance|ccxt|ib_insync|oandapyV20)\b/i.test(
+          text,
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it("imports no broker client library", () => {
+    expect(
+      offenders((text) =>
+        /from\s+["'](ccxt|binance|ib_insync|metaapi|oandapyV20)[^"']*["']/.test(text),
       ),
     ).toEqual([]);
   });
 
   it("exposes no backend filesystem artifact path", () => {
-    expect(
-      offenders((text) =>
-        /(report_path|trades_path|equity_curve_path|orders_path|data_path|backtest_registry_path)/.test(
-          text,
-        ),
+    // Application source only: a test that asserts `report_path` never appears
+    // must itself name it, and flagging that is flagging the guard working.
+    const found = APPLICATION_SOURCES.filter(({ text }) =>
+      /(report_path|trades_path|equity_curve_path|orders_path|data_path|backtest_registry_path)/.test(
+        text,
       ),
-    ).toEqual([]);
+    ).map(({ path }) => path);
+
+    expect(found).toEqual([]);
   });
 });
 
