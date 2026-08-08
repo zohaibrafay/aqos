@@ -39,8 +39,11 @@ def get_current_caller(
 
     A write session is used because resolving a caller advances the session's
     last-seen timestamp; that write has to commit or the record never moves.
-    Sprint 058 will apply this dependency to the read-only business endpoints;
-    Sprint 057 only establishes it.
+    The read-only business endpoints deliberately do not use this: Sprint 058
+    gave them ``get_read_only_caller`` so a burst of GETs cannot become a burst
+    of UPDATEs. This is for requests that mean to write anyway — the session
+    endpoints here, and the Sprint 059 signal actions, which share this one
+    write session so the caller touch and the transition commit together.
     """
 
     return resolve_caller(session, extract_bearer_token(request))

@@ -52,6 +52,7 @@ from aqos.http_api.middleware import (
 from aqos.http_api.auth import AuthenticatedCaller
 from aqos.http_api.authz import get_read_only_caller
 from aqos.http_api.responses import SafeJSONResponse, replace_non_finite
+from aqos.http_api.routes_signal_actions import SIGNAL_ACTION_STATUSES
 from aqos.users.models import (
     UserProfile,
     UserRole,
@@ -207,6 +208,12 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/signals/{{signal_id}}",
             f"{API_V1_PREFIX}/signals/{{signal_id}}/events",
             f"{API_V1_PREFIX}/signals/{{signal_id}}/reasons",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/approve",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/reject",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/miss",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/expire",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/cancel",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/mark-pending-approval",
             f"{API_V1_PREFIX}/predictions",
             f"{API_V1_PREFIX}/predictions/{{prediction_id}}",
             f"{API_V1_PREFIX}/models/promotions",
@@ -240,37 +247,77 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/auth/sessions/{{session_id}}/revoke",
         }
 
-    def test_only_auth_accepts_a_write_verb(self) -> None:
+    def test_every_write_endpoint_is_named_here(self) -> None:
         """
-        The business surface stays read-only.
+        An allow list of everything that may change state.
 
-        Sprint 057 adds POST for authentication only — logging in, logging out
-        and revoking a session. Nothing that reads trading data may mutate, so
-        any new write verb outside ``/auth`` has to be a deliberate decision
-        recorded here.
+        Sprint 057 opened POST for authentication; Sprint 059 opened it for
+        signal lifecycle decisions and nothing else. A new write verb anywhere
+        else has to be a deliberate act, written down here, so it cannot arrive
+        as a side effect of adding a router.
         """
 
         app = create_aqos_api_app(build_config())
         write_verbs = {"post", "put", "patch", "delete"}
-        offenders = [
+
+        writable = {
             path
             for path, operations in app.openapi()["paths"].items()
-            if (write_verbs & set(operations))
-            and f"{API_V1_PREFIX}/auth" not in path
-        ]
+            if write_verbs & set(operations)
+        }
 
-        assert offenders == []
+        assert writable == {
+            f"{API_V1_PREFIX}/auth/login",
+            f"{API_V1_PREFIX}/auth/logout",
+            f"{API_V1_PREFIX}/auth/logout-all",
+            f"{API_V1_PREFIX}/auth/sessions/{{session_id}}/revoke",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/approve",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/reject",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/miss",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/expire",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/cancel",
+            f"{API_V1_PREFIX}/signals/{{signal_id}}/mark-pending-approval",
+        }
 
-    def test_no_business_endpoint_mutates(self) -> None:
-        """Signals, accounts, paper and backtests are read-only throughout."""
+    def test_reading_trading_data_never_mutates(self) -> None:
+        """
+        Every endpoint that returns trading data is GET-only.
+
+        The signal actions are separate paths ending in a verb, so no path that
+        serves a signal, account, paper session or backtest also accepts a
+        write. Accounts, paper trading and backtests stay read-only entirely.
+        """
 
         app = create_aqos_api_app(build_config())
+        action_suffixes = tuple(
+            f"/{suffix}" for suffix in SIGNAL_ACTION_STATUSES
+        )
 
         for path, operations in app.openapi()["paths"].items():
             if f"{API_V1_PREFIX}/auth" in path:
                 continue
 
+            if path.endswith(action_suffixes):
+                assert set(operations) == {"post"}, path
+                continue
+
             assert set(operations) == {"get"}, path
+
+    def test_no_account_or_paper_endpoint_mutates(self) -> None:
+        """
+        Sprint 059 opened signal lifecycle only.
+
+        Money movement, account settings and paper execution are explicitly out
+        of scope, so nothing under those prefixes may accept a write verb.
+        """
+
+        app = create_aqos_api_app(build_config())
+        write_verbs = {"post", "put", "patch", "delete"}
+
+        for path, operations in app.openapi()["paths"].items():
+            for prefix in ("/accounts", "/paper", "/backtests", "/models"):
+                if path.startswith(f"{API_V1_PREFIX}{prefix}"):
+                    assert not (write_verbs & set(operations)), path
 
     def test_the_prefix_can_be_moved(self) -> None:
         app = create_aqos_api_app(build_config(api_prefix="/api/v2"))
