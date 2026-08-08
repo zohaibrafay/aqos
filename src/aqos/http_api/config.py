@@ -31,6 +31,8 @@ ENV_DB_URL = "AQOS_DB_URL"
 ENV_PREDICTION_REGISTRY = "AQOS_API_PREDICTION_REGISTRY"
 ENV_MODEL_PROMOTION_REGISTRY = "AQOS_API_MODEL_PROMOTION_REGISTRY"
 ENV_BACKTEST_REGISTRY = "AQOS_API_BACKTEST_REGISTRY"
+ENV_BACKTEST_DATASETS = "AQOS_API_BACKTEST_DATASETS"
+ENV_BACKTEST_OUTPUT = "AQOS_API_BACKTEST_OUTPUT"
 
 TRUTHY_VALUES = ("1", "true", "yes", "on")
 FALSY_VALUES = ("0", "false", "no", "off")
@@ -150,6 +152,18 @@ class ApiConfig:
     prediction_registry_path: str | None = None
     model_promotion_registry_path: str | None = None
     backtest_registry_path: str | None = None
+    #: Root directory of the datasets a backtest may be run against.
+    #:
+    #: Backtests need historical bars, and a client must never say where
+    #: those come from: a path from a request is a way to read any file the
+    #: process can. Instead the deployment configures one directory, and a
+    #: request names a dataset inside it.
+    backtest_dataset_dir: str | None = None
+    #: Where a run's artifacts are written.
+    #:
+    #: Also configured rather than requested, and never returned: the read
+    #: endpoints serve the contents of these files, never their locations.
+    backtest_output_dir: str | None = None
     api_prefix: str = API_V1_PREFIX
     extra_metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
@@ -184,6 +198,34 @@ class ApiConfig:
     def has_backtest_registry(self) -> bool:
         return bool(
             self.backtest_registry_path and self.backtest_registry_path.strip()
+        )
+
+    @property
+    def has_backtest_datasets(self) -> bool:
+        return bool(
+            self.backtest_dataset_dir and self.backtest_dataset_dir.strip()
+        )
+
+    @property
+    def has_backtest_output(self) -> bool:
+        return bool(
+            self.backtest_output_dir and self.backtest_output_dir.strip()
+        )
+
+    @property
+    def can_run_backtests(self) -> bool:
+        """
+        Whether this deployment can execute a backtest at all.
+
+        All three have to be configured: somewhere to read bars from, somewhere
+        to write artifacts, and a registry to record the run in. Missing any of
+        them is reported as unavailable rather than guessed at.
+        """
+
+        return (
+            self.has_backtest_datasets
+            and self.has_backtest_output
+            and self.has_backtest_registry
         )
 
     @property
@@ -239,6 +281,9 @@ class ApiConfig:
             "has_prediction_registry": self.has_prediction_registry,
             "has_model_promotion_registry": self.has_model_promotion_registry,
             "has_backtest_registry": self.has_backtest_registry,
+            "has_backtest_datasets": self.has_backtest_datasets,
+            "has_backtest_output": self.has_backtest_output,
+            "can_run_backtests": self.can_run_backtests,
             "metadata": self.extra_metadata,
         }
 
@@ -287,6 +332,8 @@ def load_api_config_from_env(
             source.get(ENV_MODEL_PROMOTION_REGISTRY) or None
         ),
         backtest_registry_path=(source.get(ENV_BACKTEST_REGISTRY) or None),
+        backtest_dataset_dir=(source.get(ENV_BACKTEST_DATASETS) or None),
+        backtest_output_dir=(source.get(ENV_BACKTEST_OUTPUT) or None),
     )
 
 
@@ -304,6 +351,8 @@ __all__ = [
     "ENV_API_ENV",
     "ENV_API_NAME",
     "ENV_API_VERSION",
+    "ENV_BACKTEST_DATASETS",
+    "ENV_BACKTEST_OUTPUT",
     "ENV_BACKTEST_REGISTRY",
     "ENV_DB_URL",
     "ENV_MODEL_PROMOTION_REGISTRY",

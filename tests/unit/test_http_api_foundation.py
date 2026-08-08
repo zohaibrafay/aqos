@@ -261,9 +261,10 @@ class TestVersioningAndRoutes:
         An allow list of everything that may change state.
 
         Sprint 057 opened POST for authentication, Sprint 059 for signal
-        lifecycle decisions and Sprint 060 for simulated paper activity. A new
-        write verb anywhere else has to be a deliberate act, written down here,
-        so it cannot arrive as a side effect of adding a router.
+        lifecycle decisions, Sprint 060 for simulated paper activity and
+        Sprint 061 for historical backtest runs. A new write verb anywhere else
+        has to be a deliberate act, written down here, so it cannot arrive as a
+        side effect of adding a router.
         """
 
         app = create_aqos_api_app(build_config())
@@ -297,15 +298,17 @@ class TestVersioningAndRoutes:
             f"{paper_session}/orders",
             f"{paper_session}/orders/{{order_id}}/cancel",
             f"{paper_session}/positions/{{position_id}}/close",
+            f"{API_V1_PREFIX}/backtests",
         }
 
     def test_every_write_endpoint_is_simulated_or_administrative(self) -> None:
         """
         Nothing that writes can move real money.
 
-        Authentication and signal decisions touch no capital at all, and the
-        paper routes are simulated by construction. A write under any other
-        prefix would be the first one that could.
+        Authentication and signal decisions touch no capital at all, the
+        paper routes are simulated by construction, and a backtest only replays
+        history. A write under any other prefix would be the first one that
+        could move real money.
         """
 
         app = create_aqos_api_app(build_config())
@@ -314,6 +317,7 @@ class TestVersioningAndRoutes:
             f"{API_V1_PREFIX}/auth/",
             f"{API_V1_PREFIX}/signals/",
             f"{API_V1_PREFIX}/paper/",
+            f"{API_V1_PREFIX}/backtests",
         )
 
         for path, operations in app.openapi()["paths"].items():
@@ -345,6 +349,7 @@ class TestVersioningAndRoutes:
         creating_collections = {
             f"{API_V1_PREFIX}/paper/sessions",
             f"{API_V1_PREFIX}/paper/sessions/{{session_id}}/orders",
+            f"{API_V1_PREFIX}/backtests",
         }
 
         for path, operations in app.openapi()["paths"].items():
@@ -361,12 +366,12 @@ class TestVersioningAndRoutes:
 
             assert set(operations) == {"get"}, path
 
-    def test_no_account_backtest_or_model_endpoint_mutates(self) -> None:
+    def test_no_account_or_model_endpoint_mutates(self) -> None:
         """
-        Sprint 060 opened paper trading only.
+        Sprint 061 opened backtest runs, and nothing else.
 
-        Account settings, backtest runs and model promotion are explicitly out
-        of scope, so nothing under those prefixes may accept a write verb.
+        Account settings, model promotion and prediction registries stay
+        read-only, so nothing under those prefixes may accept a write verb.
         """
 
         app = create_aqos_api_app(build_config())
@@ -375,7 +380,6 @@ class TestVersioningAndRoutes:
         for path, operations in app.openapi()["paths"].items():
             for prefix in (
                 "/accounts",
-                "/backtests",
                 "/models",
                 "/predictions",
                 "/system",

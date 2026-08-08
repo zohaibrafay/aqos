@@ -219,9 +219,25 @@ from aqos.http_api.routes_paper_actions import (
     require_owned_session,
 )
 
+from aqos.http_api.backtest_action_schemas import (
+    AQOS_HTTP_BACKTEST_ACTION_SCHEMAS_VERSION,
+    BacktestRunRequest,
+)
+
+from aqos.http_api.routes_backtest_actions import (
+    AQOS_HTTP_BACKTEST_ACTION_ROUTES_VERSION,
+    BACKTESTS_NOT_CONFIGURED_MESSAGE,
+    build_backtest_actions_router,
+    build_backtest_result,
+    refuse_unknown_dataset,
+    require_backtest_service,
+)
+
 from aqos.http_api.routes_backtests import (
     AQOS_HTTP_BACKTEST_ROUTES_VERSION,
     build_backtests_router,
+    owner_of,
+    visible_to,
 )
 
 from aqos.http_api.routes_models import (
@@ -260,6 +276,8 @@ __all__ = [
     "AQOS_HTTP_AUTH_ROUTES_VERSION",
     "AQOS_HTTP_AUTH_SCHEMAS_VERSION",
     "AQOS_HTTP_AUTH_VERSION",
+    "AQOS_HTTP_BACKTEST_ACTION_ROUTES_VERSION",
+    "AQOS_HTTP_BACKTEST_ACTION_SCHEMAS_VERSION",
     "AQOS_HTTP_BACKTEST_ROUTES_VERSION",
     "AQOS_HTTP_DEPENDENCIES_VERSION",
     "AQOS_HTTP_HEALTH_VERSION",
@@ -283,6 +301,8 @@ __all__ = [
     "ApiErrorCode",
     "AqosApiError",
     "AuthenticatedCaller",
+    "BACKTESTS_NOT_CONFIGURED_MESSAGE",
+    "BacktestRunRequest",
     "CROSS_USER_FILTER_MESSAGE",
     "DEFAULT_API_NAME",
     "DEFAULT_API_VERSION",
@@ -346,6 +366,8 @@ __all__ = [
     "build_action_response",
     "build_analytics_snapshot_summary",
     "build_auth_router",
+    "build_backtest_actions_router",
+    "build_backtest_result",
     "build_backtests_router",
     "build_database",
     "build_error_payload",
@@ -395,16 +417,19 @@ __all__ = [
     "mask_database_url",
     "mask_secret",
     "not_found_for",
+    "owner_of",
     "parse_bool",
     "parse_cors_origins",
     "parse_enum",
     "read_request_id",
     "refuse_invalid_transition",
     "refuse_paper_command",
+    "refuse_unknown_dataset",
     "register_error_handlers",
     "register_middleware",
     "register_routes",
     "replace_non_finite",
+    "require_backtest_service",
     "require_due_expiry",
     "require_enum",
     "require_owned_account",
@@ -419,4 +444,6 @@ __all__ = [
     "status_for_error_code",
     "validate_limit",
     "validate_offset",
+    "visible_to",
 ]
+

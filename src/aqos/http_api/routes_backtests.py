@@ -70,10 +70,44 @@ def require_registry(config: ApiConfig):
     return read_backtest_result_registry(path)
 
 
-def require_entry(config: ApiConfig, backtest_id: str):
+def owner_of(entry: Any) -> str | None:
+    """
+    Whose run this was, if anybody's.
+
+    Runs started through the API carry the caller's id in their registry
+    metadata. Runs produced outside it — by the CLI, or by a research script —
+    carry none, and are treated as deployment-level artifacts rather than as
+    belonging to nobody and therefore hidden from everybody.
+    """
+
+    metadata = getattr(entry, "metadata", None) or {}
+    user_id = metadata.get("user_id")
+
+    return str(user_id) if user_id else None
+
+
+def visible_to(entry: Any, caller: AuthenticatedCaller) -> bool:
+    owner = owner_of(entry)
+
+    return owner is None or owner == caller.user_id
+
+
+def require_entry(config: ApiConfig, backtest_id: str, caller: AuthenticatedCaller):
+    """
+    Load a run the caller may see, or refuse.
+
+    Another user's run answers exactly like one that does not exist, so run ids
+    cannot be probed across accounts.
+    """
+
     for entry in require_registry(config).results:
-        if entry.run_id == backtest_id:
+        if entry.run_id != backtest_id:
+            continue
+
+        if visible_to(entry, caller):
             return entry
+
+        break
 
     raise NotFoundApiError(
         "Backtest result was not found.",
@@ -122,13 +156,14 @@ def build_backtests_router() -> APIRouter:
         backtest_id: str,
         section: str,
         config: ApiConfig,
+        caller: AuthenticatedCaller,
         limit: int | None,
         offset: int | None,
     ):
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        entry = require_entry(config, backtest_id)
+        entry = require_entry(config, backtest_id, caller)
         rows = read_report_section(entry, section)
         window = apply_offset_limit(rows, resolved_limit, resolved_offset)
 
@@ -155,7 +190,11 @@ def build_backtests_router() -> APIRouter:
         resolved_limit = validate_limit(limit)
         resolved_offset = validate_offset(offset)
 
-        entries = require_registry(config).results
+        entries = tuple(
+            entry
+            for entry in require_registry(config).results
+            if visible_to(entry, caller)
+        )
         resolved_kind = parse_enum(kind, BacktestKind, "kind")
 
         if resolved_kind is not None:
@@ -193,7 +232,7 @@ def build_backtests_router() -> APIRouter:
         caller: AuthenticatedCaller = Depends(get_read_only_caller),
     ):
         return json_response(
-            build_backtest_summary(require_entry(config, backtest_id))
+            build_backtest_summary(require_entry(config, backtest_id, caller))
         )
 
     @router.get("/{backtest_id}/trades")
@@ -204,7 +243,14 @@ def build_backtests_router() -> APIRouter:
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
-        return section_response(backtest_id, "trades", config, limit, offset)
+        return section_response(
+            backtest_id,
+            "trades",
+            config,
+            caller,
+            limit,
+            offset,
+        )
 
     @router.get("/{backtest_id}/orders")
     def get_backtest_orders(
@@ -214,7 +260,14 @@ def build_backtests_router() -> APIRouter:
         limit: int | None = Query(default=None, le=MAX_PAGE_LIMIT * 10),
         offset: int | None = None,
     ):
-        return section_response(backtest_id, "orders", config, limit, offset)
+        return section_response(
+            backtest_id,
+            "orders",
+            config,
+            caller,
+            limit,
+            offset,
+        )
 
     @router.get("/{backtest_id}/equity")
     def get_backtest_equity(
@@ -228,6 +281,7 @@ def build_backtests_router() -> APIRouter:
             backtest_id,
             "equity_curve",
             config,
+            caller,
             limit,
             offset,
         )
@@ -241,7 +295,9 @@ __all__ = [
     "REGISTRY_UNAVAILABLE_MESSAGE",
     "SERVABLE_REPORT_SECTIONS",
     "build_backtests_router",
+    "owner_of",
     "read_report_section",
     "require_entry",
     "require_registry",
+    "visible_to",
 ]

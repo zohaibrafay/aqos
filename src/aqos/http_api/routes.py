@@ -17,6 +17,9 @@ from aqos.http_api.middleware import read_request_id
 from aqos.http_api.responses import json_response
 from aqos.http_api.routes_accounts import build_accounts_router
 from aqos.http_api.routes_auth import build_auth_router
+from aqos.http_api.routes_backtest_actions import (
+    build_backtest_actions_router,
+)
 from aqos.http_api.routes_backtests import build_backtests_router
 from aqos.http_api.routes_paper import build_paper_router
 from aqos.http_api.routes_paper_actions import build_paper_actions_router
@@ -114,6 +117,10 @@ def register_routes(app: FastAPI, config: ApiConfig) -> None:
         prefix=config.api_prefix,
     )
     app.include_router(build_backtests_router(), prefix=config.api_prefix)
+    app.include_router(
+        build_backtest_actions_router(),
+        prefix=config.api_prefix,
+    )
     app.include_router(build_predictions_router(), prefix=config.api_prefix)
     app.include_router(build_models_router(), prefix=config.api_prefix)
 
