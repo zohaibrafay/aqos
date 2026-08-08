@@ -286,19 +286,179 @@ export interface ReportDetail extends ReportSummary {
 
 export interface PaperSessionSummary {
   readonly session_id: string;
+  readonly user_id: string;
   readonly account_id: string;
   readonly session_name: string;
   readonly session_type: string;
   readonly status: string;
+  readonly is_terminal: boolean;
   readonly started_at_utc: string | null;
   readonly ended_at_utc: string | null;
+  readonly total_trades: number | null;
+  readonly net_pnl: number | null;
+  readonly profit_factor: number | null;
+  readonly profit_factor_state: string | null;
+}
+
+export interface PaperSessionDetail extends PaperSessionSummary {
+  readonly status_reason: string | null;
+  readonly strategy_name: string | null;
+  readonly model_id: string | null;
+  readonly model_version: string | null;
+  readonly symbol: string | null;
+  readonly timeframe: string | null;
+  readonly initial_balance: number | null;
+  readonly final_balance: number | null;
+  readonly realized_pnl: number | null;
+  readonly max_drawdown: number | null;
+}
+
+export interface PaperRejectionCount {
+  readonly reason_code: string;
+  readonly total: number;
+}
+
+/**
+ * What one simulated run measured.
+ *
+ * `profit_factor_state` travels beside the number because infinity has no JSON
+ * form: without it a wins-and-no-losses run is indistinguishable from one that
+ * measured nothing at all.
+ */
+export interface PaperSessionResult {
+  readonly session_id: string;
+  readonly account_id: string;
+  readonly has_trades: boolean;
+  readonly total_orders: number;
+  readonly total_fills: number;
+  readonly total_trades: number;
+  readonly winning_trades: number;
+  readonly losing_trades: number;
+  readonly win_rate: number | null;
+  readonly net_pnl: number | null;
+  readonly gross_profit: number | null;
+  readonly gross_loss: number | null;
+  readonly profit_factor: number | null;
+  readonly profit_factor_state: string | null;
+  readonly has_infinite_profit_factor: boolean;
+  readonly max_drawdown: number | null;
+  readonly ending_balance: number | null;
+  readonly symbols_traded: readonly string[];
+  readonly decisions_allowed: number;
+  readonly decisions_rejected: number;
+  readonly total_decisions: number;
+  readonly rejection_rate: number | null;
+  readonly top_rejection_reasons: readonly PaperRejectionCount[];
+  readonly calculated_at_utc: string | null;
+}
+
+export interface PaperOrder {
+  readonly order_id: string;
+  readonly session_id: string | null;
+  readonly signal_id: string | null;
+  readonly symbol: string;
+  readonly action: string;
+  readonly order_type: string;
+  readonly status: string;
+  readonly quantity: number | null;
+  readonly filled_quantity: number | null;
+  readonly average_fill_price: number | null;
+  readonly requested_price: number | null;
+  readonly stop_loss: number | null;
+  readonly take_profit: number | null;
+  readonly rejection_reason: string | null;
+  readonly rejection_message: string | null;
+  readonly created_at_utc: string | null;
+}
+
+export interface PaperFill {
+  readonly fill_id: string;
+  readonly order_id: string;
+  readonly position_id: string | null;
+  readonly quantity: number | null;
+  readonly price: number | null;
+  readonly commission: number | null;
+  readonly filled_at_utc: string | null;
+}
+
+export interface PaperPosition {
+  readonly position_id: string;
+  readonly order_id: string | null;
+  readonly signal_id: string | null;
+  readonly symbol: string;
+  readonly side: string;
+  readonly status: string;
+  readonly quantity: number | null;
+  readonly closed_quantity: number | null;
+  readonly entry_price: number | null;
+  readonly stop_loss: number | null;
+  readonly take_profit: number | null;
+  readonly realized_pnl: number | null;
+  readonly opened_at_utc: string | null;
+  readonly closed_at_utc: string | null;
+}
+
+export interface PaperTrade {
+  readonly trade_id: string;
+  readonly position_id: string | null;
+  readonly signal_id: string | null;
+  readonly symbol: string;
+  readonly side: string;
+  readonly quantity: number | null;
+  readonly entry_price: number | null;
+  readonly exit_price: number | null;
+  readonly gross_pnl: number | null;
+  readonly commission: number | null;
+  readonly net_pnl: number | null;
+  readonly exit_reason: string | null;
+  readonly balance_after: number | null;
+  readonly opened_at_utc: string | null;
+  readonly closed_at_utc: string | null;
+}
+
+export interface PaperDecisionReason {
+  readonly code: string | null;
+  readonly source: string | null;
+  readonly category: string | null;
+  readonly severity: string | null;
+  readonly message: string | null;
+  readonly is_blocking: boolean | null;
+}
+
+export interface PaperDecision {
+  readonly decision_id: string;
+  readonly session_id: string | null;
+  readonly signal_id: string | null;
+  readonly order_id: string | null;
+  readonly symbol: string;
+  readonly is_allowed: boolean;
+  readonly requested_execution_mode: string | null;
+  readonly effective_execution_mode: string | null;
+  readonly primary_reason_code: string | null;
+  readonly blocking_reason_count: number;
+  readonly blocking_sources: readonly string[];
+  readonly reasons: readonly PaperDecisionReason[];
+  readonly decided_at_utc: string | null;
 }
 
 export interface BacktestSummary {
   readonly backtest_id: string;
+  readonly created_at_utc: string | null;
+  readonly kind: string;
   readonly strategy_name: string;
   readonly symbol: string | null;
   readonly timeframe: string | null;
-  readonly created_at_utc: string | null;
+  readonly model_id: string | null;
+  readonly model_version: string | null;
   readonly metrics: Record<string, number>;
+  readonly tags: readonly string[];
 }
+
+/**
+ * One row from a stored backtest report.
+ *
+ * Deliberately open: the runner writes trade, order and equity rows in its own
+ * shape, and re-declaring them here would be a second definition to keep in
+ * step. The table renders whatever columns arrive.
+ */
+export type BacktestRow = Record<string, unknown>;

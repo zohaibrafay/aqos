@@ -20,7 +20,15 @@ import type {
   BacktestSummary,
   LoginResult,
   Page,
+  BacktestRow,
+  PaperDecision,
+  PaperFill,
+  PaperOrder,
+  PaperPosition,
+  PaperSessionDetail,
+  PaperSessionResult,
   PaperSessionSummary,
+  PaperTrade,
   PredictionSummary,
   PromotionStatus,
   PromotionSummary,
@@ -321,16 +329,116 @@ export const accounts = {
   },
 };
 
+/**
+ * What a caller may narrow their paper sessions by.
+ *
+ * No `user_id`: the backend scopes every list to the caller already.
+ */
+export type PaperSessionListQuery = ListQuery & {
+  readonly account_id?: string;
+  readonly session_type?: string;
+  readonly status?: string;
+  readonly symbol?: string;
+  readonly strategy_name?: string;
+  readonly model_id?: string;
+  readonly started_from?: string;
+  readonly started_to?: string;
+};
+
+/**
+ * Paper trading reads. Every method is a GET.
+ *
+ * Simulated activity only, and only ever read here. Creating a session,
+ * submitting an order or closing a position are decisions with their own
+ * confirmation rules; they are not part of this module.
+ */
 export const paper = {
-  listSessions(client: AqosApiClient, query: ListQuery = {}) {
+  listSessions(client: AqosApiClient, query: PaperSessionListQuery = {}) {
     return client.get<Page<PaperSessionSummary>>(`${API_PREFIX}/paper/sessions`, {
       query,
     });
   },
+
+  getSession(client: AqosApiClient, sessionId: string) {
+    return client.get<PaperSessionDetail>(`${API_PREFIX}/paper/sessions/${sessionId}`);
+  },
+
+  result(client: AqosApiClient, sessionId: string) {
+    return client.get<PaperSessionResult>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/result`,
+    );
+  },
+
+  orders(client: AqosApiClient, sessionId: string, query: ListQuery = {}) {
+    return client.get<Page<PaperOrder>>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/orders`,
+      { query },
+    );
+  },
+
+  fills(client: AqosApiClient, sessionId: string, query: ListQuery = {}) {
+    return client.get<Page<PaperFill>>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/fills`,
+      { query },
+    );
+  },
+
+  positions(client: AqosApiClient, sessionId: string, query: ListQuery = {}) {
+    return client.get<Page<PaperPosition>>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/positions`,
+      { query },
+    );
+  },
+
+  trades(client: AqosApiClient, sessionId: string, query: ListQuery = {}) {
+    return client.get<Page<PaperTrade>>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/trades`,
+      { query },
+    );
+  },
+
+  decisions(client: AqosApiClient, sessionId: string, query: ListQuery = {}) {
+    return client.get<Page<PaperDecision>>(
+      `${API_PREFIX}/paper/sessions/${sessionId}/decisions`,
+      { query },
+    );
+  },
 };
 
+export type BacktestListQuery = ListQuery & {
+  readonly kind?: string;
+  readonly symbol?: string;
+  readonly strategy_name?: string;
+};
+
+/** Historical backtest reads. Every method is a GET. */
 export const backtests = {
-  list(client: AqosApiClient, query: ListQuery = {}) {
+  list(client: AqosApiClient, query: BacktestListQuery = {}) {
     return client.get<Page<BacktestSummary>>(`${API_PREFIX}/backtests`, { query });
+  },
+
+  get(client: AqosApiClient, backtestId: string) {
+    return client.get<BacktestSummary>(`${API_PREFIX}/backtests/${backtestId}`);
+  },
+
+  trades(client: AqosApiClient, backtestId: string, query: ListQuery = {}) {
+    return client.get<Page<BacktestRow>>(
+      `${API_PREFIX}/backtests/${backtestId}/trades`,
+      { query },
+    );
+  },
+
+  orders(client: AqosApiClient, backtestId: string, query: ListQuery = {}) {
+    return client.get<Page<BacktestRow>>(
+      `${API_PREFIX}/backtests/${backtestId}/orders`,
+      { query },
+    );
+  },
+
+  equity(client: AqosApiClient, backtestId: string, query: ListQuery = {}) {
+    return client.get<Page<BacktestRow>>(
+      `${API_PREFIX}/backtests/${backtestId}/equity`,
+      { query },
+    );
   },
 };

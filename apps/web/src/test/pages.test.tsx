@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import BacktestsPage from "@/app/backtests/page";
 import DashboardPage from "@/app/dashboard/page";
 import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
 import NotFoundPage from "@/app/not-found";
-import PaperPage from "@/app/paper/page";
 import { AppShell, NAV_ITEMS } from "@/components/layout/AppShell";
 import { ErrorMessage } from "@/components/states";
 import { AqosApiError } from "@/api/errors";
@@ -48,8 +46,6 @@ describe("every route placeholder renders", () => {
   const pages = [
     { name: "Home", Component: HomePage, heading: "AQOS" },
     { name: "Dashboard", Component: DashboardPage, heading: "Dashboard" },
-    { name: "Paper", Component: PaperPage, heading: "Paper" },
-    { name: "Backtests", Component: BacktestsPage, heading: "Backtests" },
     { name: "Not found", Component: NotFoundPage, heading: "Page not found" },
   ];
 
@@ -60,10 +56,10 @@ describe("every route placeholder renders", () => {
   });
 
   it("says a placeholder is unbuilt rather than showing an empty list", () => {
-    // "Nothing here yet" and "you have no sessions" are different claims, and
-    // only one of them is true. Signals and accounts are real screens now, so
-    // the assertion moved to one that is still a placeholder.
-    render(<PaperPage />);
+    // "Nothing here yet" and "you have nothing" are different claims, and
+    // only one of them is true. Signals, accounts, paper and backtests are all
+    // real screens now; the dashboard is the last placeholder.
+    render(<DashboardPage />);
 
     expect(screen.getByText("Not built yet")).toBeInTheDocument();
   });
