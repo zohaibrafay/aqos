@@ -442,6 +442,38 @@ describe("only signal lifecycle actions exist in the UI", () => {
   });
 });
 
+describe("public config reaches the browser", () => {
+  /**
+   * A bundler inlines `NEXT_PUBLIC_*` only where it can see the reference.
+   *
+   * Reading the same values through a variable — `env[name]` — is invisible to
+   * that scan, so the browser bundle receives an empty `process.env` and every
+   * value reads as missing. Server rendering hides it completely, which is why
+   * this shipped in Sprint 063 and was only found by opening the app.
+   */
+  const PUBLIC_NAMES = [
+    "NEXT_PUBLIC_AQOS_WEB_API_BASE_URL",
+    "NEXT_PUBLIC_AQOS_WEB_APP_NAME",
+    "NEXT_PUBLIC_AQOS_WEB_ENV",
+  ];
+
+  const config =
+    SOURCES.find(({ path }) => path === "config/env.ts")?.text ?? "";
+
+  it.each(PUBLIC_NAMES)("reads %s as a literal reference", (name) => {
+    expect(config).toContain(`process.env.${name}`);
+  });
+
+  it("never reads the environment through a variable index", () => {
+    // `process.env[something]` is the shape that silently breaks in a browser.
+    expect(/process\.env\s*\[/.test(config)).toBe(false);
+  });
+
+  it("passes the static object as the default source", () => {
+    expect(config).toContain("= PUBLIC_ENV");
+  });
+});
+
 describe("the session token is handled deliberately", () => {
   it("never uses localStorage", () => {
     // Matched as a property access rather than as a word: session.ts explains

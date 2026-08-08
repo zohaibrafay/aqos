@@ -48,6 +48,29 @@ export interface AqosWebConfig {
   readonly environment: AqosWebEnvironment;
 }
 
+/**
+ * The public values, read so a bundler can actually find them.
+ *
+ * Each one is written as a literal `process.env.NEXT_PUBLIC_…` on purpose.
+ * Next replaces those references at build time by scanning the source for that
+ * exact shape; reaching the same values through a variable — `env[name]` — is
+ * invisible to that scan, so the browser bundle would receive an empty
+ * `process.env` and every value would read as missing.
+ *
+ * That is not hypothetical: it is what this module did until a local run
+ * showed the app booting fine on the server and failing in the browser with
+ * "NEXT_PUBLIC_AQOS_WEB_API_BASE_URL is required". Server rendering hid it,
+ * because `process.env` is real there.
+ *
+ * Anything added here must be written the same literal way.
+ */
+export const PUBLIC_ENV: Record<string, string | undefined> = {
+  NEXT_PUBLIC_AQOS_WEB_API_BASE_URL:
+    process.env.NEXT_PUBLIC_AQOS_WEB_API_BASE_URL,
+  NEXT_PUBLIC_AQOS_WEB_APP_NAME: process.env.NEXT_PUBLIC_AQOS_WEB_APP_NAME,
+  NEXT_PUBLIC_AQOS_WEB_ENV: process.env.NEXT_PUBLIC_AQOS_WEB_ENV,
+};
+
 export class AqosWebConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -151,10 +174,7 @@ function isLocalHost(hostname: string): boolean {
  * message can say why.
  */
 export function loadAqosWebConfig(
-  source: Record<string, string | undefined> = process.env as Record<
-    string,
-    string | undefined
-  >,
+  source: Record<string, string | undefined> = PUBLIC_ENV,
 ): AqosWebConfig {
   assertNoUnsafePublicNames(source);
 

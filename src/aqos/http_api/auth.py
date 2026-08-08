@@ -107,7 +107,15 @@ def login(
 
     timestamp = now_utc or database_utc_now()
 
-    profile = UserProfileRepository(session).find_by_email(email)
+    try:
+        profile = UserProfileRepository(session).find_by_email(email)
+    except ValueError:
+        # An address that is not an address cannot match a stored one, so this
+        # is the same failure as an unknown user and is reported identically.
+        # Letting the normalizer's error escape would answer with a 500, which
+        # tells a caller their input never reached the credential check — and
+        # logs a traceback for what is only ever bad input.
+        profile = None
 
     if profile is None:
         # Still an explicit failure, worded exactly like a wrong password.

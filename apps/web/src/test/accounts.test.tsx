@@ -173,7 +173,11 @@ const REPORT = {
 
 function routeFor(url: string): Response {
   if (url.includes("/execution-constraints")) return ok(CONSTRAINTS);
-  if (url.includes("/funded-rules")) return ok(null);
+  // 404 with a message, which is what the real API returns for an account
+  // that has no funded programme.
+  if (url.includes("/funded-rules")) {
+    return fail(404, API_ERROR_CODES.notFound, "This account has no funded rules assigned.");
+  }
   if (url.includes("/analytics/snapshots")) return ok(pageOf([snapshot()]));
   if (url.includes("/analytics")) return ok(UNAVAILABLE_ANALYTICS);
   if (/\/reports\/report_1$/.test(url)) {
@@ -507,6 +511,26 @@ describe("snapshots carry measured trade metrics", () => {
 });
 
 describe("funded rules are honest about absence", () => {
+  it("shows the empty state, not an error, when there is no programme", async () => {
+    // The API answers 404 for a paper account. That is the normal case, and
+    // rendering it as a red error box made an ordinary account look broken.
+    render(<AccountDetailPage />);
+
+    expect(await screen.findByText("No funded rules")).toBeInTheDocument();
+  });
+
+  it("still surfaces a real failure", async () => {
+    // Only the not-found code is swallowed; everything else is an error.
+    fetchMock.mockImplementation(async (url: unknown) =>
+      String(url).includes("/funded-rules")
+        ? fail(503, API_ERROR_CODES.databaseUnavailable, "Database unavailable.")
+        : routeFor(String(url)),
+    );
+    render(<AccountDetailPage />);
+
+    expect(await screen.findByText("Database unavailable.")).toBeInTheDocument();
+  });
+
   it("says there are none rather than showing blanks", () => {
     render(<FundedRulesPanel rules={null} />);
 

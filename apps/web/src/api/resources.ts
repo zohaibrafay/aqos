@@ -7,6 +7,7 @@
  * this app until a sprint deliberately opens them.
  */
 
+import { API_ERROR_CODES, isAqosApiError } from "@/api/errors";
 import type { AqosApiClient } from "@/api/client";
 import type {
   AccountAnalytics,
@@ -292,10 +293,29 @@ export const accounts = {
     );
   },
 
-  fundedRules(client: AqosApiClient, accountId: string) {
-    return client.get<FundedRules | null>(
-      `${API_PREFIX}/accounts/${accountId}/funded-rules`,
-    );
+  /**
+   * The account's funded rules, or nothing.
+   *
+   * An account with no funded programme answers 404 with a message saying so.
+   * That is the normal case for a paper account, not a failure, so it is
+   * mapped onto ``null`` here rather than left for each screen to special-case
+   * — otherwise the ordinary state renders as a red error box.
+   *
+   * Only that one code is swallowed. A 403, a 503 or a genuinely missing
+   * account still reaches the caller as an error.
+   */
+  async fundedRules(client: AqosApiClient, accountId: string) {
+    try {
+      return await client.get<FundedRules>(
+        `${API_PREFIX}/accounts/${accountId}/funded-rules`,
+      );
+    } catch (cause) {
+      if (isAqosApiError(cause) && cause.code === API_ERROR_CODES.notFound) {
+        return null;
+      }
+
+      throw cause;
+    }
   },
 
   analytics(client: AqosApiClient, accountId: string) {

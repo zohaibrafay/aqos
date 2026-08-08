@@ -196,6 +196,73 @@ class TestLogin:
             "request_id": unknown.json()["error"]["request_id"],
         }
 
+    @pytest.mark.parametrize(
+        "address",
+        [
+            "dev@localhost",
+            "not-an-email",
+            "@example.com",
+            "spaces in@example.com",
+            "",
+        ],
+    )
+    def test_a_malformed_address_answers_identically_too(
+        self,
+        client,
+        user_id,
+        address: str,
+    ) -> None:
+        """
+        An address that is not an address is just another failed login.
+
+        Letting the email normalizer's error escape answered with a 500, which
+        told a caller their input never reached the credential check — and
+        logged a traceback for what is only ever bad input. Found by running
+        the app locally after Sprint 069.
+        """
+
+        malformed = client.post(
+            f"{API_V1_PREFIX}/auth/login",
+            json={"email": address, "password": PASSWORD},
+        )
+
+        assert malformed.status_code != 500
+        assert malformed.status_code in (401, 422)
+
+    def test_a_malformed_address_is_word_for_word_a_wrong_password(
+        self,
+        client,
+        user_id,
+    ) -> None:
+        """The third failure mode must not be distinguishable from the other two."""
+
+        malformed = client.post(
+            f"{API_V1_PREFIX}/auth/login",
+            json={"email": "dev@localhost", "password": PASSWORD},
+        )
+        wrong = login(client, password=WRONG_PASSWORD)
+
+        assert malformed.status_code == wrong.status_code == 401
+        assert malformed.json()["error"] == {
+            **wrong.json()["error"],
+            "request_id": malformed.json()["error"]["request_id"],
+        }
+
+    def test_a_malformed_address_leaks_nothing(self, client, user_id) -> None:
+        body = client.post(
+            f"{API_V1_PREFIX}/auth/login",
+            json={"email": "dev@localhost", "password": PASSWORD},
+        ).text
+
+        for fragment in (
+            "Traceback",
+            "ValueError",
+            "normalize_email",
+            "is not valid",
+            PASSWORD,
+        ):
+            assert fragment not in body
+
     def test_the_response_never_carries_the_password(
         self,
         client,
